@@ -2687,10 +2687,23 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     susu_kambing: { n: 'Susu Kambing', e: '🥛', price: 110 }, susu: { n: 'Susu Sapi', e: '🥛', price: 150 }, susu_premium: { n: 'Susu Premium', e: '✨', price: 300 },
   };
   Object.entries(CROPS).forEach(([k, c]) => ITEMS[k] = { n: c.n, e: c.e, price: c.price });
+  const FISH = {
+    teri:    { n: 'Ikan Teri',   e: '🐟', w: 40, lv: 1, price: 15,  kg: 0.05, d: 0.30 },
+    nila:    { n: 'Ikan Nila',   e: '🐟', w: 30, lv: 1, price: 35,  kg: 0.6,  d: 0.26 },
+    tongkol: { n: 'Tongkol',     e: '🐟', w: 12, lv: 2, price: 90,  kg: 1.5,  d: 0.20 },
+    kakap:   { n: 'Kakap Merah', e: '🐠', w: 10, lv: 2, price: 120, kg: 2.2,  d: 0.17 },
+    kerapu:  { n: 'Kerapu',      e: '🐡', w: 7,  lv: 3, price: 160, kg: 3.0,  d: 0.15 },
+    gurita:  { n: 'Gurita',      e: '🐙', w: 4,  lv: 3, price: 200, kg: 2.5,  d: 0.14 },
+    tuna:    { n: 'Tuna',        e: '🐟', w: 3,  lv: 4, price: 450, kg: 18,   d: 0.10 },
+    sepatu:  { n: 'Sepatu Bot',  e: '👢', w: 8,  lv: 1, price: 2,   kg: 0.8,  d: 0.40, junk: true },
+    peti:    { n: 'Peti Harta',  e: '💰', w: 1,  lv: 1, price: 0,   kg: 5,    d: 0.12, coins: 350 },
+  };
+  Object.entries(FISH).forEach(([k, f]) => { if (!f.coins) ITEMS['ikan_' + k] = { n: f.n, e: f.e, price: f.price }; });
   const ROOFS = [0xc2410c, 0x1d4ed8, 0x15803d, 0x7c3aed, 0xdb2777, 0x0f766e, 0xca8a04, 0x111827];
   const SHOP = [
     ...Object.entries(CROPS).map(([k, c]) => ({ id: 'seed_' + k, n: 'Benih ' + c.n, e: c.e, price: c.seed, lv: c.lv, d: `Panen ${c.hours < 24 ? c.hours + ' jam' : c.hours / 24 + ' hari'} · hasil ${c.yield}×` })),
     { id: 'pakan', n: 'Pakan Ternak ×5', e: '🌾', price: 40, lv: 1, d: 'Untuk memberi makan hewan' },
+    { id: 'umpan', n: 'Umpan Cacing ×10', e: '🪱', price: 30, lv: 1, d: 'Untuk memancing di Tempat Pemancingan' },
     { id: 'esteh', n: 'Es Teh Jumbo', e: '🧋', price: 60, lv: 1, d: '+30 energi (dari lapak @nindriluvita7)' },
     ...Object.entries(ANIMALS).map(([k, a]) => ({ id: 'animal_' + k, n: a.n, e: a.e, price: a.price, lv: a.lv, d: `Hasil: ${a.prodN} tiap hari` })),
     { id: 'barn2', n: 'Kandang Sedang (4 hewan)', e: '🏚️', price: 900, lv: 2, d: 'Muat 4 hewan' },
@@ -2700,11 +2713,11 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     { id: 'fence', n: 'Pagar Kayu', e: '🪵', price: 450, lv: 2, d: 'Pagar keliling kebun' },
     { id: 'garden', n: 'Taman Bunga', e: '🌷', price: 600, lv: 3, d: 'Bunga di depan rumah' },
   ];
-  const ENERGY = { till: 4, plant: 2, water: 2, harvest: 1, feed: 2, pet: 1, collect: 1, clear: 2 };
+  const ENERGY = { fish: 3, till: 4, plant: 2, water: 2, harvest: 1, feed: 2, pet: 1, collect: 1, clear: 2 };
   const DAILY_POOL = [
     { id: 'water', t: 'Siram tanaman', n: 8 }, { id: 'harvest', t: 'Panen hasil kebun', n: 4 }, { id: 'feed', t: 'Beri makan ternak', n: 2 },
     { id: 'pet', t: 'Elus hewan', n: 2 }, { id: 'till', t: 'Cangkul tanah', n: 4 }, { id: 'sell', t: 'Jual hasil senilai 150 koin', n: 150 },
-    { id: 'plant', t: 'Tanam benih', n: 4 }, { id: 'collect', t: 'Ambil telur / susu', n: 2 },
+    { id: 'plant', t: 'Tanam benih', n: 4 }, { id: 'collect', t: 'Ambil telur / susu', n: 2 }, { id: 'fish', t: 'Pancing 3 ikan', n: 3 },
   ];
   const WEEKLY_POOL = [
     { id: 'harvest_tomat', t: 'Panen 15 tomat', n: 15, r: 350 }, { id: 'harvest', t: 'Panen 40 hasil kebun', n: 40, r: 450 },
@@ -2712,7 +2725,8 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     { id: 'water', t: 'Siram 60 kali', n: 60, r: 350 }, { id: 'pet', t: 'Elus hewan 20 kali', n: 20, r: 350 },
     { id: 'harvest_jagung', t: 'Panen 8 jagung', n: 8, r: 450, lv: 2 }, { id: 'harvest_semangka', t: 'Panen 3 semangka', n: 3, r: 600, lv: 4 },
     { id: 'days', t: 'Main 5 hari minggu ini', n: 5, r: 500 }, { id: 'feed', t: 'Beri makan ternak 20 kali', n: 20, r: 400 },
-    { id: 'plant', t: 'Tanam 30 benih', n: 30, r: 350 },
+    { id: 'plant', t: 'Tanam 30 benih', n: 30, r: 350 }, { id: 'fish', t: 'Pancing 20 ikan', n: 20, r: 450 },
+    { id: 'fish_kakap', t: 'Dapat 2 Kakap Merah', n: 2, r: 500, lv: 2 }, { id: 'fish_tuna', t: 'Dapat 1 Tuna', n: 1, r: 700, lv: 4 },
   ];
   const WEEK_BONUS = 800;
 
@@ -2751,10 +2765,10 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
   const newState = () => ({
     v: 1, coins: 300, xp: 0, level: 1, energy: 100, eDay: null, field: 3,
     tiles: Array.from({ length: 16 }, () => ({ s: 'grass' })),
-    animals: [], barn: 2, inv: { seed_lobak: 6, seed_tomat: 3, pakan: 5 },
+    animals: [], barn: 2, inv: { seed_lobak: 6, seed_tomat: 3, pakan: 5, umpan: 10 },
     house: { roof: 0, fence: false, garden: false },
     streak: 0, lastDay: null, days: [],
-    daily: null, weekly: null, badges: [], stats: { harvest: 0, collect: 0, sold: 0 }, seed: 'lobak',
+    daily: null, weekly: null, badges: [], stats: { harvest: 0, collect: 0, sold: 0, fish: 0 }, best: null, seed: 'lobak',
   });
   const xpNeed = lv => 60 + lv * 45;
   const maxEnergy = s => 100 + (s.level - 1) * 5;
@@ -2996,6 +3010,15 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
   .gtabs{display:flex;gap:6px;margin:6px 0 4px} .gtabs button{border:0;border-radius:20px;padding:6px 12px;font:700 12.5px Poppins,sans-serif;background:#f3f4f6} .gtabs button.on{background:#14181f;color:#fff}
   #gLogin .how input{width:100%;height:46px;border:2px solid #e5e7eb;border-radius:12px;padding:0 12px;font:600 16px Poppins,sans-serif;margin:6px 0 10px;box-sizing:border-box}
   #gLogin .how button.go{width:100%;height:46px;border:0;border-radius:12px;background:#16a34a;color:#fff;font:800 15px Poppins,sans-serif}
+  #gFishBar{position:fixed;left:0;right:0;bottom:12px;display:none;justify-content:center;gap:8px;z-index:5}
+  body.fishing #gFishBar{display:flex} body.fishing #gBar{display:none!important}
+  #gFishBar button{border:0;border-radius:14px;background:#fff;padding:11px 14px;font:800 14px Poppins,sans-serif;box-shadow:0 4px 12px rgba(0,0,0,.18)} #gFishBar button.pri{background:#0ea5e9;color:#fff;min-width:150px}
+  #gFishBar button.bite{background:#ef4444;color:#fff;animation:gp .35s infinite alternate} @keyframes gp{to{transform:scale(1.08)}}
+  #gReel{position:fixed;left:50%;top:42%;transform:translate(-50%,-50%);width:min(340px,calc(100% - 40px));background:rgba(255,255,255,.97);border-radius:18px;padding:14px;box-shadow:0 10px 30px rgba(0,0,0,.3);display:none;z-index:7;text-align:center;font-family:Poppins,sans-serif}
+  #gReel.on{display:block} #gReel .t{font-weight:800;font-size:14px;margin-bottom:10px}
+  #gReel .trk{position:relative;height:26px;border-radius:13px;background:#e0f2fe;overflow:hidden} #gReel .zone{position:absolute;top:0;bottom:0;background:#22c55e;border-radius:6px}
+  #gReel .mk{position:absolute;top:-2px;width:6px;height:30px;background:#111827;border-radius:3px}
+  #gReel button{margin-top:12px;width:100%;height:50px;border:0;border-radius:14px;background:#ef4444;color:#fff;font:900 18px Poppins,sans-serif}
   #gTip{position:fixed;left:50%;bottom:74px;transform:translateX(-50%);background:rgba(20,24,31,.88);color:#fff;font:600 12.5px Poppins,sans-serif;padding:7px 12px;border-radius:12px;display:none;z-index:5;max-width:calc(100% - 40px);text-align:center}
   body.game #gTip{display:block}
   #gFloat{position:fixed;inset:0;pointer-events:none;z-index:6;overflow:hidden} #gFloat div{position:absolute;font:800 15px Poppins,sans-serif;color:#fff;text-shadow:0 2px 4px rgba(0,0,0,.6);transition:transform 1.1s ease-out,opacity 1.1s;white-space:nowrap}
@@ -3003,7 +3026,9 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
   const ui = document.createElement('div'); ui.innerHTML = `
   <div id="gHud"><div class="gchip" id="gLv">Lv 1</div><div class="gchip">🪙 <span id="gCoin">0</span></div><div class="gchip" id="gEn">⚡<div id="gEnBar"><i></i></div><span id="gEnT">100</span></div><button id="gExit">✕</button></div>
   <div id="gTip">Ketuk tanah untuk mencangkul · ketuk lagi untuk menanam</div>
-  <div id="gBar"><button id="gSeed" class="pri">🌱 Benih</button><button id="gShop">🏪 Toko</button><button id="gBag">🎒 Tas</button><button id="gMis">🎯 Misi<span class="dot" id="gMisDot" style="display:none">!</span></button><button id="gRank">🏆</button></div>
+  <div id="gBar"><button id="gSeed" class="pri">🌱 Benih</button><button id="gShop">🏪 Toko</button><button id="gBag">🎒 Tas</button><button id="gMis">🎯 Misi<span class="dot" id="gMisDot" style="display:none">!</span></button><button id="gFishB">🎣</button><button id="gRank">🏆</button></div>
+  <div id="gFishBar"><button id="gCast" class="pri">🎣 Lempar Kail</button><button id="gFishBag">🎒</button><button id="gFishBack">🏡 Pulang</button></div>
+  <div id="gReel"><div class="t" id="gReelT">Tarik saat penanda di zona hijau!</div><div class="trk"><div class="zone" id="gZone"></div><div class="mk" id="gMk"></div></div><button id="gPull">TARIK!</button></div>
   <div id="gFloat"></div>
   <div class="panel gpanel" id="gLogin"><div class="ph"><h3>🌾 Main Kebunku</h3><button data-close>✕</button></div><div class="how">
     Punya kebun & ternak sendiri di <b>Desa Tani</b>! Masukkan username IG kamu (harus sudah jadi warga) dan buat PIN 4–6 angka. PIN dipakai setiap kali main, jangan sampai lupa.
@@ -3014,7 +3039,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
   <div class="panel gpanel" id="gP_shop"><div class="ph"><h3>🏪 Toko Pasar Pulau</h3><button data-close>✕</button></div><div class="pb" id="gShopList"></div></div>
   <div class="panel gpanel" id="gP_bag"><div class="ph"><h3>🎒 Tas & Jual</h3><button data-close>✕</button></div><div class="pb" id="gBagList"></div></div>
   <div class="panel gpanel" id="gP_mis"><div class="ph"><h3>🎯 Misi</h3><button data-close>✕</button></div><div class="pb" id="gMisList"></div></div>
-  <div class="panel gpanel" id="gP_rank"><div class="ph"><h3>🏆 Papan Peringkat</h3><button data-close>✕</button></div><div class="pb"><div class="gtabs" id="gRankTabs"><button data-k="coins" class="on">🪙 Terkaya</button><button data-k="hearts">❤️ Peternak</button><button data-k="missions_done">🎯 Misi</button><button data-k="harvests">🧺 Panen</button></div><div id="gRankList"></div></div></div>`;
+  <div class="panel gpanel" id="gP_rank"><div class="ph"><h3>🏆 Papan Peringkat</h3><button data-close>✕</button></div><div class="pb"><div class="gtabs" id="gRankTabs"><button data-k="coins" class="on">🪙 Terkaya</button><button data-k="hearts">❤️ Peternak</button><button data-k="missions_done">🎯 Misi</button><button data-k="harvests">🧺 Panen</button><button data-k="fish">🎣 Ikan</button></div><div id="gRankList"></div></div></div>`;
   document.body.appendChild(ui);
   const panels = ['gLogin', 'gP_seed', 'gP_shop', 'gP_bag', 'gP_mis', 'gP_rank'];
   const openP = id => { panels.forEach(p => $(p).classList.toggle('on', p === id)); document.body.classList.add('gp'); };
@@ -3042,6 +3067,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     if (!r.ok) { $('gErr').textContent = r.err || 'Gagal masuk'; return; }
     try { localStorage.setItem('pn_login', JSON.stringify({ u, p })); } catch {}
     const s = r.state && r.state.tiles ? r.state : newState();
+    if (s.inv.umpan === undefined) s.inv.umpan = 10; s.stats.fish = s.stats.fish || 0;
     ME = { u, p, s, ent };
     const msgs = []; tickState(ME.s, Date.now(), msgs);
     if (r.new || !r.state || !r.state.tiles) { ME.s.animals.push({ t: 'ayam', n: NAMES[Math.floor(Math.random() * NAMES.length)], h: 2, fed: null, pet: null, col: null }); msgs.unshift('🎉 Selamat datang di Desa Tani! Kamu dapat 300 koin, benih, pakan, dan seekor ayam.'); }
@@ -3056,7 +3082,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     const p = ME.v.root.position; W.flyTo(V(p.x - 0.1, 0.2, p.z + 0.2), 10.5, V(0.04, 1.35, 1));
     const S = ME.ent.sim; S.manual = true; ME.ent.m.root.position.set(p.x + 0.9, p.y, p.z + 1.4); ME.walk = null; updateHUD();
   }
-  $('gExit').onclick = () => { document.body.classList.remove('game'); closeP(); if (ME) { ME.ent.sim.manual = false; ME.ent.sim.st = 'idle'; } save(true); };
+  $('gExit').onclick = () => { if (FISHING.st !== 'off') { stopFishing(); } document.body.classList.remove('game'); closeP(); if (ME) { ME.ent.sim.manual = false; ME.ent.sim.st = 'idle'; } save(true); };
   function markDirty() { dirty = true; clearTimeout(saveT); saveT = setTimeout(save, 2500); }
   async function save(force) {
     if (!ME || (!dirty && !force)) return; dirty = false;
@@ -3143,6 +3169,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     const s = ME.s; if (s.coins < it.price) return; const msgs = [];
     if (it.id.startsWith('seed_')) s.inv[it.id] = (s.inv[it.id] || 0) + 1;
     else if (it.id === 'pakan') s.inv.pakan = (s.inv.pakan || 0) + 5;
+    else if (it.id === 'umpan') s.inv.umpan = (s.inv.umpan || 0) + 10;
     else if (it.id === 'esteh') { s.energy = Math.min(maxEnergy(s) + 30, s.energy + 30); }
     else if (it.id.startsWith('animal_')) { const t = it.id.slice(7); s.animals.push({ t, n: NAMES[Math.floor(Math.random() * NAMES.length)], h: 1, fed: null, pet: null, col: null }); msgs.push(`${ANIMALS[t].e} Hewan baru datang ke kandangmu!`); }
     else if (it.id === 'barn2') s.barn = 4; else if (it.id === 'barn3') s.barn = 6;
@@ -3155,7 +3182,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     const s = ME.s, el = $('gBagList'); el.innerHTML = '';
     const goods = Object.entries(s.inv).filter(([k, n]) => ITEMS[k] && n > 0);
     let total = 0; goods.forEach(([k, n]) => total += ITEMS[k].price * n);
-    const top = document.createElement('div'); top.innerHTML = `<div style="display:flex;gap:8px;margin:4px 0 8px"><div class="gchip">🌾 Pakan: ${s.inv.pakan || 0}</div><div class="gchip">🪙 ${fmt(s.coins)}</div></div>`;
+    const top = document.createElement('div'); top.innerHTML = `<div style="display:flex;gap:8px;margin:4px 0 8px"><div class="gchip">🌾 Pakan: ${s.inv.pakan || 0}</div><div class="gchip">🪱 Umpan: ${s.inv.umpan || 0}</div><div class="gchip">🪙 ${fmt(s.coins)}</div></div>`;
     el.appendChild(top);
     if (!goods.length) el.insertAdjacentHTML('beforeend', '<p style="color:#6b7280;font-size:13.5px">Belum ada hasil panen. Tanam, siram, lalu panen!</p>');
     goods.forEach(([k, n]) => { const it = ITEMS[k]; const d = document.createElement('div'); d.className = 'gitem';
@@ -3181,10 +3208,10 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
   let rankKey = 'coins';
   async function openRank() {
     openP('gP_rank'); await refreshList(); const el = $('gRankList'); const wk = weekKey(Date.now());
-    const val = r => rankKey === 'missions_done' ? (r.week_key === wk ? r.missions_done : 0) : r[rankKey] || 0;
-    const rows = LIST.map(r => ME && r.username === ME.u ? { ...r, coins: ME.s.coins, hearts: heartsTotal(ME.s), harvests: ME.s.stats.harvest, missions_done: ME.s.weekly.list.filter(m => m.done).length, week_key: ME.s.weekly.week } : r)
+    const val = r => rankKey === 'missions_done' ? (r.week_key === wk ? r.missions_done : 0) : rankKey === 'fish' ? (r.state?.stats?.fish || 0) : r[rankKey] || 0;
+    const rows = LIST.map(r => ME && r.username === ME.u ? { ...r, coins: ME.s.coins, hearts: heartsTotal(ME.s), harvests: ME.s.stats.harvest, missions_done: ME.s.weekly.list.filter(m => m.done).length, week_key: ME.s.weekly.week, state: ME.s } : r)
       .sort((a, b) => val(b) - val(a)).slice(0, 30);
-    const unit = { coins: '🪙', hearts: '❤️', missions_done: '🎯', harvests: '🧺' }[rankKey];
+    const unit = { coins: '🪙', hearts: '❤️', missions_done: '🎯', harvests: '🧺', fish: '🎣' }[rankKey];
     el.innerHTML = rows.map((r, i) => `<div class="gitem" data-u="${r.username}" style="cursor:pointer"><div class="ic" style="font-size:18px;font-weight:800">${['🥇', '🥈', '🥉'][i] || i + 1}</div><div class="tx"><b>@${r.username}</b><span>Lv ${r.level || 1} · kunjungi kebun ›</span></div><b>${unit} ${fmt(val(r))}</b></div>`).join('') || '<p style="color:#6b7280">Belum ada pemain. Jadilah yang pertama!</p>';
     el.querySelectorAll('[data-u]').forEach(d => d.onclick = () => { const v = FARMS.get(d.dataset.u); if (v) { closeP(); const p = v.root.position; W.flyTo(V(p.x, 0.3, p.z), 9, V(0.1, 1.1, 1)); } });
   }
@@ -3193,10 +3220,85 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
   // leaderboard also reachable outside the game
   const rankBtn = document.createElement('button'); rankBtn.textContent = '🏆'; rankBtn.style.cssText = 'background:#fff;color:#14181f;flex:0 0 auto'; rankBtn.onclick = openRank; if (GAME_ON) playBtn.after(rankBtn);
 
+  // ---------------- fishing ----------------
+  const FISHING = { st: 'off', t0: 0, biteAt: 0, fish: null, rod: null, line: null, bob: null, mk: 0, dir: 1, zone: [0.4, 0.6] };
+  {
+    const rod = new THREE.Group(); const rm = mesh(new THREE.CylinderGeometry(0.012, 0.02, 1.5, 5), M(0x5b3a1e), 0, -0.2, 0.7, false); rm.rotation.x = Math.PI / 2 - 0.5; rod.add(rm);
+    rod.add(mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.08, 8), M(0x111827), 0, -0.42, 0.05, false));
+    const tip = new THREE.Object3D(); tip.position.set(0, 0.15, 1.38); rod.add(tip); rod.userData.tip = tip; FISHING.rod = rod;
+    const bob = new THREE.Group(); bob.add(mesh(new THREE.SphereGeometry(0.07, 8, 6), M(0xef4444), 0, 0.03, 0, false)); bob.add(mesh(new THREE.SphereGeometry(0.071, 8, 6, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), M(0xffffff), 0, 0.03, 0, false));
+    bob.visible = false; scene.add(bob); FISHING.bob = bob;
+    const lg = new THREE.BufferGeometry().setFromPoints([V(0, 0, 0), V(0, 0, 0)]); FISHING.line = new THREE.Line(lg, new THREE.LineBasicMaterial({ color: 0xf8fafc })); FISHING.line.visible = false; FISHING.line.frustumCulled = false; scene.add(FISHING.line);
+  }
+  const FSPOT = () => { const p = pml(0.85, 0, 1.75); p.y = PIER.y + 0.04; return p; };
+  const FBOB = () => pml(3.3, 0, 1.9);
+  const FYAW = () => PM.rotation.y + Math.PI / 2;
+  function startFishing() {
+    if (!ME) return; closeP(); document.body.classList.add('fishing');
+    const S = ME.ent.sim; S.manual = true; ME.walk = null;
+    const p = FSPOT(); ME.ent.m.root.position.copy(p); ME.ent.m.root.rotation.y = FYAW();
+    ME.ent.m.arms[1].add(FISHING.rod);
+    const b = FBOB(); const back = pml(-0.75, 0, -1).sub(PM.position).setY(0).normalize(); W.flyTo(V((p.x * 0.5 + b.x * 0.5), 0.5, (p.z * 0.5 + b.z * 0.5)), 7.5, V(back.x, 1.05, back.z));
+    FISHING.st = 'idle'; setCast('🎣 Lempar Kail'); tip(`Umpan: ${ME.s.inv.umpan || 0} 🪱 · Energi ${ME.s.energy}. Lempar kail lalu tunggu pelampung tenggelam!`);
+  }
+  function stopFishing() {
+    document.body.classList.remove('fishing'); $('gReel').classList.remove('on');
+    FISHING.st = 'off'; FISHING.bob.visible = false; FISHING.line.visible = false; if (FISHING.rod.parent) FISHING.rod.parent.remove(FISHING.rod);
+    if (ME) enterGame();
+  }
+  const setCast = (txt, bite) => { $('gCast').textContent = txt; $('gCast').classList.toggle('bite', !!bite); };
+  function pickFish(s) {
+    const pool = Object.entries(FISH).filter(([k, f]) => f.lv <= s.level); const hr = new Date(Date.now() + WIB).getUTCHours(); const night = hr >= 18 || hr < 6;
+    const tw = pool.reduce((a, [k, f]) => a + f.w * (night && (k === 'tuna' || k === 'gurita') ? 2 : 1), 0); let r = Math.random() * tw;
+    for (const [k, f] of pool) { r -= f.w * (night && (k === 'tuna' || k === 'gurita') ? 2 : 1); if (r <= 0) return k; } return 'teri';
+  }
+  function onCast() {
+    const s = ME.s, now = performance.now();
+    if (FISHING.st === 'idle') {
+      tickState(s, Date.now());
+      if (!(s.inv.umpan > 0)) { W.toast('🪱 Umpan habis! Beli Umpan Cacing di 🏪 Toko.'); return; }
+      if (!useEnergy(ENERGY.fish)) return; s.inv.umpan--; updateHUD();
+      FISHING.st = 'cast'; FISHING.t0 = now; FISHING.biteAt = now + 900 + 1500 + Math.random() * 4500; setCast('⏳ Menunggu…'); tip('Sabar… tunggu pelampungnya tenggelam.');
+    } else if (FISHING.st === 'bite') {
+      const k = pickFish(s), f = FISH[k]; FISHING.fish = k; FISHING.st = 'reel';
+      const w = clamp(f.d + (s.level - 1) * 0.008, 0.08, 0.45), c = 0.15 + Math.random() * (0.7 - w); FISHING.zone = [c, c + w]; FISHING.mk = 0; FISHING.dir = 1; FISHING.spd = 0.9 + (0.4 - f.d) * 3.2;
+      $('gZone').style.left = `${c * 100}%`; $('gZone').style.width = `${w * 100}%`; $('gReelT').textContent = 'Ada yang nyangkut! Tarik saat penanda di zona hijau!'; $('gReel').classList.add('on'); setCast('🎣 …');
+    } else if (FISHING.st === 'wait' || FISHING.st === 'cast') { W.toast('Belum ada yang makan umpan… tunggu pelampungnya tenggelam.'); }
+  }
+  function onPull() {
+    if (FISHING.st !== 'reel') return; const s = ME.s, k = FISHING.fish, f = FISH[k], msgs = [];
+    $('gReel').classList.remove('on'); const ok = FISHING.mk >= FISHING.zone[0] && FISHING.mk <= FISHING.zone[1];
+    const wp = FBOB().add(V(0, 0.6, 0));
+    if (ok) {
+      if (f.coins) { s.coins += f.coins; floatTxt(`💰 +${f.coins} koin!`, wp); W.toast(`💰 WOW! Kamu menarik Peti Harta berisi ${f.coins} koin!`); }
+      else {
+        const kg = +(f.kg * (0.6 + Math.random() * 0.9)).toFixed(f.kg < 1 ? 2 : 1); s.inv['ikan_' + k] = (s.inv['ikan_' + k] || 0) + 1;
+        if (!f.junk) { s.stats.fish = (s.stats.fish || 0) + 1; emit(s, 'fish', 1, k, msgs); if (!s.best || kg > s.best.kg) { s.best = { k, kg }; msgs.push(`🏆 Rekor baru! ${f.n} ${kg} kg`); } }
+        floatTxt(`+1 ${f.e} ${f.n}`, wp); W.toast(f.junk ? `👢 Yah… cuma ${f.n}. Coba lagi!` : `${f.e} Dapat ${f.n} (${kg} kg)!`);
+      }
+      addXP(s, f.junk ? 1 : 3 + Math.round(f.price / 40), msgs);
+    } else W.toast(`💨 Yah, ${f.junk ? 'tangkapannya' : 'ikannya'} lepas! Coba lagi.`);
+    FISHING.st = 'idle'; FISHING.bob.visible = false; FISHING.line.visible = false; setCast('🎣 Lempar Kail'); tip(`Umpan: ${s.inv.umpan || 0} 🪱 · Energi ${s.energy}`); after(msgs);
+  }
+  function fishTick(t, dt, now) {
+    if (FISHING.st === 'off' || !ME) return;
+    const m = ME.ent.m; vPose(m, { t }); m.arms[1].rotation.set(-0.9, 0, 0.15); m.root.rotation.y = FYAW();
+    const b = FBOB(); const wy = (typeof waveH === 'function' ? waveH(b.x, b.z, t) : 0.1);
+    if (FISHING.st === 'cast') { const k = Math.min(1, (now - FISHING.t0) / 700); const st = FSPOT().add(V(0, 1.6, 0)); FISHING.bob.visible = true; FISHING.bob.position.lerpVectors(st, V(b.x, wy + 0.05, b.z), k); FISHING.bob.position.y += Math.sin(k * Math.PI) * 1.2; if (k >= 1) FISHING.st = 'wait'; m.arms[1].rotation.set(-2.2 + k * 1.3, 0, 0.15); }
+    if (FISHING.st === 'wait') { FISHING.bob.position.set(b.x, wy + 0.05 + Math.sin(t * 3) * 0.015, b.z); if (now > FISHING.biteAt) { FISHING.st = 'bite'; FISHING.biteEnd = now + 1300; setCast('❗ TARIK SEKARANG!', true); } }
+    if (FISHING.st === 'bite') { FISHING.bob.position.set(b.x + Math.sin(t * 40) * 0.03, wy - 0.07, b.z); if (now > FISHING.biteEnd) { FISHING.st = 'idle'; FISHING.bob.visible = false; setCast('🎣 Lempar Kail'); W.toast('🐟 Ikannya kabur… tarik lebih cepat saat pelampung tenggelam!'); } }
+    if (FISHING.st === 'reel') { FISHING.mk += FISHING.dir * FISHING.spd * dt; if (FISHING.mk > 1) { FISHING.mk = 1; FISHING.dir = -1; } if (FISHING.mk < 0) { FISHING.mk = 0; FISHING.dir = 1; } $('gMk').style.left = `calc(${FISHING.mk * 100}% - 3px)`;
+      FISHING.bob.position.set(b.x + Math.sin(t * 25) * 0.05, wy - 0.05, b.z + Math.cos(t * 19) * 0.05); m.arms[1].rotation.set(-1.3 + Math.sin(t * 20) * 0.1, 0, 0.15); }
+    FISHING.line.visible = FISHING.bob.visible;
+    if (FISHING.line.visible) { const a = FISHING.rod.userData.tip.getWorldPosition(V(0, 0, 0)); const pts = FISHING.line.geometry.attributes.position; pts.setXYZ(0, a.x, a.y, a.z); const q = FISHING.bob.position; pts.setXYZ(1, q.x, q.y + 0.08, q.z); pts.needsUpdate = true; }
+  }
+  $('gFishB').onclick = startFishing; $('gFishBack').onclick = stopFishing; $('gCast').onclick = onCast; $('gPull').onclick = onPull; $('gFishBag').onclick = () => openBag();
+
   // ---------------- input ----------------
   const ray = new THREE.Raycaster(); let pd = null;
   addEventListener('pointerdown', e => { pd = [e.clientX, e.clientY]; }, true);
   addEventListener('pointerup', e => {
+    if (document.body.classList.contains('fishing') && e.target === renderer.domElement) { e.stopPropagation(); return; }
     if (!document.body.classList.contains('game') || !ME || e.target !== renderer.domElement) return;
     if (!pd || Math.hypot(e.clientX - pd[0], e.clientY - pd[1]) > 8) return;
     ray.setFromCamera(V((e.clientX / innerWidth) * 2 - 1, -(e.clientY / innerHeight) * 2 + 1, 0), camera);
@@ -3213,7 +3315,8 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
   let lastSlow = 0;
   window.__gameTick = (t, dt, now) => {
     animateFarms(t, dt || 0.016);
-    if (ME && ME.ent.sim.manual) {
+    fishTick(t, dt || 0.016, now);
+    if (ME && ME.ent.sim.manual && FISHING.st === 'off') {
       const m = ME.ent.m, w = ME.walk;
       if (w) { const k = Math.min(1, (now - w.t0) / w.d); m.root.position.lerpVectors(w.from, w.to, k); m.root.rotation.y = Math.atan2(w.to.x - w.from.x, w.to.z - w.from.z) || m.root.rotation.y;
         if (k < 1) vPose(m, { t, walk: k * 12 }); else { m.root.rotation.y = Math.atan2(w.look.x - m.root.position.x, w.look.z - m.root.position.z); vPose(m, { t: t * 1.6, hammer: 1 }); if ((now - w.t0) > w.d + w.work * 1000) ME.walk = null; } }
@@ -3221,5 +3324,5 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     }
     if (ME && now - lastSlow > 30000) { lastSlow = now; tickState(ME.s, Date.now()); renderFarm(ME.v, ME.s, Date.now()); updateHUD(); }
   };
-  window.__game = { get me() { return ME; }, CROPS, ANIMALS, refreshList, FARMS, api, tapTile, tapAnimal, openShop, openMis, openBag, openRank, buy: id => buy(SHOP.find(x => x.id === id)), tickState };
+  window.__game = { startFishing, onCast, onPull, FISHING, get me() { return ME; }, CROPS, ANIMALS, refreshList, FARMS, api, tapTile, tapAnimal, openShop, openMis, openBag, openRank, buy: id => buy(SHOP.find(x => x.id === id)), tickState };
 }
