@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Peta Penduduk Pulau Netizen</title>
+<meta name="description" content="Cari karaktermu di Pulau Netizen, pulau yang dibangun dari komentar netizen. @pulau.netizen">
+<meta property="og:title" content="Peta Penduduk Pulau Netizen">
+<meta property="og:description" content="Cari karaktermu di Pulau Netizen 🏝️">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{--ink:#14181f;--muted:#5b6472;--card:#fffdf7;--orange:#ff7a1a;--line:#e7e1d3}
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;overflow:hidden;background:#bfe6ff;font-family:'Poppins',system-ui,sans-serif;color:var(--ink);-webkit-tap-highlight-color:transparent}
+  #sky{position:fixed;inset:0}
+  canvas{position:fixed;inset:0;touch-action:none}
+  #ui{display:none}
+  button{font-family:inherit;cursor:pointer}
+
+  #top{position:fixed;left:0;right:0;top:0;padding:12px 16px 0;display:flex;flex-direction:column;gap:9px;pointer-events:none}
+  #top>*{pointer-events:auto}
+  .brand{display:flex;align-items:center;gap:10px}
+  .logo{width:40px;height:40px;border-radius:12px;background:#ff7a1a;display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:0 3px 10px rgba(0,0,0,.18);flex:0 0 auto}
+  .brand h1{margin:0;font-size:17px;line-height:1.1;font-weight:800;color:#fff;text-shadow:0 1px 3px rgba(0,40,80,.45)}
+  .brand small{display:block;font-size:11px;font-weight:600;color:#fff;opacity:.92;text-shadow:0 1px 2px rgba(0,40,80,.45)}
+  .pop{margin-left:auto;background:rgba(255,255,255,.95);border-radius:12px;padding:5px 11px;text-align:center;box-shadow:0 3px 10px rgba(0,0,0,.15)}
+  .pop b{display:block;font-size:19px;line-height:1.1;font-weight:800;color:#13643a}
+  .pop span{font-size:9.5px;font-weight:700;letter-spacing:.5px;color:var(--muted)}
+  .search{position:relative}
+  .search input{width:100%;height:46px;border:0;border-radius:14px;padding:0 14px 0 42px;font:600 15px 'Poppins',sans-serif;background:#fff;box-shadow:0 4px 14px rgba(0,0,0,.16);outline:none;color:var(--ink)}
+  .search input:focus{box-shadow:0 0 0 3px #ffd23f,0 4px 14px rgba(0,0,0,.16)}
+  .search .ic{position:absolute;left:14px;top:12px;font-size:17px;opacity:.6}
+  #sug{display:none;position:absolute;left:0;right:0;top:52px;background:#fff;border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,.2);overflow:hidden;max-height:50vh;overflow-y:auto}
+  .it{padding:10px 14px;border-bottom:1px solid #f0ede6;cursor:pointer}
+  .it:last-child{border-bottom:0}
+  .it:hover{background:#fff7e8}
+  .it b{display:block;font-size:14px;font-weight:700;word-break:break-all}
+  .it span{font-size:12px;color:var(--muted);font-weight:500}
+  .none{padding:12px 14px;font-size:13px;color:var(--muted);line-height:1.4}
+  #chips{display:flex;gap:7px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}
+  #chips::-webkit-scrollbar{display:none}
+  #chips button{flex:0 0 auto;border:0;background:rgba(255,255,255,.92);border-radius:20px;padding:7px 13px;font-size:12.5px;font-weight:700;color:var(--ink);box-shadow:0 2px 8px rgba(0,0,0,.12)}
+  #chips button:active{transform:scale(.96)}
+
+  #bottom{position:fixed;left:16px;right:16px;bottom:16px;display:flex;gap:8px;justify-content:center}
+  #bottom button{border:0;border-radius:14px;padding:11px 16px;font-size:13.5px;font-weight:700;box-shadow:0 4px 14px rgba(0,0,0,.18)}
+  #btnDir{background:#fff;color:var(--ink)}
+  #btnHow{background:var(--orange);color:#fff}
+
+  /* KTP card */
+  #card{position:fixed;left:50%;bottom:16px;width:min(420px,calc(100% - 32px));transform:translate(-50%,130%);transition:transform .35s cubic-bezier(.2,1.2,.4,1);
+        background:var(--card);border-radius:18px;box-shadow:0 10px 30px rgba(0,0,0,.28);overflow:hidden;border:2px solid #f3d9a6}
+  #card.on{transform:translate(-50%,0)}
+  .kh{background:linear-gradient(90deg,#ff7a1a,#ffb02e);color:#fff;padding:8px 14px;display:flex;align-items:center;gap:8px}
+  .kh b{font-size:12px;letter-spacing:1px;font-weight:800}
+  .kh span{margin-left:auto;font-size:12px;font-weight:700;opacity:.95}
+  #kClose{border:0;background:rgba(255,255,255,.25);color:#fff;width:26px;height:26px;border-radius:50%;font-size:14px;font-weight:700;margin-left:6px}
+  .kb{display:flex;gap:13px;padding:13px 14px 14px}
+  #kAv{flex:0 0 64px;height:78px;border-radius:12px;border:2px solid rgba(0,0,0,.08);text-shadow:0 1px 3px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;color:#fff;font-size:30px;font-weight:800;box-shadow:inset 0 -10px 0 rgba(0,0,0,.12)}
+  .kf{flex:1;min-width:0}
+  #kUser{font-size:17px;font-weight:800;line-height:1.15;word-break:break-all}
+  .st{display:inline-block;margin:4px 0 6px;font-size:10px;font-weight:800;letter-spacing:.6px;padding:2px 8px;border-radius:10px;background:#e5e7eb;color:#374151}
+  .st.pegawai{background:#dcfce7;color:#166534}
+  .st.menunggu{background:#fef3c7;color:#92400e}
+  .st.baru{background:#dbeafe;color:#1e40af}
+  .row{display:flex;gap:6px;font-size:12.5px;line-height:1.45}
+  .row i{font-style:normal;color:var(--muted);flex:0 0 74px;font-weight:500}
+  .row b{font-weight:700}
+  #kNote{margin-top:6px;font-size:12px;color:#92400e;background:#fff3dc;border-radius:8px;padding:4px 8px;font-weight:600}
+
+  /* panels */
+  .panel{position:fixed;inset:auto 0 0 0;max-height:78vh;background:#fff;border-radius:20px 20px 0 0;box-shadow:0 -10px 30px rgba(0,0,0,.25);transform:translateY(105%);transition:transform .3s ease;display:flex;flex-direction:column}
+  .panel.on{transform:none}
+  @media (min-width:760px){.panel{left:auto;right:16px;bottom:16px;width:380px;border-radius:20px;max-height:calc(100vh - 32px)}}
+  .ph{display:flex;align-items:center;padding:14px 16px 10px;border-bottom:1px solid #f0ede6}
+  .ph h3{margin:0;font-size:16px;font-weight:800}
+  .ph button{margin-left:auto;border:0;background:#f3f4f6;width:30px;height:30px;border-radius:50%;font-size:15px;font-weight:700}
+  .pb{overflow-y:auto;padding:4px 0 16px}
+  .pb h4{margin:12px 16px 4px;font-size:11px;letter-spacing:.8px;text-transform:uppercase;color:var(--muted)}
+  .how{padding:6px 18px 18px;font-size:14px;line-height:1.55}
+  .how ol{padding-left:20px;margin:8px 0}
+  .how li{margin-bottom:6px}
+  .how .kw{display:inline-block;background:#ffd23f;color:#3a2300;font-weight:800;padding:0 7px;border-radius:6px}
+  .how a{color:#c2410c;font-weight:700}
+
+  #toast{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%) scale(.9);opacity:0;transition:.25s;background:rgba(20,24,31,.9);color:#fff;padding:12px 16px;border-radius:14px;font-size:13.5px;font-weight:600;max-width:calc(100% - 48px);text-align:center;pointer-events:none}
+  #toast.on{opacity:1;transform:translate(-50%,-50%) scale(1)}
+  #loading{position:fixed;inset:0;background:linear-gradient(#7cc6f2,#bfe6ff);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;transition:opacity .6s;z-index:10}
+  #loading.off{opacity:0;pointer-events:none}
+  #loading div{font-size:44px;animation:bob 1.2s ease-in-out infinite}
+  #loading p{margin:0;font-weight:700;color:#fff;text-shadow:0 1px 3px rgba(0,40,80,.4)}
+  @keyframes bob{50%{transform:translateY(-8px)}}
+  .upd{position:fixed;right:16px;bottom:70px;font-size:10.5px;color:#fff;font-weight:600;text-shadow:0 1px 2px rgba(0,40,80,.6);pointer-events:none}
+</style>
+</head>
+<body>
+<div id="sky"></div>
+
+<!-- elemen video (disembunyikan, dipakai kode pulau) -->
+<div id="ui">
+  <div class="day">DAY</div><div class="wm"></div>
+  <div id="clock"><b id="clockT"></b><i id="clockL"></i></div>
+  <div id="rules"><div class="rule" id="r1"></div><div class="rule" id="r2"></div><div class="rule" id="r3"></div></div>
+  <div id="cmt"><div id="clbl"></div><div id="cav"></div><div><b id="cname"></b><span id="cago"></span><p id="ctext"></p></div></div>
+  <div id="sub"></div><div id="flash"></div>
+</div>
+
+<div id="top">
+  <div class="brand">
+    <div class="logo">🏝️</div>
+    <div><h1>Peta Penduduk</h1><small>Pulau Netizen · @pulau.netizen</small></div>
+    <div class="pop"><b id="tot">0</b><span>PENDUDUK</span></div>
+  </div>
+  <div class="search">
+    <span class="ic">🔍</span>
+    <input id="q" type="search" placeholder="Cari username kamu…" autocomplete="off" autocapitalize="off" spellcheck="false">
+    <div id="sug"></div>
+  </div>
+  <div id="chips"></div>
+</div>
+
+<div class="upd" id="upd"></div>
+<div id="bottom">
+  <button id="btnDir">👥 Daftar Penduduk</button>
+  <button id="btnHow">📝 Cara Daftar</button>
+</div>
+
+<div id="card">
+  <div class="kh"><b>KTP PULAU NETIZEN</b><span id="kNo"></span><button id="kClose" aria-label="Tutup">✕</button></div>
+  <div class="kb">
+    <div id="kAv"></div>
+    <div class="kf">
+      <div id="kUser"></div>
+      <div class="st" id="kStatus"></div>
+      <div class="row"><i>Profesi</i><b id="kJob"></b></div>
+      <div class="row"><i>Posisi</i><b id="kZone"></b></div>
+      <div class="row"><i>Rumah</i><b id="kRumah"></b></div>
+      <div class="row"><i>Tercatat</i><b id="kSince"></b></div>
+      <div id="kNote"></div>
+    </div>
+  </div>
+</div>
+
+<div class="panel" id="dir">
+  <div class="ph"><h3>👥 Daftar Penduduk</h3><button id="dirClose" aria-label="Tutup">✕</button></div>
+  <div class="pb" id="dirList"></div>
+</div>
+
+<div class="panel" id="how">
+  <div class="ph"><h3>📝 Cara Jadi Warga Resmi</h3><button id="howClose" aria-label="Tutup">✕</button></div>
+  <div class="how">
+    <ol>
+      <li><b>Follow</b> <a href="https://www.instagram.com/pulau.netizen/" target="_blank" rel="noopener">@pulau.netizen</a>.</li>
+      <li>Komen <span class="kw">JADI WARGA</span> di <b>reel mana saja</b>. Mau kerja? Tambahkan profesinya, misalnya <i>"JADI WARGA, mau jadi nelayan"</i>.</li>
+      <li>Kamu dicatat jadi penduduk resmi. Paling lambat besok, karaktermu sudah muncul di peta ini dan bisa kamu cari.</li>
+      <li>Yang minta profesi akan dilantik Bang Tanjung di video dan dapat seragam.</li>
+    </ol>
+    Karaktermu hidup di pulau: jalan-jalan, ngobrol sama tetangga. Komen paling rame, besok dibangun. 🏗️
+  </div>
+</div>
+
+<div id="toast"></div>
+<div id="loading"><div>🏝️</div><p>Menyiapkan pulau…</p></div>
+
+<script src="./penduduk.js"></script>
+<script type="importmap">{"imports":{"three":"./lib/three.module.js","three/addons/":"./lib/addons/"}}</script>
+<script type="module" src="./app.js"></script>
+</body>
+</html>
