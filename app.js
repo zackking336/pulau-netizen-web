@@ -2757,6 +2757,9 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
       const r = d[b.p_user];
       if (fn === 'farm_login') { if (!r) { d[b.p_user] = { pin: b.p_pin, state: {}, coins: 0, level: 1, hearts: 0, harvests: 0, missions_done: 0, created_at: new Date().toISOString() }; this.put(d); return { ok: true, new: true, state: {} }; }
         return r.pin === b.p_pin ? { ok: true, state: r.state } : { ok: false, err: 'PIN salah' }; }
+      if (fn === 'chat_send') { if (!r || r.pin !== b.p_pin) return { ok: false, err: 'PIN salah' }; const c = JSON.parse(localStorage.getItem('pn_mock_chat') || '[]'); c.push({ id: c.length + 1, username: b.p_user, msg: b.p_msg.slice(0, 140), created_at: new Date().toISOString() }); localStorage.setItem('pn_mock_chat', JSON.stringify(c)); r.last_seen = Date.now(); this.put(d); return { ok: true }; }
+      if (fn === 'chat_list') { const c = JSON.parse(localStorage.getItem('pn_mock_chat') || '[]'); return { msgs: c.filter(m => m.id > (b.p_since || 0)).slice(-60), online: Object.entries(d).filter(([u, x]) => x.last_seen > Date.now() - 180000).map(([u]) => u) }; }
+      if (fn === 'farm_ping') { if (r) { r.last_seen = Date.now(); this.put(d); } return { ok: !!r }; }
       if (fn === 'farm_save') { if (!r || r.pin !== b.p_pin) return { ok: false, err: 'PIN salah' }; Object.assign(r, { state: b.p_state, coins: b.p_coins, level: b.p_level, hearts: b.p_hearts, harvests: b.p_harvests, week_key: b.p_week, missions_done: b.p_missions, updated_at: new Date().toISOString() }); this.put(d); return { ok: true }; }
     },
   };
@@ -2998,8 +3001,9 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
   #gExit{border:0;border-radius:12px;background:rgba(255,255,255,.95);width:36px;height:34px;font:800 15px Poppins;box-shadow:0 3px 10px rgba(0,0,0,.15)}
   #bottom{flex-wrap:wrap} #btnPlay{flex:1 1 auto;font-size:15px!important;padding:12px!important} #bottom .brk{flex-basis:100%;height:0}
   body.game #gBar{display:flex}
-  #gBar button{border:0;border-radius:14px;background:#fff;padding:9px 10px;font:700 12.5px Poppins,sans-serif;white-space:nowrap;box-shadow:0 4px 12px rgba(0,0,0,.18);color:#14181f}
-  #gBar button.pri{background:#16a34a;color:#fff} #gBar .dot{display:inline-block;min-width:16px;height:16px;border-radius:9px;background:#ef4444;color:#fff;font-size:10px;line-height:16px;margin-left:4px}
+  #gBar button small{display:block;font-size:9.5px;font-weight:700;margin-top:1px} #gBar .dot{position:absolute;top:-4px;right:-4px}
+  #gBar button{position:relative;border:0;border-radius:14px;background:#fff;padding:6px 7px;min-width:44px;font:700 15px Poppins,sans-serif;white-space:nowrap;box-shadow:0 4px 12px rgba(0,0,0,.18);color:#14181f}
+  #gBar button.pri{background:#16a34a;color:#fff;font-size:14px} #gBar .dot{display:inline-block;min-width:16px;height:16px;border-radius:9px;background:#ef4444;color:#fff;font-size:10px;line-height:16px;margin-left:4px}
   #btnPlay{background:#16a34a!important;color:#fff!important}
   .gpanel .pb{padding:6px 14px 18px}
   .gitem{display:flex;align-items:center;gap:10px;padding:9px 4px;border-bottom:1px solid #f0ede6}
@@ -3019,6 +3023,14 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
   #gReel .trk{position:relative;height:26px;border-radius:13px;background:#e0f2fe;overflow:hidden} #gReel .zone{position:absolute;top:0;bottom:0;background:#22c55e;border-radius:6px}
   #gReel .mk{position:absolute;top:-2px;width:6px;height:30px;background:#111827;border-radius:3px}
   #gReel button{margin-top:12px;width:100%;height:50px;border:0;border-radius:14px;background:#ef4444;color:#fff;font:900 18px Poppins,sans-serif}
+  #gChatIn{display:flex;gap:8px;padding:10px 12px calc(12px + env(safe-area-inset-bottom));border-top:1px solid #f0ede6}
+  #gChatIn input{flex:1;height:42px;border:2px solid #e5e7eb;border-radius:12px;padding:0 12px;font:600 14px Poppins,sans-serif;min-width:0}
+  #gChatIn button{border:0;border-radius:12px;background:#16a34a;color:#fff;font:800 14px Poppins,sans-serif;padding:0 16px}
+  .gmsg{margin:6px 0;max-width:85%} .gmsg b{font-size:12px} .gmsg i{font-style:normal;font-size:10.5px;color:#9ca3af;margin-left:6px}
+  .gmsg p{margin:2px 0 0;background:#f3f4f6;border-radius:12px 12px 12px 4px;padding:7px 10px;font-size:14px;line-height:1.35;word-wrap:break-word}
+  .gmsg.me{margin-left:auto;text-align:right} .gmsg.me p{background:#dcfce7;border-radius:12px 12px 4px 12px;text-align:left}
+  .gmsg.sys p{background:#fff7e6;color:#7a4b00;font-weight:600}
+  #gP_chat{height:72vh}
   #gTip{position:fixed;left:50%;bottom:74px;transform:translateX(-50%);background:rgba(20,24,31,.88);color:#fff;font:600 12.5px Poppins,sans-serif;padding:7px 12px;border-radius:12px;display:none;z-index:5;max-width:calc(100% - 40px);text-align:center}
   body.game #gTip{display:block}
   #gFloat{position:fixed;inset:0;pointer-events:none;z-index:6;overflow:hidden} #gFloat div{position:absolute;font:800 15px Poppins,sans-serif;color:#fff;text-shadow:0 2px 4px rgba(0,0,0,.6);transition:transform 1.1s ease-out,opacity 1.1s;white-space:nowrap}
@@ -3026,7 +3038,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
   const ui = document.createElement('div'); ui.innerHTML = `
   <div id="gHud"><div class="gchip" id="gLv">Lv 1</div><div class="gchip">🪙 <span id="gCoin">0</span></div><div class="gchip" id="gEn">⚡<div id="gEnBar"><i></i></div><span id="gEnT">100</span></div><button id="gExit">✕</button></div>
   <div id="gTip">Ketuk tanah untuk mencangkul · ketuk lagi untuk menanam</div>
-  <div id="gBar"><button id="gSeed" class="pri">🌱 Benih</button><button id="gShop">🏪 Toko</button><button id="gBag">🎒 Tas</button><button id="gMis">🎯 Misi<span class="dot" id="gMisDot" style="display:none">!</span></button><button id="gFishB">🎣</button><button id="gRank">🏆</button></div>
+  <div id="gBar"><button id="gSeed" class="pri">🌱 Benih</button><button id="gShop">🏪<small>Toko</small></button><button id="gBag">🎒<small>Tas</small></button><button id="gMis">🎯<small>Misi</small><span class="dot" id="gMisDot" style="display:none">!</span></button><button id="gFishB">🎣<small>Mancing</small></button><button id="gChatB">💬<small>Chat</small><span class="dot" id="gChatDot" style="display:none"></span></button><button id="gRank">🏆<small>Juara</small></button></div>
   <div id="gFishBar"><button id="gCast" class="pri">🎣 Lempar Kail</button><button id="gFishBag">🎒</button><button id="gFishBack">🏡 Pulang</button></div>
   <div id="gReel"><div class="t" id="gReelT">Tarik saat penanda di zona hijau!</div><div class="trk"><div class="zone" id="gZone"></div><div class="mk" id="gMk"></div></div><button id="gPull">TARIK!</button></div>
   <div id="gFloat"></div>
@@ -3039,9 +3051,10 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
   <div class="panel gpanel" id="gP_shop"><div class="ph"><h3>🏪 Toko Pasar Pulau</h3><button data-close>✕</button></div><div class="pb" id="gShopList"></div></div>
   <div class="panel gpanel" id="gP_bag"><div class="ph"><h3>🎒 Tas & Jual</h3><button data-close>✕</button></div><div class="pb" id="gBagList"></div></div>
   <div class="panel gpanel" id="gP_mis"><div class="ph"><h3>🎯 Misi</h3><button data-close>✕</button></div><div class="pb" id="gMisList"></div></div>
+  <div class="panel gpanel" id="gP_chat"><div class="ph"><h3>💬 Obrolan Desa <span id="gOnline" style="font-size:12px;color:#16a34a;font-weight:700;margin-left:6px"></span></h3><button data-close>✕</button></div><div class="pb" id="gChatList" style="flex:1;min-height:200px"></div><div id="gChatIn"><input id="gMsg" maxlength="140" placeholder="Tulis pesan… (sopan ya 🙏)" autocomplete="off"><button id="gSend">Kirim</button></div></div>
   <div class="panel gpanel" id="gP_rank"><div class="ph"><h3>🏆 Papan Peringkat</h3><button data-close>✕</button></div><div class="pb"><div class="gtabs" id="gRankTabs"><button data-k="coins" class="on">🪙 Terkaya</button><button data-k="hearts">❤️ Peternak</button><button data-k="missions_done">🎯 Misi</button><button data-k="harvests">🧺 Panen</button><button data-k="fish">🎣 Ikan</button></div><div id="gRankList"></div></div></div>`;
   document.body.appendChild(ui);
-  const panels = ['gLogin', 'gP_seed', 'gP_shop', 'gP_bag', 'gP_mis', 'gP_rank'];
+  const panels = ['gLogin', 'gP_seed', 'gP_shop', 'gP_bag', 'gP_mis', 'gP_rank', 'gP_chat'];
   const openP = id => { panels.forEach(p => $(p).classList.toggle('on', p === id)); document.body.classList.add('gp'); };
   const closeP = () => { panels.forEach(p => $(p).classList.remove('on')); document.body.classList.remove('gp'); };
   ui.querySelectorAll('[data-close]').forEach(b => b.onclick = closeP);
@@ -3074,7 +3087,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     await refreshList();
     let v = FARMS.get(u); if (!v) { const idx = Math.max(LIST.length, ...[...FARMS.values()].map(f => f.idx + 1), 0); v = buildFarm(u, idx); }
     ME.v = v; renderFarm(v, ME.s, Date.now());
-    markDirty(); closeP(); enterGame(); msgs.forEach((m, i) => setTimeout(() => W.toast(m), i * 2600));
+    markDirty(); closeP(); enterGame(); api.rpc('farm_ping', { p_user: u, p_pin: p }).catch(() => {}); pollChat(); msgs.forEach((m, i) => setTimeout(() => W.toast(m), i * 2600));
   }
   $('gGo').onclick = login; $('gP').addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
   function enterGame() {
@@ -3294,6 +3307,60 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
   }
   $('gFishB').onclick = startFishing; $('gFishBack').onclick = stopFishing; $('gCast').onclick = onCast; $('gPull').onclick = onPull; $('gFishBag').onclick = () => openBag();
 
+  // ---------------- chat ----------------
+  const CHAT = { last: 0, msgs: [], unread: 0, online: [], bubbles: new Map() };
+  const BAD = ['anjing','anjir','anjg','babi','bangsat','bajingan','kontol','memek','ngentot','entot','jancok','jancuk','goblok','goblog','tolol','kampret','asu','pepek','perek','lonte','tai','bego','idiot','sialan','brengsek','keparat'];
+  const clean = t => { let r = t.replace(/(https?:\/\/\S+|www\.\S+|\S+\.(com|net|id|co|xyz|ly|me|io|org)(\/\S*)?)/gi, '[link dihapus]'); BAD.forEach(w => r = r.replace(new RegExp('\\b' + w + '\\b', 'gi'), '*'.repeat(w.length))); return r; };
+  const esc = t => t.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const hhmm = iso => { const d = new Date(Date.parse(iso) + WIB); return d.toISOString().slice(11, 16); };
+  function renderChat() {
+    const el = $('gChatList'), atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 60;
+    el.innerHTML = `<div class="gmsg sys"><p>👋 Obrolan untuk semua pemain Kebunku. Jaga sopan santun ya. Pesan kasar & link otomatis disaring.</p></div>` +
+      CHAT.msgs.map(m => `<div class="gmsg ${ME && m.username === ME.u ? 'me' : ''}"><b>@${esc(m.username)}</b><i>${hhmm(m.created_at)}</i><p>${esc(m.msg)}</p></div>`).join('');
+    if (atBottom || CHAT.forceScroll) { el.scrollTop = el.scrollHeight; CHAT.forceScroll = false; }
+    $('gOnline').textContent = `🟢 ${CHAT.online.length} online`;
+  }
+  function chatBubble(u, text) {
+    const e = W.ENT.find(x => x.u === u); if (!e) return;
+    const old = CHAT.bubbles.get(u); if (old) { scene.remove(old.s); old.s.material.map.dispose(); }
+    const short = text.length > 42 ? text.slice(0, 40) + '…' : text;
+    const tex = canvasTex(1024, 160, (x, w, h) => { x.font = '600 52px Poppins'; const tw = Math.min(w - 20, x.measureText(short).width + 60);
+      x.fillStyle = '#ffffff'; x.beginPath(); x.roundRect((w - tw) / 2, 10, tw, 110, 40); x.fill(); x.beginPath(); x.moveTo(w / 2 - 18, 118); x.lineTo(w / 2, 150); x.lineTo(w / 2 + 18, 118); x.fill();
+      x.fillStyle = '#14181f'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(short, w / 2, 66); });
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, depthTest: false, transparent: true })); sp.scale.set(2.6, 0.41, 1); sp.renderOrder = 12; scene.add(sp);
+    CHAT.bubbles.set(u, { s: sp, e, until: performance.now() + 7000 });
+  }
+  let chatBusy = false;
+  async function pollChat() {
+    if (chatBusy || !ME) return; chatBusy = true;
+    try {
+      const r = await api.rpc('chat_list', { p_since: CHAT.last });
+      if (r && r.msgs) {
+        const fresh = r.msgs.filter(m => m.id > CHAT.last);
+        if (fresh.length) {
+          const first = CHAT.last === 0; CHAT.last = fresh[fresh.length - 1].id; CHAT.msgs = [...CHAT.msgs, ...fresh].slice(-80);
+          if (!first) fresh.forEach(m => { chatBubble(m.username, m.msg); if (m.username !== ME.u && !$('gP_chat').classList.contains('on')) CHAT.unread++; });
+        }
+        CHAT.online = r.online || [];
+        $('gChatDot').style.display = CHAT.unread ? 'inline-block' : 'none'; $('gChatDot').textContent = CHAT.unread > 9 ? '9+' : CHAT.unread || '';
+        if ($('gP_chat').classList.contains('on')) renderChat();
+      }
+    } catch (e) {}
+    chatBusy = false;
+  }
+  setInterval(() => { if (ME) pollChat(); }, 4000);
+  setInterval(() => { if (ME) api.rpc('farm_ping', { p_user: ME.u, p_pin: ME.p }).catch(() => {}); }, 60000);
+  async function sendChat() {
+    const v = $('gMsg').value.trim(); if (!v || !ME) return;
+    $('gSend').disabled = true;
+    try { const r = await api.rpc('chat_send', { p_user: ME.u, p_pin: ME.p, p_msg: clean(v).slice(0, 140) }); if (!r.ok) W.toast(r.err || 'Gagal mengirim'); else { $('gMsg').value = ''; CHAT.forceScroll = true; await pollChat(); } }
+    catch (e) { W.toast('Tidak bisa terhubung, coba lagi.'); }
+    $('gSend').disabled = false;
+  }
+  $('gChatB').onclick = () => { openP('gP_chat'); CHAT.unread = 0; $('gChatDot').style.display = 'none'; CHAT.forceScroll = true; renderChat(); pollChat(); setTimeout(() => $('gMsg').focus(), 300); };
+  $('gSend').onclick = sendChat; $('gMsg').addEventListener('keydown', e => { if (e.key === 'Enter') sendChat(); });
+  const bubbleTick = now => { for (const [u, b] of CHAT.bubbles) { if (now > b.until) { scene.remove(b.s); b.s.material.map.dispose(); CHAT.bubbles.delete(u); continue; } b.s.position.copy(b.e.m.root.position).add(V(0, 2.5, 0)); } };
+
   // ---------------- input ----------------
   const ray = new THREE.Raycaster(); let pd = null;
   addEventListener('pointerdown', e => { pd = [e.clientX, e.clientY]; }, true);
@@ -3315,7 +3382,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
   let lastSlow = 0;
   window.__gameTick = (t, dt, now) => {
     animateFarms(t, dt || 0.016);
-    fishTick(t, dt || 0.016, now);
+    fishTick(t, dt || 0.016, now); bubbleTick(now);
     if (ME && ME.ent.sim.manual && FISHING.st === 'off') {
       const m = ME.ent.m, w = ME.walk;
       if (w) { const k = Math.min(1, (now - w.t0) / w.d); m.root.position.lerpVectors(w.from, w.to, k); m.root.rotation.y = Math.atan2(w.to.x - w.from.x, w.to.z - w.from.z) || m.root.rotation.y;
@@ -3324,5 +3391,5 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     }
     if (ME && now - lastSlow > 30000) { lastSlow = now; tickState(ME.s, Date.now()); renderFarm(ME.v, ME.s, Date.now()); updateHUD(); }
   };
-  window.__game = { startFishing, onCast, onPull, FISHING, get me() { return ME; }, CROPS, ANIMALS, refreshList, FARMS, api, tapTile, tapAnimal, openShop, openMis, openBag, openRank, buy: id => buy(SHOP.find(x => x.id === id)), tickState };
+  window.__game = { sendChat, pollChat, CHAT, startFishing, onCast, onPull, FISHING, get me() { return ME; }, CROPS, ANIMALS, refreshList, FARMS, api, tapTile, tapAnimal, openShop, openMis, openBag, openRank, buy: id => buy(SHOP.find(x => x.id === id)), tickState };
 }
