@@ -2712,12 +2712,18 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     { id: 'roof', n: 'Cat Atap Rumah', e: '🎨', price: 250, lv: 1, d: 'Ganti warna atap' },
     { id: 'fence', n: 'Pagar Kayu', e: '🪵', price: 450, lv: 2, d: 'Pagar keliling kebun' },
     { id: 'garden', n: 'Taman Bunga', e: '🌷', price: 600, lv: 3, d: 'Bunga di depan rumah' },
+    { id: 'pet_kucing', n: 'Kucing Peliharaan', e: '🐈', price: 500, lv: 2, d: 'Menemani di kebun' },
+    { id: 'pet_anjing', n: 'Anjing Peliharaan', e: '🐕', price: 700, lv: 3, d: 'Menjaga kebunmu' },
+    { id: 'hat_caping', n: 'Caping Petani', e: '👒', price: 200, lv: 1, d: 'Kostum: dipakai karaktermu di pulau' },
+    { id: 'hat_koboi', n: 'Topi Koboi', e: '🤠', price: 350, lv: 2, d: 'Kostum peternak sejati' },
+    { id: 'hat_bunga', n: 'Mahkota Bunga', e: '🌸', price: 300, lv: 2, d: 'Kostum cantik' },
+    { id: 'hat_mahkota', n: 'Mahkota Emas', e: '👑', price: 5000, lv: 6, d: 'Kostum para sultan desa' },
   ];
   const ENERGY = { fish: 3, till: 4, plant: 2, water: 2, harvest: 1, feed: 2, pet: 1, collect: 1, clear: 2 };
   const DAILY_POOL = [
     { id: 'water', t: 'Siram tanaman', n: 8 }, { id: 'harvest', t: 'Panen hasil kebun', n: 4 }, { id: 'feed', t: 'Beri makan ternak', n: 2 },
     { id: 'pet', t: 'Elus hewan', n: 2 }, { id: 'till', t: 'Cangkul tanah', n: 4 }, { id: 'sell', t: 'Jual hasil senilai 150 koin', n: 150 },
-    { id: 'plant', t: 'Tanam benih', n: 4 }, { id: 'collect', t: 'Ambil telur / susu', n: 2 }, { id: 'fish', t: 'Pancing 3 ikan', n: 3 },
+    { id: 'plant', t: 'Tanam benih', n: 4 }, { id: 'collect', t: 'Ambil telur / susu', n: 2 }, { id: 'fish', t: 'Pancing 3 ikan', n: 3 }, { id: 'help', t: 'Bantu 1 kebun tetangga', n: 1 },
   ];
   const WEEKLY_POOL = [
     { id: 'harvest_tomat', t: 'Panen 15 tomat', n: 15, r: 350 }, { id: 'harvest', t: 'Panen 40 hasil kebun', n: 40, r: 450 },
@@ -2725,7 +2731,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     { id: 'water', t: 'Siram 60 kali', n: 60, r: 350 }, { id: 'pet', t: 'Elus hewan 20 kali', n: 20, r: 350 },
     { id: 'harvest_jagung', t: 'Panen 8 jagung', n: 8, r: 450, lv: 2 }, { id: 'harvest_semangka', t: 'Panen 3 semangka', n: 3, r: 600, lv: 4 },
     { id: 'days', t: 'Main 5 hari minggu ini', n: 5, r: 500 }, { id: 'feed', t: 'Beri makan ternak 20 kali', n: 20, r: 400 },
-    { id: 'plant', t: 'Tanam 30 benih', n: 30, r: 350 }, { id: 'fish', t: 'Pancing 20 ikan', n: 20, r: 450 },
+    { id: 'plant', t: 'Tanam 30 benih', n: 30, r: 350 }, { id: 'fish', t: 'Pancing 20 ikan', n: 20, r: 450 }, { id: 'help', t: 'Bantu kebun tetangga 7 kali', n: 7, r: 450 },
     { id: 'fish_kakap', t: 'Dapat 2 Kakap Merah', n: 2, r: 500, lv: 2 }, { id: 'fish_tuna', t: 'Dapat 1 Tuna', n: 1, r: 700, lv: 4 },
   ];
   const WEEK_BONUS = 800;
@@ -2760,6 +2766,10 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
       if (fn === 'chat_send') { if (!r || r.pin !== b.p_pin) return { ok: false, err: 'PIN salah' }; const c = JSON.parse(localStorage.getItem('pn_mock_chat') || '[]'); c.push({ id: c.length + 1, username: b.p_user, msg: b.p_msg.slice(0, 140), created_at: new Date().toISOString() }); localStorage.setItem('pn_mock_chat', JSON.stringify(c)); r.last_seen = Date.now(); this.put(d); return { ok: true }; }
       if (fn === 'chat_list') { const c = JSON.parse(localStorage.getItem('pn_mock_chat') || '[]'); return { msgs: c.filter(m => m.id > (b.p_since || 0)).slice(-60), online: Object.entries(d).filter(([u, x]) => x.last_seen > Date.now() - 180000).map(([u]) => u) }; }
       if (fn === 'farm_ping') { if (r) { r.last_seen = Date.now(); this.put(d); } return { ok: !!r }; }
+      if (fn === 'community_get' || fn === 'community_add') { const c = JSON.parse(localStorage.getItem('pn_mock_gr') || '{}'); const w = c[b.p_week] || { totals: {}, people: {} };
+        if (fn === 'community_add') { if (!r || r.pin !== b.p_pin) return { ok: false, err: 'PIN salah' }; w.totals[b.p_item] = (w.totals[b.p_item] || 0) + b.p_qty; w.people[b.p_user] = (w.people[b.p_user] || 0) + b.p_qty; c[b.p_week] = w; localStorage.setItem('pn_mock_gr', JSON.stringify(c)); return { ok: true, ...w }; } return w; }
+      if (fn === 'farm_help') { if (!r || r.pin !== b.p_pin) return { ok: false, err: 'PIN salah' }; const h = JSON.parse(localStorage.getItem('pn_mock_help') || '[]'); if (h.some(x => x.target === b.p_target && x.helper === b.p_user && x.kind === b.p_kind && x.day === b.p_day)) return { ok: false, err: 'Kamu sudah membantu kebun ini hari ini' }; h.push({ id: h.length + 1, target: b.p_target, helper: b.p_user, kind: b.p_kind, day: b.p_day }); localStorage.setItem('pn_mock_help', JSON.stringify(h)); return { ok: true }; }
+      if (fn === 'help_list') { const h = JSON.parse(localStorage.getItem('pn_mock_help') || '[]'); return h.filter(x => x.target === b.p_user && x.id > (b.p_since || 0)); }
       if (fn === 'farm_save') { if (!r || r.pin !== b.p_pin) return { ok: false, err: 'PIN salah' }; Object.assign(r, { state: b.p_state, coins: b.p_coins, level: b.p_level, hearts: b.p_hearts, harvests: b.p_harvests, week_key: b.p_week, missions_done: b.p_missions, updated_at: new Date().toISOString() }); this.put(d); return { ok: true }; }
     },
   };
@@ -2799,20 +2809,22 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
         s.animals.forEach(a => { const miss = a.fed ? Math.max(0, daysBetween(a.fed, dk) - 1) : gap; if (miss > 0) a.h = Math.max(0, a.h - miss); });
       } else s.streak = 1;
       s.lastDay = dk;
-      const bonus = Math.min(200, 20 * s.streak);
-      s.coins += bonus; if (msgs) msgs.push(`🌅 Hari baru! Bonus login ${s.streak} hari beruntun: +${bonus} koin`);
+      const cal = calReward(s); if (msgs) msgs.push(`📅 Hadiah login hari ke-${cal.day}: ${cal.txt}`);
+      const wx = weatherOf(dk); if (msgs) msgs.push(`${wx.e} Cuaca hari ini: ${wx.n} (${wx.season}). ${wx.tip}`);
       const wk = weekKey(now); s.days = (s.days || []).filter(d => weekKey(Date.parse(d + 'T12:00:00+07:00')) === wk); if (!s.days.includes(dk)) s.days.push(dk);
     }
     if (s.eDay !== dk) { s.energy = maxEnergy(s); s.eDay = dk; }
     ensureMissions(s, now);
     const dm = s.weekly.list.find(m => m.id === 'days'); if (dm) setProg(s, dm, s.days.length, msgs, true);
+    const rain = weatherOf(dk).rain, dayStart = dayEnd(now) - 864e5;
     for (const t of s.tiles) {
       if (t.s !== 'crop') continue;
+      if (rain && !wateredToday(t, now)) t.wt = Math.max(dayStart, t.p || dayStart); // hujan = tersiram otomatis
       const u = t.u || now;
       if (t.wt) { const a = Math.max(u, t.wt), b = Math.min(now, dayEnd(t.wt)); if (b > a) t.g = (t.g || 0) + (b - a) / 3600e3; }
       t.u = now;
       const lastW = t.wt ? dayKey(t.wt) : dayKey(t.p || now);
-      if (daysBetween(lastW, dk) >= 3 && !isReady(t)) { t.s = 'dead'; }
+      if (daysBetween(lastW, dk) >= (weatherOf(dk).dry ? 2 : 3) && !isReady(t)) { t.s = 'dead'; }
     }
   }
   const isReady = t => t.s === 'crop' && (t.g || 0) >= CROPS[t.c].hours;
@@ -2900,10 +2912,11 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     }
     return g;
   }
-  function signTex(u) {
+  function signTex(u, title) {
     return canvasTex(512, 128, (x, w, h) => { x.fillStyle = '#fff8e6'; x.fillRect(0, 0, w, h); x.strokeStyle = '#8b5a2b'; x.lineWidth = 10; x.strokeRect(5, 5, w - 10, h - 10);
-      let fs = 56; x.font = `800 ${fs}px Poppins`; while (x.measureText('@' + u).width > w - 30 && fs > 24) { fs -= 4; x.font = `800 ${fs}px Poppins`; }
-      x.fillStyle = '#3a2300'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText('@' + u, w / 2, h / 2 + 2); });
+      let fs = title ? 44 : 56; x.font = `800 ${fs}px Poppins`; while (x.measureText('@' + u).width > w - 30 && fs > 22) { fs -= 4; x.font = `800 ${fs}px Poppins`; }
+      x.fillStyle = '#3a2300'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText('@' + u, w / 2, title ? 46 : h / 2 + 2);
+      if (title) { x.font = '700 30px Poppins'; x.fillStyle = '#b45309'; x.fillText(title, w / 2, 96); } });
   }
   function buildFarm(u, idx) {
     const root = new THREE.Group(); scene.add(root); root.position.copy(desaPlot(idx));
@@ -2939,12 +2952,15 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     sg.add(mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.8, 5), wd, 0, 0.4, 0));
     const sm = new THREE.MeshStandardMaterial({ map: signTex(u) }); sg.add(mesh(new THREE.BoxGeometry(1.2, 0.3, 0.04), [wd, wd, wd, wd, sm, wd], 0, 0.75, 0));
     const badge = mesh(new THREE.SphereGeometry(0.09, 10, 8), new THREE.MeshStandardMaterial({ color: 0xfacc15, metalness: 0.6, roughness: 0.3, emissive: 0x7a5a00, emissiveIntensity: 0.3 }), 0.7, 0.75, 0.03, false); sg.add(badge);
-    const v = { u, idx, root, tiles, roofM, garden, fence, barn, badge, animals: [], aKey: '' };
+    const v = { u, idx, root, tiles, roofM, garden, fence, barn, badge, animals: [], aKey: '', signM: sm, title: '', pet: null, petKey: '' };
     FARMS.set(u, v); return v;
   }
   function renderFarm(v, s, now) {
     v.roofM.color.setHex(ROOFS[s.house?.roof || 0]); v.garden.visible = !!s.house?.garden; v.fence.visible = !!s.house?.fence;
     v.badge.visible = (s.badges || []).length > 0;
+    const ttl = s.title && TITLES[s.title] ? TITLES[s.title].n : '';
+    if (ttl !== v.title) { v.signM.map.dispose(); v.signM.map = signTex(v.u, ttl); v.signM.needsUpdate = true; v.title = ttl; }
+    if ((s.pet || '') !== v.petKey) { if (v.pet) v.root.remove(v.pet.g); v.pet = null; if (s.pet) { const g = petMesh(s.pet); g.position.set(0.3, 0.05, 1.3); v.root.add(g); v.pet = { g, tgt: g.position.clone(), ph: Math.random() * 6 }; } v.petKey = s.pet || ''; }
     const act = new Set(tilesIdx(s));
     v.tiles.forEach((T, i) => {
       const t = s.tiles[i] || { s: 'grass' };
@@ -2967,6 +2983,10 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     }
   }
   function animateFarms(t, dt) {
+    for (const v of FARMS.values()) if (v.pet) { const P = v.pet, p = P.g.position;
+      if (p.distanceTo(P.tgt) < 0.05) { if (Math.random() < dt * 0.5) P.tgt.set((Math.random() - 0.5) * 3.6, 0.05, -1.6 + Math.random() * 3.4); }
+      else { const d = P.tgt.clone().sub(p); p.addScaledVector(d.normalize(), Math.min(d.length(), dt * 0.6)); P.g.rotation.y = Math.atan2(d.x, d.z); P.g.children[0].position.y = Math.abs(Math.sin(t * 9 + P.ph)) * 0.03; }
+      P.g.children[0].children.forEach(c => { if (c.userData.tail) c.rotation.z = Math.sin(t * 8 + P.ph) * 0.6; }); }
     for (const v of FARMS.values()) v.animals.forEach((A, j) => {
       const g = A.g, p = g.position;
       if (p.distanceTo(A.tgt) < 0.03) { if (Math.random() < dt * 0.4) A.tgt.set(clamp(A.home.x + (Math.random() - 0.5) * 0.5, -0.8, 0.85), 0, clamp(A.home.z + (Math.random() - 0.5) * 0.5, -0.45, 0.5)); }
@@ -2984,7 +3004,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
       if (i >= DESA.cols * DESA.rows) return;
       let v = FARMS.get(r.username); if (!v) v = buildFarm(r.username, i);
       const s = (ME && ME.u === r.username) ? ME.s : r.state;
-      if (s && s.tiles) renderFarm(v, s, Date.now());
+      if (s && s.tiles) { renderFarm(v, s, Date.now()); applyCostume(r.username, s); }
     });
   }
   refreshList(); setInterval(refreshList, 60000);
@@ -3005,7 +3025,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
   #gBar button{position:relative;border:0;border-radius:14px;background:#fff;padding:6px 7px;min-width:44px;font:700 15px Poppins,sans-serif;white-space:nowrap;box-shadow:0 4px 12px rgba(0,0,0,.18);color:#14181f}
   #gBar button.pri{background:#16a34a;color:#fff;font-size:14px} #gBar .dot{display:inline-block;min-width:16px;height:16px;border-radius:9px;background:#ef4444;color:#fff;font-size:10px;line-height:16px;margin-left:4px}
   #btnPlay{background:#16a34a!important;color:#fff!important}
-  .gpanel .pb{padding:6px 14px 18px}
+  .gpanel .pb{padding:6px 14px 18px;min-height:0;flex:1 1 auto;overflow-y:auto;background:#fff}
   .gitem{display:flex;align-items:center;gap:10px;padding:9px 4px;border-bottom:1px solid #f0ede6}
   .gitem .ic{font-size:26px;width:36px;text-align:center} .gitem .tx{flex:1;min-width:0} .gitem b{display:block;font-size:14px} .gitem span{font-size:12px;color:#5b6472}
   .gitem button{border:0;border-radius:10px;padding:7px 11px;font:700 12.5px Poppins,sans-serif;background:#16a34a;color:#fff} .gitem button:disabled{background:#d1d5db;color:#6b7280}
@@ -3031,17 +3051,23 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
   .gmsg.me{margin-left:auto;text-align:right} .gmsg.me p{background:#dcfce7;border-radius:12px 12px 4px 12px;text-align:left}
   .gmsg.sys p{background:#fff7e6;color:#7a4b00;font-weight:600}
   #gP_chat{height:72vh}
+  #gHelp{position:fixed;left:50%;top:58px;transform:translateX(-50%);display:none;gap:6px;align-items:center;background:rgba(255,255,255,.96);border-radius:14px;padding:6px 8px;box-shadow:0 4px 14px rgba(0,0,0,.2);z-index:5;font:800 12.5px Poppins,sans-serif;white-space:nowrap}
+  #gHelp button{border:0;border-radius:10px;background:#0ea5e9;color:#fff;font:800 12px Poppins,sans-serif;padding:6px 9px} #gHelp #gHelpF{background:#16a34a} #gHelp #gHelpBack{background:#f3f4f6;color:#111}
+  body.gp #gHelp{display:none!important}
+  .gbtn{border:0;border-radius:8px;background:#16a34a;color:#fff;font:700 11.5px Poppins,sans-serif;padding:4px 9px} .gbtn:disabled{background:#d1d5db}
+  .gbig{width:100%;height:46px;border:0;border-radius:12px;background:#16a34a;color:#fff;font:800 14px Poppins,sans-serif;margin-top:10px}
   #gTip{position:fixed;left:50%;bottom:74px;transform:translateX(-50%);background:rgba(20,24,31,.88);color:#fff;font:600 12.5px Poppins,sans-serif;padding:7px 12px;border-radius:12px;display:none;z-index:5;max-width:calc(100% - 40px);text-align:center}
   body.game #gTip{display:block}
   #gFloat{position:fixed;inset:0;pointer-events:none;z-index:6;overflow:hidden} #gFloat div{position:absolute;font:800 15px Poppins,sans-serif;color:#fff;text-shadow:0 2px 4px rgba(0,0,0,.6);transition:transform 1.1s ease-out,opacity 1.1s;white-space:nowrap}
   `; document.head.appendChild(css);
   const ui = document.createElement('div'); ui.innerHTML = `
-  <div id="gHud"><div class="gchip" id="gLv">Lv 1</div><div class="gchip">🪙 <span id="gCoin">0</span></div><div class="gchip" id="gEn">⚡<div id="gEnBar"><i></i></div><span id="gEnT">100</span></div><button id="gExit">✕</button></div>
+  <div id="gHud"><div class="gchip" id="gWx" style="cursor:pointer">☀️</div><div class="gchip" id="gLv">Lv 1</div><div class="gchip">🪙 <span id="gCoin">0</span></div><div class="gchip" id="gEn">⚡<div id="gEnBar"><i></i></div><span id="gEnT">100</span></div><button id="gExit">✕</button></div>
   <div id="gTip">Ketuk tanah untuk mencangkul · ketuk lagi untuk menanam</div>
   <div id="gBar"><button id="gSeed" class="pri">🌱 Benih</button><button id="gShop">🏪<small>Toko</small></button><button id="gBag">🎒<small>Tas</small></button><button id="gMis">🎯<small>Misi</small><span class="dot" id="gMisDot" style="display:none">!</span></button><button id="gFishB">🎣<small>Mancing</small></button><button id="gChatB">💬<small>Chat</small><span class="dot" id="gChatDot" style="display:none"></span></button><button id="gRank">🏆<small>Juara</small></button></div>
   <div id="gFishBar"><button id="gCast" class="pri">🎣 Lempar Kail</button><button id="gFishBag">🎒</button><button id="gFishBack">🏡 Pulang</button></div>
   <div id="gReel"><div class="t" id="gReelT">Tarik saat penanda di zona hijau!</div><div class="trk"><div class="zone" id="gZone"></div><div class="mk" id="gMk"></div></div><button id="gPull">TARIK!</button></div>
   <div id="gFloat"></div>
+  <div id="gHelp"><span id="gHelpT">Kebun</span><button id="gHelpW">💧 Siram</button><button id="gHelpF">🌾 Beri makan</button><button id="gHelpBack">🏡</button></div>
   <div class="panel gpanel" id="gLogin"><div class="ph"><h3>🌾 Main Kebunku</h3><button data-close>✕</button></div><div class="how">
     Punya kebun & ternak sendiri di <b>Desa Tani</b>! Masukkan username IG kamu (harus sudah jadi warga) dan buat PIN 4–6 angka. PIN dipakai setiap kali main, jangan sampai lupa.
     <input id="gU" placeholder="username IG kamu" autocomplete="off" autocapitalize="off"><input id="gP" placeholder="PIN 4–6 angka" inputmode="numeric" type="password" maxlength="6">
@@ -3050,7 +3076,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
   <div class="panel gpanel" id="gP_seed"><div class="ph"><h3>🌱 Pilih Benih</h3><button data-close>✕</button></div><div class="pb" id="gSeedList"></div></div>
   <div class="panel gpanel" id="gP_shop"><div class="ph"><h3>🏪 Toko Pasar Pulau</h3><button data-close>✕</button></div><div class="pb" id="gShopList"></div></div>
   <div class="panel gpanel" id="gP_bag"><div class="ph"><h3>🎒 Tas & Jual</h3><button data-close>✕</button></div><div class="pb" id="gBagList"></div></div>
-  <div class="panel gpanel" id="gP_mis"><div class="ph"><h3>🎯 Misi</h3><button data-close>✕</button></div><div class="pb" id="gMisList"></div></div>
+  <div class="panel gpanel" id="gP_mis"><div class="ph"><h3>🎯 Kegiatan Desa</h3><button data-close>✕</button></div><div class="pb"><div class="gtabs" id="gActTabs" style="flex-wrap:wrap"><button data-k="mis" class="on">🎯 Misi</button><button data-k="order">📋 Pesanan</button><button data-k="gr">🤝 Gotong Royong</button><button data-k="event">🎪 Event</button><button data-k="cal">📅 Kalender</button></div><div id="gMisList"></div></div></div>
   <div class="panel gpanel" id="gP_chat"><div class="ph"><h3>💬 Obrolan Desa <span id="gOnline" style="font-size:12px;color:#16a34a;font-weight:700;margin-left:6px"></span></h3><button data-close>✕</button></div><div class="pb" id="gChatList" style="flex:1;min-height:200px"></div><div id="gChatIn"><input id="gMsg" maxlength="140" placeholder="Tulis pesan… (sopan ya 🙏)" autocomplete="off"><button id="gSend">Kirim</button></div></div>
   <div class="panel gpanel" id="gP_rank"><div class="ph"><h3>🏆 Papan Peringkat</h3><button data-close>✕</button></div><div class="pb"><div class="gtabs" id="gRankTabs"><button data-k="coins" class="on">🪙 Terkaya</button><button data-k="hearts">❤️ Peternak</button><button data-k="missions_done">🎯 Misi</button><button data-k="harvests">🧺 Panen</button><button data-k="fish">🎣 Ikan</button></div><div id="gRankList"></div></div></div>`;
   document.body.appendChild(ui);
@@ -3087,6 +3113,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     await refreshList();
     let v = FARMS.get(u); if (!v) { const idx = Math.max(LIST.length, ...[...FARMS.values()].map(f => f.idx + 1), 0); v = buildFarm(u, idx); }
     ME.v = v; renderFarm(v, ME.s, Date.now());
+    applyCostume(u, ME.s); pollHelps(); grLoad();
     markDirty(); closeP(); enterGame(); api.rpc('farm_ping', { p_user: u, p_pin: p }).catch(() => {}); pollChat(); msgs.forEach((m, i) => setTimeout(() => W.toast(m), i * 2600));
   }
   $('gGo').onclick = login; $('gP').addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
@@ -3107,7 +3134,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
   function updateHUD() {
     if (!ME) return; const s = ME.s;
-    $('gLv').textContent = `Lv ${s.level}`; $('gCoin').textContent = fmt(s.coins);
+    const wx = weatherOf(dayKey(Date.now())); $('gWx').textContent = wx.e; $('gLv').textContent = `Lv ${s.level}`; $('gCoin').textContent = fmt(s.coins);
     const me = maxEnergy(s); $('gEnBar').firstChild.style.width = `${100 * s.energy / me}%`; $('gEnT').textContent = s.energy;
     $('gSeed').textContent = `${CROPS[s.seed]?.e || '🌱'} ${(s.inv['seed_' + s.seed] || 0)}`;
     const anyDone = [...s.daily.list, ...s.weekly.list].some(m => !m.done);
@@ -3137,6 +3164,8 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
       floatTxt(`🌱 ${CROPS[k].n}`, wp); tip('Sudah ditanam! Ketuk lagi untuk menyiram 💧');
     } else if (t.s === 'crop') {
       if (isReady(t)) { if (!useEnergy(ENERGY.harvest)) return; const c = CROPS[t.c]; s.inv[t.c] = (s.inv[t.c] || 0) + c.yield; s.stats.harvest += c.yield;
+        albumAdd(s, 'crop', t.c, msgs); eventScore(s, 'panen', c.yield, msgs);
+        if (t.c === 'semangka') { const kg = +(4 + Math.random() * 6 + (s.level * 0.3)).toFixed(1); eventScore(s, 'semangka', kg, msgs, true); msgs.push(`🍉 Semangkamu ${kg} kg!`); }
         emit(s, 'harvest', c.yield, t.c, msgs); addXP(s, 4 + Math.round(c.hours / 2), msgs); floatTxt(`+${c.yield} ${c.e}`, wp); Object.assign(t, { s: 'soil', c: null, g: 0, wt: null }); tip('Panen! Jual hasilnya di 🎒 Tas.'); }
       else if (!wateredToday(t, now)) { if (!useEnergy(ENERGY.water)) return; t.wt = now; t.u = now; emit(s, 'water', 1, null, msgs); addXP(s, 1, msgs); floatTxt('💧 disiram', wp);
         const left = CROPS[t.c].hours - (t.g || 0); tip(`Tumbuh selama hari ini. Siap panen ±${left < 1 ? Math.ceil(left * 60) + ' menit' : Math.ceil(left) + ' jam'} lagi (kalau disiram tiap hari).`); }
@@ -3149,7 +3178,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     const wp = ME.v.animals[j].g.getWorldPosition(V(0, 0, 0)).add(V(0, 0.4, 0));
     if (a.fed !== dk) { if (!(s.inv.pakan > 0)) { W.toast('🌾 Pakan habis! Beli di 🏪 Toko.'); return; } if (!useEnergy(ENERGY.feed)) return; s.inv.pakan--; a.fed = dk; emit(s, 'feed', 1, null, msgs); addXP(s, 2, msgs); floatTxt('🌾 makan!', wp); tip(`${a.n} kenyang. Ketuk lagi untuk mengambil ${A.prodN.toLowerCase()}.`); }
     else if (a.col !== dk) { if (!useEnergy(ENERGY.collect)) return; a.col = dk; const gold = a.h >= 7 && Math.random() < 0.15 + (a.h - 7) * 0.08; const item = gold ? A.gold : A.prod;
-      s.inv[item] = (s.inv[item] || 0) + 1; s.stats.collect++; emit(s, 'collect', 1, null, msgs); addXP(s, 3, msgs); floatTxt(`+1 ${gold ? '🌟 ' + A.goldN : A.pe + ' ' + A.prodN}`, wp); tip(`Elus ${a.n} biar makin sayang ❤️`); }
+      s.inv[item] = (s.inv[item] || 0) + 1; s.stats.collect++; albumAdd(s, 'animal', a.t, msgs); if (gold) albumAdd(s, 'gold', item, msgs); emit(s, 'collect', 1, null, msgs); addXP(s, 3, msgs); floatTxt(`+1 ${gold ? '🌟 ' + A.goldN : A.pe + ' ' + A.prodN}`, wp); tip(`Elus ${a.n} biar makin sayang ❤️`); }
     else if (a.pet !== dk) { if (!useEnergy(ENERGY.pet)) return; a.pet = dk; a.h = Math.min(10, a.h + 1); emit(s, 'pet', 1, null, msgs); addXP(s, 2, msgs); floatTxt(`❤️ ${a.h}/10`, wp); tip(`${a.n} senang! Hewan dengan ❤️ 7+ kadang memberi ${A.goldN}.`); }
     else { W.toast(`${A.e} ${a.n} sudah dirawat hari ini ❤️ ${a.h}/10. Datang lagi besok!`); return; }
     work(wp, 0.5); after(msgs);
@@ -3170,7 +3199,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     SHOP.forEach(it => {
       let locked = it.lv > s.level, note = it.d;
       if (it.id.startsWith('animal_') && s.animals.length >= s.barn) note = `Kandang penuh (${s.barn}). Beli kandang lebih besar.`;
-      if (it.id === 'barn2' && s.barn >= 4 || it.id === 'barn3' && s.barn >= 6 || it.id === 'field4' && s.field >= 4 || it.id === 'fence' && s.house.fence || it.id === 'garden' && s.house.garden) note = 'Sudah punya ✅';
+      if (it.id.startsWith('pet_') && s.pet === it.id.slice(4) || it.id.startsWith('hat_') && (s.hats || []).includes(it.id.slice(4)) || it.id === 'barn3' && s.barn >= 6 || it.id === 'field4' && s.field >= 4 || it.id === 'fence' && s.house.fence || it.id === 'garden' && s.house.garden) note = 'Sudah punya ✅';
       const d = document.createElement('div'); d.className = 'gitem';
       d.innerHTML = `<div class="ic">${it.e}</div><div class="tx"><b>${it.n}</b><span>${locked ? '🔒 Buka di Level ' + it.lv : note}</span></div><button>🪙 ${fmt(it.price)}</button>`;
       const btn = d.querySelector('button'); btn.disabled = locked || s.coins < it.price || note.startsWith('Kandang penuh') || note === 'Sudah punya ✅';
@@ -3189,34 +3218,47 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     else if (it.id === 'field4') s.field = 4;
     else if (it.id === 'roof') s.house.roof = ((s.house.roof || 0) + 1) % ROOFS.length;
     else if (it.id === 'fence') s.house.fence = true; else if (it.id === 'garden') s.house.garden = true;
+    else if (it.id.startsWith('pet_')) { s.pet = it.id.slice(4); msgs.push(`${it.e} ${it.n} sekarang tinggal di kebunmu!`); }
+    else if (it.id.startsWith('hat_')) { s.hats = [...new Set([...(s.hats || []), it.id.slice(4)])]; s.hat = it.id.slice(4); msgs.push(`${it.e} Kostum dipakai! Karaktermu di pulau ikut berganti.`); applyCostume(ME.u, s); }
     s.coins -= it.price; after(msgs); openShop();
   }
   function openBag() {
     const s = ME.s, el = $('gBagList'); el.innerHTML = '';
     const goods = Object.entries(s.inv).filter(([k, n]) => ITEMS[k] && n > 0);
-    let total = 0; goods.forEach(([k, n]) => total += ITEMS[k].price * n);
+    let total = 0; goods.forEach(([k, n]) => total += priceToday(k) * n);
     const top = document.createElement('div'); top.innerHTML = `<div style="display:flex;gap:8px;margin:4px 0 8px"><div class="gchip">🌾 Pakan: ${s.inv.pakan || 0}</div><div class="gchip">🪱 Umpan: ${s.inv.umpan || 0}</div><div class="gchip">🪙 ${fmt(s.coins)}</div></div>`;
     el.appendChild(top);
     if (!goods.length) el.insertAdjacentHTML('beforeend', '<p style="color:#6b7280;font-size:13.5px">Belum ada hasil panen. Tanam, siram, lalu panen!</p>');
     goods.forEach(([k, n]) => { const it = ITEMS[k]; const d = document.createElement('div'); d.className = 'gitem';
-      d.innerHTML = `<div class="ic">${it.e}</div><div class="tx"><b>${it.n} ×${n}</b><span>🪙 ${it.price} / buah</span></div><button>Jual 🪙 ${fmt(it.price * n)}</button>`;
+      const pt = priceToday(k), tag = pt > it.price ? ` <b style="display:inline;color:#16a34a;font-size:11px">▲ naik</b>` : pt < it.price ? ` <b style="display:inline;color:#dc2626;font-size:11px">▼ turun</b>` : '';
+      d.innerHTML = `<div class="ic">${it.e}</div><div class="tx"><b>${it.n} ×${n}</b><span>🪙 ${pt} / buah${tag}</span></div><button>Jual 🪙 ${fmt(pt * n)}</button>`;
       d.querySelector('button').onclick = () => sell(k, n); el.appendChild(d); });
     if (goods.length > 1) { const b = document.createElement('div'); b.style.marginTop = '10px'; b.innerHTML = `<button style="width:100%;height:44px;border:0;border-radius:12px;background:#16a34a;color:#fff;font:800 14px Poppins">Jual semua · 🪙 ${fmt(total)}</button>`; b.firstChild.onclick = () => { goods.forEach(([k, n]) => sell(k, n, true)); after([]); openBag(); }; el.appendChild(b); }
     const seeds = Object.entries(s.inv).filter(([k, n]) => k.startsWith('seed_') && n > 0).map(([k, n]) => `${CROPS[k.slice(5)].e}×${n}`).join('  ');
     el.insertAdjacentHTML('beforeend', `<h4 style="margin:14px 0 4px;font-size:11px;letter-spacing:.8px;color:#5b6472">BENIH</h4><div style="font-size:15px">${seeds || '-'}</div>
       <h4 style="margin:14px 0 4px;font-size:11px;letter-spacing:.8px;color:#5b6472">TERNAK (${s.animals.length}/${s.barn})</h4>${s.animals.map(a => `<div style="font-size:13.5px;padding:3px 0">${ANIMALS[a.t].e} <b>${a.n}</b> · ❤️ ${a.h}/10</div>`).join('') || '-'}`);
+    const al = s.album || {}; const cnt = c => ALBUM[c].filter(k => al[c]?.[k]).length;
+    el.insertAdjacentHTML('beforeend', `<h4 style="margin:16px 0 4px;font-size:11px;letter-spacing:.8px;color:#5b6472">👒 KOSTUM & PELIHARAAN</h4>
+      <div style="display:flex;flex-wrap:wrap;gap:6px">${['', ...(s.hats || [])].map(h => `<button class="gbtn" data-hat="${h}" style="${(s.hat || '') === h ? 'background:#14181f' : ''}">${h ? { caping: '👒 Caping', koboi: '🤠 Koboi', bunga: '🌸 Mahkota Bunga', mahkota: '👑 Mahkota' }[h] : '🚫 Tanpa topi'}</button>`).join('')}</div>
+      <div style="font-size:13px;margin-top:6px">${s.pet ? (s.pet === 'kucing' ? '🐈 Kucing' : '🐕 Anjing') + ' menemanimu di kebun' : 'Belum punya peliharaan (beli di 🏪 Toko)'}</div>
+      <h4 style="margin:16px 0 4px;font-size:11px;letter-spacing:.8px;color:#5b6472">📖 ALBUM KOLEKSI</h4>
+      ${[['fish', '🎣 Ikan', k => FISH[k].e + ' ' + FISH[k].n], ['crop', '🌱 Tanaman', k => CROPS[k].e + ' ' + CROPS[k].n], ['animal', '🐔 Ternak', k => ANIMALS[k].e + ' ' + ANIMALS[k].n], ['gold', '🌟 Barang Langka', k => ITEMS[k].e + ' ' + ITEMS[k].n]].map(([c, t, nm]) =>
+        `<div style="margin:6px 0"><b style="font-size:13px">${t} ${cnt(c)}/${ALBUM[c].length}</b> <span style="font-size:11.5px;color:#b45309">→ gelar ${TITLES[c].n}</span><div style="font-size:12.5px;color:#374151;margin-top:2px">${ALBUM[c].map(k => al[c]?.[k] ? nm(k) : '❔ ???').join(' · ')}</div></div>`).join('')}
+      ${(s.titles || []).length ? `<div style="margin-top:6px;font-size:12.5px">Pakai gelar: ${['', ...s.titles].map(t => `<button class="gbtn" data-ttl="${t}" style="${(s.title || '') === t ? 'background:#14181f' : ''}">${t ? TITLES[t].n : 'Tanpa gelar'}</button>`).join(' ')}</div>` : ''}`);
+    el.querySelectorAll('[data-hat]').forEach(b => b.onclick = () => { s.hat = b.dataset.hat; applyCostume(ME.u, s); after([]); openBag(); });
+    el.querySelectorAll('[data-ttl]').forEach(b => b.onclick = () => { s.title = b.dataset.ttl; after([]); openBag(); });
     openP('gP_bag');
   }
-  function sell(k, n, quiet) { const s = ME.s, msgs = []; const v = ITEMS[k].price * n; s.inv[k] = 0; s.coins += v; s.stats.sold += v; emit(s, 'sell', v, null, msgs); addXP(s, Math.ceil(v / 50), msgs); if (!quiet) { after(msgs); openBag(); } else msgs.forEach(m => W.toast(m)); }
-  function openMis() {
-    const s = ME.s, el = $('gMisList'); tickState(s, Date.now());
+  function sell(k, n, quiet) { const s = ME.s, msgs = []; const v = priceToday(k) * n; s.inv[k] = 0; s.coins += v; s.stats.sold += v; emit(s, 'sell', v, null, msgs); addXP(s, Math.ceil(v / 50), msgs); if (!quiet) { after(msgs); openBag(); } else msgs.forEach(m => W.toast(m)); }
+  function openMis() { openP('gP_mis'); grLoad().then(() => { if (actTab === 'gr') renderAct(); }); refreshList(); renderAct(); }
+  function misHTML(el) {
+    const s = ME.s;
     const row = (m, pool, rew) => { const d = pool.find(x => x.id === m.id); return `<div class="gmis ${m.done ? 'done' : ''}"><b>${m.done ? '✅' : '⬜'} ${d.t}</b> <span style="float:right;font-size:12px;color:#5b6472">${fmt(m.p)}/${fmt(d.n)} · 🪙 ${rew || d.r}</span><div class="bar"><i style="width:${100 * m.p / d.n}%"></i></div></div>`; };
     const end = new Date(Date.parse(s.weekly.week ? new Date().toISOString() : 0));
     el.innerHTML = `<h4 style="margin:6px 0 2px;font-size:11px;letter-spacing:.8px;color:#5b6472">MISI HARIAN · ganti tiap tengah malam</h4>${s.daily.list.map(m => row(m, DAILY_POOL, 50)).join('')}
       <h4 style="margin:16px 0 2px;font-size:11px;letter-spacing:.8px;color:#5b6472">MISI MINGGUAN · ganti tiap Senin</h4>${s.weekly.list.map(m => row(m, WEEKLY_POOL)).join('')}
       <div style="margin-top:12px;background:${s.weekly.bonus ? '#dcfce7' : '#fff7e6'};border-radius:12px;padding:10px 12px;font-size:13px;font-weight:600">${s.weekly.bonus ? '🏅 Kamu WARGA TELADAN minggu ini! Namamu bisa disebut Bang Tanjung di video.' : `🏅 Selesaikan 3 misi mingguan: +${WEEK_BONUS} koin & lencana WARGA TELADAN (namamu bisa muncul di video Bang Tanjung)`}</div>
       <div style="margin-top:8px;font-size:12.5px;color:#5b6472">🔥 Login beruntun: ${s.streak} hari · 🏅 Lencana: ${(s.badges || []).length}</div>`;
-    openP('gP_mis');
   }
   let rankKey = 'coins';
   async function openRank() {
@@ -3225,13 +3267,213 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     const rows = LIST.map(r => ME && r.username === ME.u ? { ...r, coins: ME.s.coins, hearts: heartsTotal(ME.s), harvests: ME.s.stats.harvest, missions_done: ME.s.weekly.list.filter(m => m.done).length, week_key: ME.s.weekly.week, state: ME.s } : r)
       .sort((a, b) => val(b) - val(a)).slice(0, 30);
     const unit = { coins: '🪙', hearts: '❤️', missions_done: '🎯', harvests: '🧺', fish: '🎣' }[rankKey];
-    el.innerHTML = rows.map((r, i) => `<div class="gitem" data-u="${r.username}" style="cursor:pointer"><div class="ic" style="font-size:18px;font-weight:800">${['🥇', '🥈', '🥉'][i] || i + 1}</div><div class="tx"><b>@${r.username}</b><span>Lv ${r.level || 1} · kunjungi kebun ›</span></div><b>${unit} ${fmt(val(r))}</b></div>`).join('') || '<p style="color:#6b7280">Belum ada pemain. Jadilah yang pertama!</p>';
+    el.innerHTML = rows.map((r, i) => `<div class="gitem" data-u="${r.username}" style="cursor:pointer"><div class="ic" style="font-size:18px;font-weight:800">${['🥇', '🥈', '🥉'][i] || i + 1}</div><div class="tx"><b>@${r.username}</b><span>Lv ${r.level || 1}${r.state?.title && TITLES[r.state.title] ? ' · ' + TITLES[r.state.title].n : ''} · kunjungi kebun ›</span></div><b>${unit} ${fmt(val(r))}</b></div>`).join('') || '<p style="color:#6b7280">Belum ada pemain. Jadilah yang pertama!</p>';
     el.querySelectorAll('[data-u]').forEach(d => d.onclick = () => { const v = FARMS.get(d.dataset.u); if (v) { closeP(); const p = v.root.position; W.flyTo(V(p.x, 0.3, p.z), 9, V(0.1, 1.1, 1)); } });
   }
   $('gRankTabs').querySelectorAll('button').forEach(b => b.onclick = () => { rankKey = b.dataset.k; $('gRankTabs').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); openRank(); });
-  $('gSeed').onclick = openSeeds; $('gShop').onclick = openShop; $('gBag').onclick = openBag; $('gMis').onclick = openMis; $('gRank').onclick = openRank;
+  $('gSeed').onclick = openSeeds; $('gShop').onclick = openShop; $('gBag').onclick = openBag; $('gMis').onclick = openMis; $('gActTabs').querySelectorAll('button').forEach(b => b.onclick = () => { if (b.dataset.k === 'gr') grLoad().then(() => renderAct('gr')); renderAct(b.dataset.k); }); $('gRank').onclick = openRank;
   // leaderboard also reachable outside the game
   const rankBtn = document.createElement('button'); rankBtn.textContent = '🏆'; rankBtn.style.cssText = 'background:#fff;color:#14181f;flex:0 0 auto'; rankBtn.onclick = openRank; if (GAME_ON) playBtn.after(rankBtn);
+
+
+  // ================= FITUR TAMBAHAN =================
+  // ---- cuaca & musim (sama untuk semua pemain) ----
+  const SEASON = dk => { const m = +dk.slice(5, 7); return m >= 11 || m <= 3 ? 'hujan' : 'kemarau'; };
+  const WX_CACHE = {};
+  function weatherOf(dk) {
+    if (WX_CACHE[dk]) return WX_CACHE[dk];
+    const r = seeded('cuaca' + dk), se = SEASON(dk), x = r();
+    const rainP = se === 'hujan' ? 0.42 : 0.12;
+    let w;
+    if (x < rainP) w = { k: 'hujan', e: '🌧️', n: 'Hujan', rain: true, tip: 'Tanaman tersiram otomatis hari ini!' };
+    else if (se === 'kemarau' && x > 0.72) w = { k: 'panas', e: '🔥', n: 'Panas Terik', dry: true, tip: 'Tanah cepat kering, jangan lupa siram (layu dalam 2 hari).' };
+    else if (x < rainP + 0.25) w = { k: 'berawan', e: '⛅', n: 'Berawan', tip: 'Cuaca enak untuk berkebun.' };
+    else w = { k: 'cerah', e: '☀️', n: 'Cerah', tip: 'Jangan lupa siram tanamanmu.' };
+    w.season = se === 'hujan' ? 'Musim Hujan' : 'Musim Kemarau';
+    return WX_CACHE[dk] = w;
+  }
+  // ---- harga pasar harian ----
+  const PRICE_CACHE = {};
+  function pricesToday(dk) {
+    if (PRICE_CACHE[dk]) return PRICE_CACHE[dk];
+    const r = seeded('harga' + dk), keys = Object.keys(ITEMS).filter(k => !k.startsWith('ikan_sepatu')), out = {};
+    const up = pickN(keys, 2, r), down = pickN(keys.filter(k => !up.includes(k)), 1, r);
+    up.forEach(k => out[k] = 1.5 + Math.round(r() * 5) / 10); down.forEach(k => out[k] = 0.7);
+    return PRICE_CACHE[dk] = out;
+  }
+  const priceToday = k => Math.round((ITEMS[k]?.price || 0) * (pricesToday(dayKey(Date.now()))[k] || 1));
+  // ---- kalender login 7 hari ----
+  const CAL = [
+    { txt: '+80 koin', f: s => s.coins += 80 }, { txt: '+5 pakan 🌾', f: s => s.inv.pakan = (s.inv.pakan || 0) + 5 },
+    { txt: '+3 benih jagung 🌽', f: s => s.inv.seed_jagung = (s.inv.seed_jagung || 0) + 3 }, { txt: '+150 koin', f: s => s.coins += 150 },
+    { txt: '+10 umpan 🪱', f: s => s.inv.umpan = (s.inv.umpan || 0) + 10 }, { txt: '+300 koin', f: s => s.coins += 300 },
+    { txt: '🐄 Sapi gratis! (atau +1.500 koin kalau kandang penuh)', f: s => { if (s.animals.length < s.barn) s.animals.push({ t: 'sapi', n: NAMES[Math.floor(Math.random() * NAMES.length)], h: 2, fed: null, pet: null, col: null }); else s.coins += 1500; } },
+  ];
+  function calReward(s) { const day = ((s.streak - 1) % 7) + 1; CAL[day - 1].f(s); s.calDay = day; return { day, txt: CAL[day - 1].txt }; }
+  // ---- album & gelar ----
+  const ALBUM = { fish: Object.keys(FISH).filter(k => !FISH[k].junk && !FISH[k].coins), crop: Object.keys(CROPS), animal: Object.keys(ANIMALS), gold: ['telur_emas', 'susu_premium'] };
+  const TITLES = { fish: { n: '🎣 Raja Pancing', a: 'fish' }, crop: { n: '🌾 Petani Sejati', a: 'crop' }, animal: { n: '🐄 Juragan Ternak', a: 'animal' }, gold: { n: '👑 Sultan Desa', a: 'gold' } };
+  function albumAdd(s, cat, k, msgs) {
+    s.album = s.album || { fish: {}, crop: {}, animal: {}, gold: {} }; s.album[cat] = s.album[cat] || {};
+    if (s.album[cat][k]) return; s.album[cat][k] = 1;
+    const name = (cat === 'fish' ? FISH[k]?.n : cat === 'crop' ? CROPS[k]?.n : cat === 'animal' ? ANIMALS[k]?.n : ITEMS[k]?.n) || k;
+    if (msgs) msgs.push(`📖 Koleksi baru: ${name}`);
+    if (ALBUM[cat].every(x => s.album[cat][x])) { s.titles = [...new Set([...(s.titles || []), cat])]; if (!s.title) s.title = cat; s.coins += 500; if (msgs) msgs.push(`🏆 Album lengkap! Gelar ${TITLES[cat].n} + 500 koin`); }
+  }
+  // ---- event mingguan ----
+  const EVENTS = { semangka: { n: '🍉 Lomba Semangka Terberat', d: 'Panen semangka seberat mungkin (Lv 4). Skor = semangka terberat (kg).', u: 'kg' },
+    mancing: { n: '🎣 Turnamen Mancing', d: 'Pancing ikan sebanyak-banyaknya minggu ini. Malam hari lebih banyak ikan langka!', u: 'ikan' },
+    panen: { n: '🌾 Festival Panen Raya', d: 'Kumpulkan hasil panen sebanyak-banyaknya minggu ini.', u: 'panen' } };
+  const eventOf = wk => { const n = +wk.slice(6); return ['mancing', 'panen', 'semangka'][n % 3]; };
+  function eventScore(s, type, val, msgs, isMax) {
+    const wk = weekKey(Date.now()), ev = eventOf(wk); if (ev !== type) return;
+    if (!s.event || s.event.week !== wk) s.event = { week: wk, type: ev, score: 0 };
+    s.event.score = isMax ? Math.max(s.event.score, val) : +(s.event.score + val).toFixed(1);
+  }
+  // ---- gotong royong (target bersama) ----
+  const GR_BUILD = ['Lumbung Desa', 'Gazebo Pantai', 'Menara Pandang', 'Taman Bermain', 'Pos Ronda', 'Air Mancur Alun-alun', 'Perpustakaan Desa', 'Panggung Hiburan'];
+  function grGoal(wk) {
+    const r = seeded('gr' + wk), pool = ['telur', 'tomat', 'lobak', 'jagung', 'cabai', 'ikan_nila', 'ikan_teri', 'susu'];
+    const items = pickN(pool, 3, r); const base = { telur: 120, tomat: 200, lobak: 120, jagung: 90, cabai: 150, ikan_nila: 60, ikan_teri: 100, susu: 40 };
+    return { items: items.map(k => ({ k, n: base[k] })), build: GR_BUILD[Math.floor(r() * GR_BUILD.length)] };
+  }
+  let GR = { week: null, totals: {}, people: {} };
+  async function grLoad() { const wk = weekKey(Date.now()); try { const r = await api.rpc('community_get', { p_week: wk }); GR = { week: wk, totals: r.totals || {}, people: r.people || {} }; } catch (e) {} }
+  async function grGive(k, n) {
+    const s = ME.s; if (!(s.inv[k] >= n) || n < 1) return; const wk = weekKey(Date.now()), msgs = [];
+    let r; try { r = await api.rpc('community_add', { p_user: ME.u, p_pin: ME.p, p_week: wk, p_item: k, p_qty: n }); } catch (e) { W.toast('Tidak bisa terhubung, coba lagi.'); return; }
+    if (!r.ok) { W.toast(r.err || 'Gagal'); return; }
+    s.inv[k] -= n; const rew = Math.ceil(priceToday(k) * n * 0.6); s.coins += rew; addXP(s, n * 2, msgs); s.grGiven = { week: wk, n: ((s.grGiven?.week === wk ? s.grGiven.n : 0) + n) };
+    GR = { week: wk, totals: r.totals, people: r.people }; msgs.unshift(`🤝 Terima kasih! Kamu menyumbang ${n} ${ITEMS[k].n} (+${rew} koin)`); after(msgs); renderAct('gr');
+  }
+  const grDone = goal => goal.items.every(it => (GR.totals[it.k] || 0) >= it.n);
+  // ---- papan pesanan warga ----
+  const ORDER_FROM = ['zyx_naww', 'flyjouze', 'kasmir_994', 'ainiyz0', 'hoinos.edit1', 'ghitssna', 'nindriluvita7', 'ruryfauziah', 'Bang Tanjung'];
+  const ORDER_WHY = { zyx_naww: 'untuk seblak', flyjouze: 'untuk mie ayam', kasmir_994: 'untuk lapak ikan', ainiyz0: 'untuk lapak sayur', 'hoinos.edit1': 'untuk ramuan parfum 😆', ghitssna: 'untuk hiasan bunga', nindriluvita7: 'untuk es teh jumbo', ruryfauziah: 'untuk RM Padang', 'Bang Tanjung': 'untuk acara desa' };
+  function ordersToday(lv) {
+    const dk = dayKey(Date.now()), r = seeded('order' + dk);
+    const pool = [...Object.keys(CROPS).filter(k => CROPS[k].lv <= Math.max(2, lv)), 'telur', 'ikan_teri', 'ikan_nila', ...(lv >= 2 ? ['ikan_kakap', 'telur_bebek'] : []), ...(lv >= 5 ? ['susu'] : [])];
+    return Array.from({ length: 4 }, (_, i) => { const k = pool[Math.floor(r() * pool.length)], q = 2 + Math.floor(r() * 5), who = ORDER_FROM[Math.floor(r() * ORDER_FROM.length)];
+      return { id: `${dk}-${i}`, k, q, who, rew: Math.round((ITEMS[k]?.price || 20) * q * (1.6 + r() * 0.6)), xp: 6 + q * 2 }; });
+  }
+  function fillOrder(o) {
+    const s = ME.s, msgs = []; s.orders = s.orders?.day === dayKey(Date.now()) ? s.orders : { day: dayKey(Date.now()), done: [] };
+    if (s.orders.done.includes(o.id) || !(s.inv[o.k] >= o.q)) return;
+    s.inv[o.k] -= o.q; s.orders.done.push(o.id); s.coins += o.rew; addXP(s, o.xp, msgs); emit(s, 'sell', o.rew, null, msgs);
+    msgs.unshift(`📋 Pesanan ${o.who === 'Bang Tanjung' ? 'Bang Tanjung' : '@' + o.who} selesai! +${o.rew} koin`); after(msgs); renderAct('order');
+  }
+  // ---- bantu tetangga ----
+  async function helpFarm(target, kind) {
+    const s = ME.s, dk = dayKey(Date.now()), msgs = []; if (!useEnergy(3)) return;
+    let r; try { r = await api.rpc('farm_help', { p_user: ME.u, p_pin: ME.p, p_target: target, p_kind: kind, p_day: dk }); } catch (e) { s.energy += 3; W.toast('Tidak bisa terhubung.'); return; }
+    if (!r.ok) { s.energy += 3; W.toast(r.err || 'Gagal'); updateHUD(); return; }
+    s.coins += 40; addXP(s, 6, msgs); s.helped = (s.helped || 0) + 1; emit(s, 'help', 1, null, msgs);
+    msgs.unshift(kind === 'water' ? `💧 Kamu menyiram kebun @${target}! +40 koin` : `🌾 Kamu memberi makan ternak @${target}! +40 koin`); after(msgs);
+    const v = FARMS.get(target); if (v) floatTxt(kind === 'water' ? '💧💧💧' : '🌾❤️', v.root.position.clone().add(V(0, 1.2, 0)));
+  }
+  async function pollHelps() {
+    if (!ME) return; const s = ME.s; let list; try { list = await api.rpc('help_list', { p_user: ME.u, p_pin: ME.p, p_since: s.helpLast || 0 }); } catch (e) { return; }
+    if (!Array.isArray(list) || !list.length) return; const dk = dayKey(Date.now()), now = Date.now(), msgs = [];
+    for (const h of list) {
+      s.helpLast = Math.max(s.helpLast || 0, h.id);
+      if (h.day !== dk) continue;
+      if (h.kind === 'water') s.tiles.forEach(t => { if (t.s === 'crop' && !wateredToday(t, now)) { tickState(s, now); t.wt = now; t.u = now; } });
+      if (h.kind === 'feed') s.animals.forEach(a => { if (a.fed !== dk) a.fed = dk; });
+      msgs.push(h.kind === 'water' ? `💧 @${h.helper} menyiram kebunmu!` : `🌾 @${h.helper} memberi makan ternakmu!`);
+    }
+    after(msgs);
+  }
+  setInterval(pollHelps, 60000);
+  // nearest neighbour farm to the camera target (for the "Bantu" button)
+  let nearFarm = null;
+  function updateNear() {
+    if (!ME || !document.body.classList.contains('game') || document.body.classList.contains('fishing')) { $('gHelp').style.display = 'none'; return; }
+    const f = W.controls.target; let best = null, bd = 3.2;
+    for (const v of FARMS.values()) { const d = Math.hypot(v.root.position.x - f.x, v.root.position.z - f.z); if (d < bd) { bd = d; best = v; } }
+    if (best && best.u === ME.u) best = null;
+    nearFarm = best; $('gHelp').style.display = best ? 'flex' : 'none'; if (best) $('gHelpT').textContent = `Kebun @${best.u}`;
+  }
+  // ---- peliharaan ----
+  function petMesh(t) {
+    const g = new THREE.Group(), b = new THREE.Group(); g.add(b);
+    const col = t === 'kucing' ? 0xf59e0b : 0x92400e, sc = t === 'kucing' ? 0.8 : 1;
+    b.add(mesh(new THREE.BoxGeometry(0.16 * sc, 0.14 * sc, 0.32 * sc), M(col), 0, 0.16 * sc, 0));
+    b.add(mesh(new THREE.BoxGeometry(0.16 * sc, 0.15 * sc, 0.15 * sc), M(col), 0, 0.28 * sc, 0.19 * sc));
+    for (const sx of [-1, 1]) { const e = mesh(new THREE.ConeGeometry(0.035 * sc, 0.08 * sc, 4), M(t === 'kucing' ? col : 0x78350f), sx * 0.05 * sc, 0.38 * sc, 0.17 * sc, false); if (t !== 'kucing') e.rotation.z = sx * 1.2; b.add(e); }
+    for (const sx of [-1, 1]) b.add(mesh(new THREE.SphereGeometry(0.014, 5, 4), M(0x111111), sx * 0.04 * sc, 0.3 * sc, 0.27 * sc, false));
+    for (const [x, z] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) b.add(mesh(new THREE.BoxGeometry(0.04 * sc, 0.1 * sc, 0.04 * sc), M(col), x * 0.05 * sc, 0.05 * sc, z * 0.11 * sc, false));
+    const tail = mesh(new THREE.CylinderGeometry(0.015, 0.012, 0.18 * sc, 4), M(col), 0, 0.24 * sc, -0.2 * sc, false); tail.rotation.x = -0.8; tail.userData.tail = true; b.add(tail);
+    return g;
+  }
+  // ---- kostum karakter (terlihat oleh semua pengunjung) ----
+  function hatMesh(k) {
+    const g = new THREE.Group(); g.name = 'kostum';
+    if (k === 'caping') { const c = mesh(new THREE.ConeGeometry(0.48, 0.24, 14), M(0xe3c27a), 0, 0.36, 0); g.add(c); }
+    if (k === 'koboi') { g.add(mesh(new THREE.CylinderGeometry(0.46, 0.46, 0.03, 16), M(0x7c4a1e), 0, 0.27, 0)); g.add(mesh(new THREE.CylinderGeometry(0.22, 0.26, 0.24, 12), M(0x7c4a1e), 0, 0.4, 0)); g.add(mesh(new THREE.CylinderGeometry(0.265, 0.265, 0.05, 12), M(0x111111), 0, 0.31, 0)); }
+    if (k === 'bunga') [0xf472b6, 0xfacc15, 0xffffff, 0xa855f7, 0xef4444, 0xf472b6].forEach((c, i) => { const a = i / 6 * Math.PI * 2; g.add(mesh(new THREE.SphereGeometry(0.06, 6, 5), M(c), Math.cos(a) * 0.26, 0.24, Math.sin(a) * 0.26, false)); });
+    if (k === 'mahkota') { const gm = new THREE.MeshStandardMaterial({ color: 0xfacc15, metalness: 0.7, roughness: 0.25, emissive: 0x6b4f00, emissiveIntensity: 0.3 }); g.add(mesh(new THREE.CylinderGeometry(0.24, 0.24, 0.1, 12, 1, true), gm, 0, 0.32, 0, false)); for (let i = 0; i < 6; i++) { const a = i / 6 * Math.PI * 2; g.add(mesh(new THREE.ConeGeometry(0.045, 0.12, 4), gm, Math.cos(a) * 0.23, 0.42, Math.sin(a) * 0.23, false)); } }
+    return g;
+  }
+  function applyCostume(u, s) {
+    const e = W.ENT.find(x => x.u === u); if (!e) return;
+    const k = s && s.hat || ''; if ((e.m.head.userData.hat || '') === k) return;
+    const old = e.m.head.getObjectByName('kostum'); if (old) e.m.head.remove(old);
+    if (k) e.m.head.add(hatMesh(k)); e.m.head.userData.hat = k;
+  }
+  // ---- hujan (visual) ----
+  const RAIN = (() => { const n = 700, g = new THREE.BufferGeometry(), p = new Float32Array(n * 6); g.setAttribute('position', new THREE.BufferAttribute(p, 3));
+    const l = new THREE.LineSegments(g, new THREE.LineBasicMaterial({ color: 0xcfe8ff, transparent: true, opacity: 0.55 })); l.frustumCulled = false; l.visible = false; scene.add(l);
+    const seeds = Array.from({ length: n }, () => [Math.random() * 30 - 15, Math.random() * 14, Math.random() * 30 - 15]); return { l, p, seeds, n }; })();
+  let baseSun = null;
+  function rainTick(t) {
+    const on = weatherOf(dayKey(Date.now())).rain; RAIN.l.visible = on;
+    if (baseSun === null) baseSun = sun.intensity; sun.intensity = on ? baseSun * 0.55 : baseSun;
+    if (!on) return; const c = W.controls.target;
+    for (let i = 0; i < RAIN.n; i++) { const s = RAIN.seeds[i]; const y = ((s[1] - t * 9) % 14 + 14) % 14; const x = c.x + s[0], z = c.z + s[2];
+      RAIN.p.set([x, y, z, x - 0.03, y - 0.45, z], i * 6); }
+    RAIN.l.geometry.attributes.position.needsUpdate = true;
+  }
+  // ---- panel Kegiatan (tabs) ----
+  let actTab = 'mis';
+  function renderAct(tab) {
+    if (tab) actTab = tab; const s = ME.s, el = $('gMisList'); tickState(s, Date.now());
+    $('gActTabs').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.k === actTab));
+    const H = t => `<h4 style="margin:10px 0 4px;font-size:11px;letter-spacing:.8px;color:#5b6472">${t}</h4>`;
+    if (actTab === 'mis') { misHTML(el); return; }
+    if (actTab === 'order') {
+      const os = ordersToday(s.level), done = s.orders?.day === dayKey(Date.now()) ? s.orders.done : [];
+      el.innerHTML = H('PAPAN PESANAN WARGA · ganti tiap hari') + os.map(o => { const it = ITEMS[o.k], have = s.inv[o.k] || 0, ok = done.includes(o.id);
+        return `<div class="gitem"><div class="ic">${it.e}</div><div class="tx"><b>${o.who === 'Bang Tanjung' ? '🧑‍🌾 Bang Tanjung' : '@' + o.who}: ${o.q} ${it.n}</b><span>${ORDER_WHY[o.who] || ''} · kamu punya ${have} · +${o.xp} XP</span></div><button data-o="${o.id}" ${ok || have < o.q ? 'disabled' : ''}>${ok ? '✅ Selesai' : '🪙 ' + fmt(o.rew)}</button></div>`; }).join('') +
+        `<p style="font-size:12px;color:#6b7280;margin-top:10px">Pesanan memberi koin lebih banyak daripada menjual biasa. Pesanan sama untuk semua pemain, ganti setiap tengah malam.</p>`;
+      el.querySelectorAll('[data-o]').forEach(b => b.onclick = () => fillOrder(os.find(o => o.id === b.dataset.o))); return;
+    }
+    if (actTab === 'gr') {
+      const wk = weekKey(Date.now()), goal = grGoal(wk), mine = GR.people?.[ME.u] || 0, done = grDone(goal);
+      el.innerHTML = H(`GOTONG ROYONG MINGGU INI`) + `<div style="background:#ecfdf5;border-radius:12px;padding:10px 12px;font-size:13px;font-weight:600;margin-bottom:8px">🏗️ Kalau semua target tercapai, Bang Tanjung akan membangun <b>${goal.build}</b> di video! Semua penyumbang dapat lencana & +500 koin.</div>` +
+        goal.items.map(it => { const I = ITEMS[it.k], tot = GR.totals?.[it.k] || 0, have = s.inv[it.k] || 0;
+          return `<div class="gmis ${tot >= it.n ? 'done' : ''}"><b>${I.e} ${I.n}</b><span style="float:right;font-size:12px;color:#5b6472">${fmt(Math.min(tot, it.n))}/${fmt(it.n)}</span><div class="bar"><i style="width:${Math.min(100, 100 * tot / it.n)}%"></i></div>
+            <div style="margin-top:6px;display:flex;gap:6px;align-items:center;font-size:12px;color:#5b6472">Punya ${have} <button class="gbtn" data-g="${it.k}" data-n="1" ${have < 1 ? 'disabled' : ''}>+1</button><button class="gbtn" data-g="${it.k}" data-n="5" ${have < 5 ? 'disabled' : ''}>+5</button><button class="gbtn" data-g="${it.k}" data-n="${have}" ${have < 1 ? 'disabled' : ''}>Semua</button></div></div>`; }).join('') +
+        `<div style="margin-top:10px;font-size:12.5px;color:#5b6472">Sumbanganmu minggu ini: <b>${mine}</b> · Penyumbang: <b>${Object.keys(GR.people || {}).length}</b></div>` +
+        (done ? (s.grClaim === wk ? `<div class="gmis done"><b>✅ Hadiah gotong royong sudah diambil</b></div>` : mine > 0 ? `<button class="gbig" id="gGrClaim">🎉 Target tercapai! Ambil hadiah +500 koin</button>` : '') : '') +
+        `<h4 style="margin:12px 0 4px;font-size:11px;letter-spacing:.8px;color:#5b6472">PENYUMBANG TERBANYAK</h4>` + Object.entries(GR.people || {}).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([u, n], i) => `<div style="font-size:13px;padding:2px 0">${['🥇', '🥈', '🥉'][i] || '·'} @${esc(u)} — ${n}</div>`).join('');
+      el.querySelectorAll('[data-g]').forEach(b => b.onclick = () => grGive(b.dataset.g, +b.dataset.n));
+      const c = $('gGrClaim'); if (c) c.onclick = () => { s.grClaim = wk; s.coins += 500; s.badges = [...(s.badges || []), 'GR-' + wk]; after(['🤝 Hadiah gotong royong +500 koin & lencana!']); renderAct('gr'); };
+      return;
+    }
+    if (actTab === 'event') {
+      const wk = weekKey(Date.now()), ev = EVENTS[eventOf(wk)], my = s.event?.week === wk ? s.event.score : 0;
+      const rows = LIST.map(r => ME && r.username === ME.u ? { u: r.username, sc: my } : { u: r.username, sc: r.state?.event?.week === wk ? r.state.event.score : 0 }).filter(r => r.sc > 0).sort((a, b) => b.sc - a.sc).slice(0, 10);
+      el.innerHTML = H('EVENT MINGGU INI · ganti tiap Senin') + `<div style="background:#fff7e6;border-radius:12px;padding:12px;font-size:13.5px"><b style="font-size:15px">${ev.n}</b><br>${ev.d}<br><br>Skormu: <b>${my} ${ev.u}</b><br><span style="color:#7a4b00">🏆 Juara minggu ini akan diumumkan Bang Tanjung di video!</span></div>` +
+        H('KLASEMEN') + (rows.map((r, i) => `<div class="gitem"><div class="ic" style="font-size:18px;font-weight:800">${['🥇', '🥈', '🥉'][i] || i + 1}</div><div class="tx"><b>@${esc(r.u)}</b></div><b>${r.sc} ${ev.u}</b></div>`).join('') || '<p style="color:#6b7280;font-size:13px">Belum ada peserta. Jadilah yang pertama!</p>');
+      return;
+    }
+    if (actTab === 'cal') {
+      const day = ((Math.max(1, s.streak) - 1) % 7) + 1;
+      el.innerHTML = H('KALENDER LOGIN · datang tiap hari, jangan putus!') + `<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">${CAL.map((c, i) => `<div style="border-radius:12px;padding:8px 6px;text-align:center;font-size:11.5px;font-weight:700;background:${i + 1 < day ? '#dcfce7' : i + 1 === day ? '#fde68a' : '#f3f4f6'};${i === 6 ? 'grid-column:span 2' : ''}">Hari ${i + 1}<br><span style="font-size:${i === 6 ? 22 : 18}px">${['🪙', '🌾', '🌽', '🪙', '🪱', '💰', '🐄'][i]}</span><br>${c.txt.replace(/\(.+\)/, '')}${i + 1 < day ? '<br>✅' : i + 1 === day ? '<br>⭐ hari ini' : ''}</div>`).join('')}</div>
+        <p style="font-size:12.5px;color:#5b6472;margin-top:10px">🔥 Login beruntun: ${s.streak} hari. Kalau bolos sehari, kalender mulai lagi dari Hari 1.</p>`;
+      return;
+    }
+  }
 
   // ---------------- fishing ----------------
   const FISHING = { st: 'off', t0: 0, biteAt: 0, fish: null, rod: null, line: null, bob: null, mk: 0, dir: 1, zone: [0.4, 0.6] };
@@ -3286,7 +3528,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
       if (f.coins) { s.coins += f.coins; floatTxt(`💰 +${f.coins} koin!`, wp); W.toast(`💰 WOW! Kamu menarik Peti Harta berisi ${f.coins} koin!`); }
       else {
         const kg = +(f.kg * (0.6 + Math.random() * 0.9)).toFixed(f.kg < 1 ? 2 : 1); s.inv['ikan_' + k] = (s.inv['ikan_' + k] || 0) + 1;
-        if (!f.junk) { s.stats.fish = (s.stats.fish || 0) + 1; emit(s, 'fish', 1, k, msgs); if (!s.best || kg > s.best.kg) { s.best = { k, kg }; msgs.push(`🏆 Rekor baru! ${f.n} ${kg} kg`); } }
+        if (!f.junk) { s.stats.fish = (s.stats.fish || 0) + 1; emit(s, 'fish', 1, k, msgs); albumAdd(s, 'fish', k, msgs); eventScore(s, 'mancing', 1, msgs); if (!s.best || kg > s.best.kg) { s.best = { k, kg }; msgs.push(`🏆 Rekor baru! ${f.n} ${kg} kg`); } }
         floatTxt(`+1 ${f.e} ${f.n}`, wp); W.toast(f.junk ? `👢 Yah… cuma ${f.n}. Coba lagi!` : `${f.e} Dapat ${f.n} (${kg} kg)!`);
       }
       addXP(s, f.junk ? 1 : 3 + Math.round(f.price / 40), msgs);
@@ -3305,6 +3547,8 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     FISHING.line.visible = FISHING.bob.visible;
     if (FISHING.line.visible) { const a = FISHING.rod.userData.tip.getWorldPosition(V(0, 0, 0)); const pts = FISHING.line.geometry.attributes.position; pts.setXYZ(0, a.x, a.y, a.z); const q = FISHING.bob.position; pts.setXYZ(1, q.x, q.y + 0.08, q.z); pts.needsUpdate = true; }
   }
+  $('gHelpW').onclick = () => nearFarm && helpFarm(nearFarm.u, 'water'); $('gHelpF').onclick = () => nearFarm && helpFarm(nearFarm.u, 'feed'); $('gHelpBack').onclick = () => enterGame();
+  $('gWx').onclick = () => { const dk = dayKey(Date.now()), w = weatherOf(dk), pr = pricesToday(dk); const up = Object.entries(pr).filter(([k, m]) => m > 1).map(([k]) => ITEMS[k].e + ' ' + ITEMS[k].n).join(', '); W.toast(`${w.e} ${w.n} · ${w.season}. ${w.tip} Harga naik hari ini: ${up}.`); };
   $('gFishB').onclick = startFishing; $('gFishBack').onclick = stopFishing; $('gCast').onclick = onCast; $('gPull').onclick = onPull; $('gFishBag').onclick = () => openBag();
 
   // ---------------- chat ----------------
@@ -3382,7 +3626,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
   let lastSlow = 0;
   window.__gameTick = (t, dt, now) => {
     animateFarms(t, dt || 0.016);
-    fishTick(t, dt || 0.016, now); bubbleTick(now);
+    fishTick(t, dt || 0.016, now); bubbleTick(now); rainTick(t); if (!window.__nearT || now - window.__nearT > 400) { window.__nearT = now; updateNear(); }
     if (ME && ME.ent.sim.manual && FISHING.st === 'off') {
       const m = ME.ent.m, w = ME.walk;
       if (w) { const k = Math.min(1, (now - w.t0) / w.d); m.root.position.lerpVectors(w.from, w.to, k); m.root.rotation.y = Math.atan2(w.to.x - w.from.x, w.to.z - w.from.z) || m.root.rotation.y;
@@ -3391,5 +3635,5 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     }
     if (ME && now - lastSlow > 30000) { lastSlow = now; tickState(ME.s, Date.now()); renderFarm(ME.v, ME.s, Date.now()); updateHUD(); }
   };
-  window.__game = { sendChat, pollChat, CHAT, startFishing, onCast, onPull, FISHING, get me() { return ME; }, CROPS, ANIMALS, refreshList, FARMS, api, tapTile, tapAnimal, openShop, openMis, openBag, openRank, buy: id => buy(SHOP.find(x => x.id === id)), tickState };
+  window.__game = { weatherOf, pricesToday, ordersToday, grGoal, grGive, helpFarm, fillOrder, renderAct, eventOf, applyCostume, sendChat, pollChat, CHAT, startFishing, onCast, onPull, FISHING, get me() { return ME; }, CROPS, ANIMALS, refreshList, FARMS, api, tapTile, tapAnimal, openShop, openMis, openBag, openRank, buy: id => buy(SHOP.find(x => x.id === id)), tickState };
 }
