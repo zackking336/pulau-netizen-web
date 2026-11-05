@@ -2147,6 +2147,41 @@ const layoutFoam = (fs, y) => {
   for (let i = HOUSES.length; i < pos.length; i++) { const [r, w] = cols[i - 3]; HOUSES.push(makeHouse(pos[i][0], pos[i][1], r, w, 0, i)); }
 }
 
+// ================= DESA TANI: daratan kebun & ternak warga (game "Kebunku") =================
+const DESA = { x0: -36.4, z0: -5.2, cols: 6, rows: 8, PW: 5.0, PD: 5.2 };
+DESA.W = DESA.cols * DESA.PW + 1.4; DESA.D = DESA.rows * DESA.PD + 1.6;
+DESA.cx = DESA.x0 + DESA.W / 2; DESA.cz = DESA.z0 - DESA.D / 2;
+const desa = new THREE.Group(); scene.add(desa);
+{
+  // land: sand base + grass top, rounded corners via scaled cylinders at the corners
+  const sandM = mat(0xf2d79b), grassM = mat(0x86cf62);
+  desa.add(mesh(new THREE.BoxGeometry(DESA.W, 1.8, DESA.D), sandM, DESA.cx, SAND - 0.9, DESA.cz));
+  desa.add(mesh(new THREE.BoxGeometry(DESA.W - 1.0, 0.1, DESA.D - 1.0), grassM, DESA.cx, SAND + 0.0, DESA.cz));
+  // gate
+  const gp = mat(0x14532d);
+  const gx = -17.2, gz = DESA.z0 - 0.2;
+  for (const dx of [-1.1, 1.1]) desa.add(mesh(new THREE.BoxGeometry(0.22, 2.4, 0.22), gp, gx + dx, SAND + 1.2, gz));
+  const gt = canvasTex(1024, 200, (x, w, h) => { x.fillStyle = '#14532d'; x.fillRect(0, 0, w, h); x.fillStyle = '#fde68a'; x.font = '800 96px Poppins'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText('🌾 DESA TANI', w / 2, h / 2 + 4); });
+  desa.add(mesh(new THREE.BoxGeometry(2.6, 0.5, 0.18), [gp, gp, gp, gp, new THREE.MeshStandardMaterial({ map: gt }), new THREE.MeshStandardMaterial({ map: gt })], gx, SAND + 2.55, gz));
+  // a few palms on the outer edge
+  for (let i = 0; i < 7; i++) desa.add(palm(DESA.x0 + 0.5, SAND, DESA.z0 - 3 - i * 5.6, 2.8 + (i % 3) * 0.3, 0.2, i));
+}
+// plot slot origin (center of plot), plot faces +z (south)
+const desaPlot = i => {
+  const c = i % DESA.cols, r = Math.floor(i / DESA.cols);
+  return V(DESA.x0 + 0.7 + DESA.PW * (c + 0.5), SAND + 0.05, DESA.z0 - 0.8 - DESA.PD * (r + 0.5));
+};
+// walkers keep to the paths between plots (only the inner farm area of a CLAIMED plot is blocked)
+const DESA_TAKEN = new Set();
+const desaBlocked = (x, z) => {
+  if (x < DESA.x0 || x > DESA.x0 + DESA.W || z > DESA.z0 || z < DESA.z0 - DESA.D) return false;
+  const c = Math.floor((x - DESA.x0 - 0.7) / DESA.PW), r = Math.floor((DESA.z0 - 0.8 - z) / DESA.PD);
+  if (c < 0 || r < 0 || c >= DESA.cols || r >= DESA.rows) return false;
+  if (!DESA_TAKEN.has(r * DESA.cols + c)) return false;
+  const p = desaPlot(r * DESA.cols + c);
+  return Math.abs(x - p.x) < DESA.PW / 2 - 0.55 && Math.abs(z - p.z) < DESA.PD / 2 - 0.75;
+};
+
 // ================= WEB: PETA PENDUDUK (interaktif) =================
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 {
@@ -2172,10 +2207,10 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
   ocean.material.flatShading = false; ocean.material.roughness = 0.25; ocean.material.needsUpdate = true;
 
   // ---- ground height by raycast ----
-  const lands = [island, ext, north, sel];
+  const lands = [island, ext, north, sel, ...(typeof desa !== 'undefined' ? [desa] : [])];
   const ray = new THREE.Raycaster();
   // height map of all land (one-time raycast), used for walking + placement
-  const HM = { x0: -32, z0: -25, s: 0.3 }; HM.nx = Math.ceil(50 / HM.s); HM.nz = Math.ceil(39 / HM.s);
+  const HM = { x0: -38, z0: -50, s: 0.35, W: 58, D: 64 }; HM.nx = Math.ceil(HM.W / HM.s); HM.nz = Math.ceil(HM.D / HM.s);
   HM.y = new Float32Array(HM.nx * HM.nz);
   scene.updateMatrixWorld(true);
   for (let j = 0; j < HM.nz; j++) for (let i = 0; i < HM.nx; i++) {
@@ -2202,6 +2237,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     pasar: { name: 'Pasar & Kuliner', look: V(PASAR.x, 0.8, PASAR.z + 1.4), dist: 15 },
     pemancingan: { name: 'Tempat Pemancingan', look: V(SEL.x + 1.4, 0.8, SEL.z + 1.4), dist: 11 },
     kampung: { name: 'Kampung Penduduk', look: V(NORTH.x, 0.8, NORTH.z + 1.5), dist: 15 },
+    ...(typeof DESA !== 'undefined' ? { desa: { name: 'Desa Tani', look: V(DESA.cx, 0.5, DESA.z0 - 9), dist: 22 } } : {}),
   };
   // fixed work spots
   const SPOTS = {
@@ -2428,13 +2464,14 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
   const OBST = [...HOUSES.map(h => [h.position.x, h.position.z + 0.2, 1.55]), [WG.position.x, WG.position.z, 1.8], [RM.position.x, RM.position.z, 2.1], ...KAVLING.map(k => [k.position.x, k.position.z, 1.9]), [PASAR.x + 10.9, PASAR.z + 0.2, 0.3], [PASAR.x + 10.9, PASAR.z + 2.0, 0.3], ...LAPAK.map(l => [l.g.position.x, l.g.position.z + 0.1, 0.45]), [sign.position.x, sign.position.z, 0.6], [-1.6, -3.2, 2.2]];
   const walkable = (x, z) => {
     for (const [ox, oz, r] of OBST) if ((x - ox) ** 2 + (z - oz) ** 2 < r * r) return false;
+    if (typeof desaBlocked === 'function' && desaBlocked(x, z)) return false;
     const y = hAt(x, z);
     return y > SAND - 0.08 && y < GRASS + 0.25;
   };
   const pathOK = (a, b) => { const n = Math.max(2, Math.ceil(Math.hypot(b.x - a.x, b.z - a.z) / 0.3)); for (let k = 1; k <= n; k++) { const x = lerp(a.x, b.x, k / n), z = lerp(a.z, b.z, k / n); if (!walkable(x, z)) return false; } return true; };
   // walking network over the whole island (so residents can travel anywhere)
   const NODES = [];
-  for (let z = HM.z0; z < HM.z0 + 39; z += 1.8) for (let x = HM.x0; x < HM.x0 + 50; x += 1.8) {
+  for (let z = HM.z0; z < HM.z0 + HM.D; z += 1.8) for (let x = HM.x0; x < HM.x0 + HM.W; x += 1.8) {
     const ok = [[0, 0], [0.4, 0], [-0.4, 0], [0, 0.4], [0, -0.4]].every(([a, b]) => walkable(x + a, z + b));
     if (ok) NODES.push({ p: V(x, 0, z), n: [] });
   }
@@ -2446,6 +2483,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     if (prev[to] === -2) return null; const out = []; for (let c = to; c !== -1; c = prev[c]) out.unshift(NODES[c].p.clone()); return out;
   };
   const zoneAt = p => {
+    if (typeof DESA !== 'undefined' && p.x > DESA.x0 && p.x < DESA.x0 + DESA.W && p.z < DESA.z0 - 0.3 && p.z > DESA.z0 - DESA.D && !(p.x > -7.5 && p.z > -21)) return 'desa';
     if (((p.x - PASAR.x) / (PASAR_S.x * 1.1)) ** 2 + ((p.z - PASAR.z) / (PASAR_S.z * 1.1)) ** 2 < 1) return 'pasar';
     if ((p.x - NORTH.x) ** 2 + (p.z - NORTH.z) ** 2 < (NORTH_R + 1.6) ** 2) return 'kampung';
     if ((p.x - SEL.x) ** 2 + (p.z - SEL.z) ** 2 < 4.6 ** 2) return 'pemancingan';
@@ -2493,6 +2531,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     const dt = Math.min(0.1, t - simLast); simLast = t;
     for (const e of ENT) {
       const S = e.sim, root = e.m.root, pos = root.position;
+      if (S.manual) { S.bub.visible = false; continue; }
       if (e === selected) { S.st = 'idle'; S.until = t + 2; S.partner = null; S.path = []; S.bub.visible = false; S.yaw = turn(S.yaw, angTo(pos, camera.position), dt * 4); }
       else if (S.st === 'idle' && t > S.until && S.radius > 0) {
         const r = Math.random();
@@ -2601,6 +2640,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
     const dtBT = Math.min(0.1, t - (window.__lt || t)); window.__lt = t;
     simulate(t); simBT(t, dtBT);
+    if (window.__gameTick) window.__gameTick(t, dtBT, now);
     if (window.__life) window.__life(t);
 
     if (fly) {
@@ -2617,5 +2657,569 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     if (!window.__REC) requestAnimationFrame(frame);
   };
   if (!window.__REC) requestAnimationFrame(frame); else window.__recStep = (tt) => frame(t0 + tt * 1000);
-  window.__web = { ENT, select, flyTo, controls, NODES, HM, hAt };
+  window.__web = { ENT, select, flyTo, controls, NODES, HM, hAt, groundY, walkable, zoneAt, lookOf, smooth, toast, find, norm, card, get selected() { return selected; }, ZONES };
+}
+
+// ================= GAME "KEBUNKU": kebun & ternak warga (Harvest Moon style) =================
+{
+  const W = window.__web; if (!W || typeof DESA === 'undefined') throw new Error('game needs web + desa');
+  const $ = id => document.getElementById(id);
+  const CFG = window.PULAU_GAME || {};
+
+  // ---------------- data ----------------
+  const CROPS = {
+    lobak:    { n: 'Lobak',    e: '🥕', lv: 1, seed: 10,  hours: 2,  yield: 1, price: 25,  col: 0xf5f5f4 },
+    tomat:    { n: 'Tomat',    e: '🍅', lv: 1, seed: 20,  hours: 6,  yield: 3, price: 18,  col: 0xef4444 },
+    jagung:   { n: 'Jagung',   e: '🌽', lv: 2, seed: 35,  hours: 10, yield: 2, price: 45,  col: 0xfacc15 },
+    cabai:    { n: 'Cabai',    e: '🌶️', lv: 2, seed: 30,  hours: 8,  yield: 4, price: 20,  col: 0xdc2626 },
+    terong:   { n: 'Terong',   e: '🍆', lv: 3, seed: 45,  hours: 12, yield: 3, price: 35,  col: 0x7e22ce },
+    semangka: { n: 'Semangka', e: '🍉', lv: 4, seed: 120, hours: 24, yield: 1, price: 320, col: 0x15803d },
+  };
+  const ANIMALS = {
+    ayam:    { n: 'Ayam',    e: '🐔', lv: 1, price: 250,  prod: 'telur',  prodN: 'Telur',       pe: '🥚', pp: 40,  gold: 'telur_emas', goldN: 'Telur Emas', gp: 130 },
+    bebek:   { n: 'Bebek',   e: '🦆', lv: 2, price: 400,  prod: 'telur_bebek', prodN: 'Telur Bebek', pe: '🥚', pp: 60, gold: 'telur_emas', goldN: 'Telur Emas', gp: 130 },
+    kambing: { n: 'Kambing', e: '🐐', lv: 4, price: 1100, prod: 'susu_kambing', prodN: 'Susu Kambing', pe: '🥛', pp: 110, gold: 'susu_premium', goldN: 'Susu Premium', gp: 300 },
+    sapi:    { n: 'Sapi',    e: '🐄', lv: 5, price: 1800, prod: 'susu',   prodN: 'Susu Sapi',   pe: '🥛', pp: 150, gold: 'susu_premium', goldN: 'Susu Premium', gp: 300 },
+  };
+  const NAMES = ['Ciko', 'Momo', 'Bento', 'Kiki', 'Gendut', 'Putih', 'Belang', 'Upin', 'Ipin', 'Mimi', 'Jalu', 'Bolang', 'Cemong', 'Dodo', 'Lala', 'Unyil'];
+  const ITEMS = { // sellable goods
+    telur: { n: 'Telur', e: '🥚', price: 40 }, telur_bebek: { n: 'Telur Bebek', e: '🥚', price: 60 }, telur_emas: { n: 'Telur Emas', e: '🌟', price: 130 },
+    susu_kambing: { n: 'Susu Kambing', e: '🥛', price: 110 }, susu: { n: 'Susu Sapi', e: '🥛', price: 150 }, susu_premium: { n: 'Susu Premium', e: '✨', price: 300 },
+  };
+  Object.entries(CROPS).forEach(([k, c]) => ITEMS[k] = { n: c.n, e: c.e, price: c.price });
+  const ROOFS = [0xc2410c, 0x1d4ed8, 0x15803d, 0x7c3aed, 0xdb2777, 0x0f766e, 0xca8a04, 0x111827];
+  const SHOP = [
+    ...Object.entries(CROPS).map(([k, c]) => ({ id: 'seed_' + k, n: 'Benih ' + c.n, e: c.e, price: c.seed, lv: c.lv, d: `Panen ${c.hours < 24 ? c.hours + ' jam' : c.hours / 24 + ' hari'} · hasil ${c.yield}×` })),
+    { id: 'pakan', n: 'Pakan Ternak ×5', e: '🌾', price: 40, lv: 1, d: 'Untuk memberi makan hewan' },
+    { id: 'esteh', n: 'Es Teh Jumbo', e: '🧋', price: 60, lv: 1, d: '+30 energi (dari lapak @nindriluvita7)' },
+    ...Object.entries(ANIMALS).map(([k, a]) => ({ id: 'animal_' + k, n: a.n, e: a.e, price: a.price, lv: a.lv, d: `Hasil: ${a.prodN} tiap hari` })),
+    { id: 'barn2', n: 'Kandang Sedang (4 hewan)', e: '🏚️', price: 900, lv: 2, d: 'Muat 4 hewan' },
+    { id: 'barn3', n: 'Kandang Besar (6 hewan)', e: '🏠', price: 2800, lv: 4, d: 'Muat 6 hewan' },
+    { id: 'field4', n: 'Perluas Ladang 4×4', e: '🟫', price: 1500, lv: 3, d: '16 petak tanah' },
+    { id: 'roof', n: 'Cat Atap Rumah', e: '🎨', price: 250, lv: 1, d: 'Ganti warna atap' },
+    { id: 'fence', n: 'Pagar Kayu', e: '🪵', price: 450, lv: 2, d: 'Pagar keliling kebun' },
+    { id: 'garden', n: 'Taman Bunga', e: '🌷', price: 600, lv: 3, d: 'Bunga di depan rumah' },
+  ];
+  const ENERGY = { till: 4, plant: 2, water: 2, harvest: 1, feed: 2, pet: 1, collect: 1, clear: 2 };
+  const DAILY_POOL = [
+    { id: 'water', t: 'Siram tanaman', n: 8 }, { id: 'harvest', t: 'Panen hasil kebun', n: 4 }, { id: 'feed', t: 'Beri makan ternak', n: 2 },
+    { id: 'pet', t: 'Elus hewan', n: 2 }, { id: 'till', t: 'Cangkul tanah', n: 4 }, { id: 'sell', t: 'Jual hasil senilai 150 koin', n: 150 },
+    { id: 'plant', t: 'Tanam benih', n: 4 }, { id: 'collect', t: 'Ambil telur / susu', n: 2 },
+  ];
+  const WEEKLY_POOL = [
+    { id: 'harvest_tomat', t: 'Panen 15 tomat', n: 15, r: 350 }, { id: 'harvest', t: 'Panen 40 hasil kebun', n: 40, r: 450 },
+    { id: 'collect', t: 'Kumpulkan 12 telur / susu', n: 12, r: 450 }, { id: 'sell', t: 'Jual hasil senilai 1.500 koin', n: 1500, r: 400 },
+    { id: 'water', t: 'Siram 60 kali', n: 60, r: 350 }, { id: 'pet', t: 'Elus hewan 20 kali', n: 20, r: 350 },
+    { id: 'harvest_jagung', t: 'Panen 8 jagung', n: 8, r: 450, lv: 2 }, { id: 'harvest_semangka', t: 'Panen 3 semangka', n: 3, r: 600, lv: 4 },
+    { id: 'days', t: 'Main 5 hari minggu ini', n: 5, r: 500 }, { id: 'feed', t: 'Beri makan ternak 20 kali', n: 20, r: 400 },
+    { id: 'plant', t: 'Tanam 30 benih', n: 30, r: 350 },
+  ];
+  const WEEK_BONUS = 800;
+
+  // ---------------- time (WIB) ----------------
+  const WIB = 7 * 3600e3;
+  const dayKey = ts => new Date(ts + WIB).toISOString().slice(0, 10);
+  const dayEnd = ts => { const d = new Date(ts + WIB); d.setUTCHours(24, 0, 0, 0); return d.getTime() - WIB; };
+  const daysBetween = (a, b) => Math.round((Date.parse(b) - Date.parse(a)) / 864e5);
+  const weekKey = ts => { const d = new Date(ts + WIB); const day = (d.getUTCDay() + 6) % 7; d.setUTCDate(d.getUTCDate() - day + 3);
+    const y = d.getUTCFullYear(), j1 = new Date(Date.UTC(y, 0, 4)); const wk = 1 + Math.round(((d - j1) / 864e5 - 3 + ((j1.getUTCDay() + 6) % 7)) / 7); return `${y}-W${String(wk).padStart(2, '0')}`; };
+  const seeded = str => { let h = 2166136261; for (const c of str) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return rnd((h >>> 0) % 2147483646 + 1); };
+  const pickN = (pool, n, r) => { const a = pool.slice(); const out = []; while (out.length < n && a.length) out.push(a.splice(Math.floor(r() * a.length), 1)[0]); return out; };
+
+  // ---------------- backend ----------------
+  const api = CFG.url && CFG.key ? {
+    online: true,
+    async rpc(fn, body) {
+      const r = await fetch(`${CFG.url.replace(/\/$/, '')}/rest/v1/rpc/${fn}`, { method: 'POST', headers: { apikey: CFG.key, Authorization: `Bearer ${CFG.key}`, 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) });
+      if (!r.ok) throw new Error('Server ' + r.status); return r.json();
+    },
+  } : { // local test mode (one device only)
+    online: false,
+    db() { try { return JSON.parse(localStorage.getItem('pn_mock_farms') || '{}'); } catch { return {}; } },
+    put(d) { try { localStorage.setItem('pn_mock_farms', JSON.stringify(d)); } catch {} },
+    async rpc(fn, b) {
+      const d = this.db();
+      if (fn === 'farm_list') return Object.entries(d).map(([u, r]) => ({ username: u, ...r })).sort((a, b) => a.created_at.localeCompare(b.created_at));
+      const r = d[b.p_user];
+      if (fn === 'farm_login') { if (!r) { d[b.p_user] = { pin: b.p_pin, state: {}, coins: 0, level: 1, hearts: 0, harvests: 0, missions_done: 0, created_at: new Date().toISOString() }; this.put(d); return { ok: true, new: true, state: {} }; }
+        return r.pin === b.p_pin ? { ok: true, state: r.state } : { ok: false, err: 'PIN salah' }; }
+      if (fn === 'farm_save') { if (!r || r.pin !== b.p_pin) return { ok: false, err: 'PIN salah' }; Object.assign(r, { state: b.p_state, coins: b.p_coins, level: b.p_level, hearts: b.p_hearts, harvests: b.p_harvests, week_key: b.p_week, missions_done: b.p_missions, updated_at: new Date().toISOString() }); this.put(d); return { ok: true }; }
+    },
+  };
+
+  // ---------------- state ----------------
+  const newState = () => ({
+    v: 1, coins: 300, xp: 0, level: 1, energy: 100, eDay: null, field: 3,
+    tiles: Array.from({ length: 16 }, () => ({ s: 'grass' })),
+    animals: [], barn: 2, inv: { seed_lobak: 6, seed_tomat: 3, pakan: 5 },
+    house: { roof: 0, fence: false, garden: false },
+    streak: 0, lastDay: null, days: [],
+    daily: null, weekly: null, badges: [], stats: { harvest: 0, collect: 0, sold: 0 }, seed: 'lobak',
+  });
+  const xpNeed = lv => 60 + lv * 45;
+  const maxEnergy = s => 100 + (s.level - 1) * 5;
+  const tilesIdx = s => { const out = []; for (let r = 0; r < s.field; r++) for (let c = 0; c < s.field; c++) out.push(r * 4 + c); return out; };
+
+  function ensureMissions(s, now) {
+    const dk = dayKey(now), wk = weekKey(now);
+    if (!s.daily || s.daily.day !== dk) {
+      const r = seeded('d' + dk);
+      s.daily = { day: dk, list: pickN(DAILY_POOL, 3, r).map(m => ({ id: m.id, p: 0, done: false })), };
+    }
+    if (!s.weekly || s.weekly.week !== wk) {
+      const r = seeded('w' + wk);
+      const pool = WEEKLY_POOL.filter(m => !m.lv || m.lv <= Math.max(2, s.level));
+      s.weekly = { week: wk, list: pickN(pool, 3, r).map(m => ({ id: m.id, p: 0, done: false })), bonus: false };
+    }
+  }
+  // advance everything to "now": growth, withering, animals, new day
+  function tickState(s, now, msgs) {
+    const dk = dayKey(now);
+    if (s.lastDay !== dk) { // new day
+      if (s.lastDay) {
+        const gap = daysBetween(s.lastDay, dk);
+        s.streak = gap === 1 ? s.streak + 1 : 1;
+        s.animals.forEach(a => { const miss = a.fed ? Math.max(0, daysBetween(a.fed, dk) - 1) : gap; if (miss > 0) a.h = Math.max(0, a.h - miss); });
+      } else s.streak = 1;
+      s.lastDay = dk;
+      const bonus = Math.min(200, 20 * s.streak);
+      s.coins += bonus; if (msgs) msgs.push(`🌅 Hari baru! Bonus login ${s.streak} hari beruntun: +${bonus} koin`);
+      const wk = weekKey(now); s.days = (s.days || []).filter(d => weekKey(Date.parse(d + 'T12:00:00+07:00')) === wk); if (!s.days.includes(dk)) s.days.push(dk);
+    }
+    if (s.eDay !== dk) { s.energy = maxEnergy(s); s.eDay = dk; }
+    ensureMissions(s, now);
+    const dm = s.weekly.list.find(m => m.id === 'days'); if (dm) setProg(s, dm, s.days.length, msgs, true);
+    for (const t of s.tiles) {
+      if (t.s !== 'crop') continue;
+      const u = t.u || now;
+      if (t.wt) { const a = Math.max(u, t.wt), b = Math.min(now, dayEnd(t.wt)); if (b > a) t.g = (t.g || 0) + (b - a) / 3600e3; }
+      t.u = now;
+      const lastW = t.wt ? dayKey(t.wt) : dayKey(t.p || now);
+      if (daysBetween(lastW, dk) >= 3 && !isReady(t)) { t.s = 'dead'; }
+    }
+  }
+  const isReady = t => t.s === 'crop' && (t.g || 0) >= CROPS[t.c].hours;
+  const wateredToday = (t, now) => t.wt && dayKey(t.wt) === dayKey(now);
+
+  function setProg(s, m, val, msgs, absolute) {
+    const def = (s.daily.list.includes(m) ? DAILY_POOL : WEEKLY_POOL).find(d => d.id === m.id);
+    if (m.done) return;
+    m.p = absolute ? val : m.p + val;
+    if (m.p >= def.n) {
+      m.p = def.n; m.done = true;
+      const isW = s.weekly.list.includes(m); const rew = isW ? def.r : 50;
+      s.coins += rew; addXP(s, isW ? 60 : 15, msgs);
+      if (msgs) msgs.push(`🎯 Misi ${isW ? 'mingguan' : 'harian'} selesai: ${def.t} (+${rew} koin)`);
+      if (isW && !s.weekly.bonus && s.weekly.list.every(x => x.done)) {
+        s.weekly.bonus = true; s.coins += WEEK_BONUS; s.badges = [...(s.badges || []), s.weekly.week];
+        if (msgs) msgs.push(`🏅 Semua misi mingguan selesai! +${WEEK_BONUS} koin & lencana WARGA TELADAN`);
+      }
+    }
+  }
+  function emit(s, ev, amt = 1, extra, msgs) {
+    for (const m of [...s.daily.list, ...s.weekly.list]) {
+      if (m.id === ev || (extra && m.id === ev + '_' + extra)) setProg(s, m, amt, msgs);
+    }
+  }
+  function addXP(s, n, msgs) {
+    s.xp += n;
+    while (s.xp >= xpNeed(s.level)) { s.xp -= xpNeed(s.level); s.level++; if (msgs) msgs.push(`⭐ Naik ke Level ${s.level}! Barang baru terbuka di toko.`); }
+  }
+  const heartsTotal = s => s.animals.reduce((a, b) => a + b.h, 0);
+
+  // ---------------- 3D farm models ----------------
+  const FARMS = new Map(); // username -> view
+  const M = c => mat(c);
+  const box = (w, h, d, c, x, y, z, sh = true) => mesh(new THREE.BoxGeometry(w, h, d), M(c), x, y, z, sh);
+  const L = { house: V(-1.35, 0, -1.45), field: V(0.9, 0, -0.35), barn: V(-1.35, 0, 1.15), sign: V(0.9, 0, 2.05) };
+  const TS = 0.6;
+  const tilePos = (i) => { const r = Math.floor(i / 4), c = i % 4; return V(L.field.x + (c - 1.5) * TS, 0, L.field.z + (r - 1.5) * TS); };
+  function cropMesh(t, now) {
+    const g = new THREE.Group(); const c = CROPS[t.c];
+    if (t.s === 'dead') { for (let k = 0; k < 3; k++) { const s = mesh(new THREE.ConeGeometry(0.04, 0.22, 4), M(0x7c5a32), (k - 1) * 0.1, 0.11, 0, false); s.rotation.z = (k - 1) * 0.5; g.add(s); } return g; }
+    const k = Math.min(1, (t.g || 0) / c.hours), ready = k >= 1;
+    const leaf = M(0x3f9d3a);
+    if (k < 0.2) { g.add(mesh(new THREE.SphereGeometry(0.05, 6, 4), leaf, 0, 0.04, 0, false)); return g; }
+    const h = 0.15 + 0.35 * k;
+    if (t.c === 'jagung') { g.add(mesh(new THREE.CylinderGeometry(0.025, 0.03, h * 1.6, 5), leaf, 0, h * 0.8, 0)); for (const s of [-1, 1]) { const l = mesh(new THREE.ConeGeometry(0.04, 0.3, 3), leaf, s * 0.07, h * 0.9, 0, false); l.rotation.z = s * 0.9; g.add(l); }
+      if (ready) g.add(mesh(new THREE.CylinderGeometry(0.04, 0.035, 0.16, 6), M(c.col), 0.05, h * 1.1, 0.03)); return g; }
+    if (t.c === 'semangka') { for (let q = 0; q < 4; q++) { const l = mesh(new THREE.SphereGeometry(0.07, 5, 4), leaf, Math.cos(q * 1.6) * 0.12, 0.05, Math.sin(q * 1.6) * 0.12, false); l.scale.y = 0.4; g.add(l); }
+      if (k > 0.5) { const w = mesh(new THREE.SphereGeometry(ready ? 0.17 : 0.1, 10, 8), M(c.col), 0, ready ? 0.15 : 0.09, 0); w.scale.set(1.15, 0.9, 1); g.add(w); } return g; }
+    if (t.c === 'lobak') { for (let q = 0; q < 3; q++) { const l = mesh(new THREE.ConeGeometry(0.035, h, 3), leaf, (q - 1) * 0.05, h / 2 + 0.05, 0, false); l.rotation.z = (q - 1) * 0.35; g.add(l); }
+      if (ready) g.add(mesh(new THREE.SphereGeometry(0.08, 8, 6), M(c.col), 0, 0.05, 0)); return g; }
+    // bushes: tomat, cabai, terong
+    const b = mesh(new THREE.SphereGeometry(0.1 + 0.08 * k, 7, 5), leaf, 0, 0.08 + h * 0.5, 0); b.scale.y = 1.3; g.add(b);
+    g.add(mesh(new THREE.CylinderGeometry(0.012, 0.012, h + 0.1, 4), M(0x8b5a2b), 0.1, (h + 0.1) / 2, 0, false));
+    if (ready) for (let q = 0; q < (t.c === 'cabai' ? 5 : 3); q++) {
+      const a = q * 2.1, fx = Math.cos(a) * 0.1, fz = Math.sin(a) * 0.1 + 0.04, fy = 0.12 + h * 0.4 + (q % 2) * 0.08;
+      const f = t.c === 'cabai' ? mesh(new THREE.ConeGeometry(0.02, 0.09, 5), M(c.col), fx, fy, fz, false) : mesh(new THREE.SphereGeometry(t.c === 'terong' ? 0.045 : 0.05, 7, 5), M(c.col), fx, fy, fz, false);
+      if (t.c === 'terong') f.scale.y = 1.7; if (t.c === 'cabai') f.rotation.x = Math.PI; g.add(f);
+    }
+    return g;
+  }
+  function animalMesh(type) {
+    const g = new THREE.Group(), body = new THREE.Group(); g.add(body);
+    if (type === 'ayam' || type === 'bebek') {
+      const col = type === 'ayam' ? 0xfafafa : 0xfef3c7;
+      const b = mesh(new THREE.SphereGeometry(0.13, 8, 6), M(col), 0, 0.17, 0); b.scale.set(1, 0.9, 1.2); body.add(b);
+      const hd = mesh(new THREE.SphereGeometry(0.08, 8, 6), M(col), 0, 0.3, 0.1); body.add(hd);
+      body.add(mesh(new THREE.ConeGeometry(0.03, 0.07, 4), M(0xf59e0b), 0, 0.29, 0.19, false)).rotation.x = Math.PI / 2;
+      if (type === 'ayam') body.add(mesh(new THREE.BoxGeometry(0.02, 0.06, 0.07), M(0xdc2626), 0, 0.39, 0.1, false));
+      else body.children[2].scale.set(1.8, 1, 0.8);
+      for (const s of [-1, 1]) body.add(mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.08, 4), M(0xf59e0b), s * 0.05, 0.04, 0, false));
+      for (const s of [-1, 1]) body.add(mesh(new THREE.SphereGeometry(0.015, 5, 4), M(0x111111), s * 0.045, 0.32, 0.16, false));
+      g.userData.h = 0.4;
+    } else {
+      const sapi = type === 'sapi', col = sapi ? 0xffffff : 0xe7e5e4, sc = sapi ? 1 : 0.8;
+      const b = mesh(new THREE.BoxGeometry(0.3 * sc, 0.26 * sc, 0.5 * sc), M(col), 0, 0.34 * sc, 0); body.add(b);
+      if (sapi) for (const [x, y, z] of [[0.1, 0.4, 0.05], [-0.08, 0.36, -0.12], [0.06, 0.3, -0.18]]) body.add(box(0.12, 0.1, 0.12, 0x111111, x * 1.01, y, z, false));
+      const hd = box(0.2 * sc, 0.2 * sc, 0.2 * sc, col, 0, 0.45 * sc, 0.3 * sc); body.add(hd);
+      body.add(box(0.14 * sc, 0.09 * sc, 0.06 * sc, sapi ? 0xf9a8d4 : 0xd6d3d1, 0, 0.41 * sc, 0.41 * sc, false));
+      for (const s of [-1, 1]) { const h = mesh(new THREE.ConeGeometry(0.025, 0.1, 4), M(0xe7e5e4), s * 0.07 * sc, 0.6 * sc, 0.28 * sc, false); h.rotation.z = -s * 0.4; body.add(h); }
+      for (const [x, z] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) body.add(box(0.06 * sc, 0.22 * sc, 0.06 * sc, col, x * 0.1 * sc, 0.11 * sc, z * 0.17 * sc));
+      if (!sapi) body.add(mesh(new THREE.ConeGeometry(0.03, 0.09, 4), M(0xd6d3d1), 0, 0.33 * sc, 0.42 * sc, false)).rotation.x = Math.PI; // beard
+      for (const s of [-1, 1]) body.add(mesh(new THREE.SphereGeometry(0.018, 5, 4), M(0x111111), s * 0.06 * sc, 0.49 * sc, 0.4 * sc, false));
+      g.userData.h = 0.75 * sc;
+    }
+    return g;
+  }
+  function signTex(u) {
+    return canvasTex(512, 128, (x, w, h) => { x.fillStyle = '#fff8e6'; x.fillRect(0, 0, w, h); x.strokeStyle = '#8b5a2b'; x.lineWidth = 10; x.strokeRect(5, 5, w - 10, h - 10);
+      let fs = 56; x.font = `800 ${fs}px Poppins`; while (x.measureText('@' + u).width > w - 30 && fs > 24) { fs -= 4; x.font = `800 ${fs}px Poppins`; }
+      x.fillStyle = '#3a2300'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText('@' + u, w / 2, h / 2 + 2); });
+  }
+  function buildFarm(u, idx) {
+    const root = new THREE.Group(); scene.add(root); root.position.copy(desaPlot(idx));
+    DESA_TAKEN.add(idx);
+    // ground patch + path
+    root.add(box(DESA.PW - 0.5, 0.06, DESA.PD - 0.8, 0x7ccf5a, 0, 0.0, -0.1, false));
+    // house
+    const hs = new THREE.Group(); hs.position.copy(L.house); root.add(hs);
+    hs.add(box(1.25, 0.85, 1.0, 0xe7cfa6, 0, 0.45, 0));
+    const sh = new THREE.Shape(); sh.moveTo(-0.78, 0); sh.lineTo(0.78, 0); sh.lineTo(0, 0.6); sh.closePath();
+    const rg = new THREE.ExtrudeGeometry(sh, { depth: 1.15, bevelEnabled: false }); rg.translate(0, 0, -0.575);
+    const roofM = M(ROOFS[0]); const roof = new THREE.Mesh(rg, roofM); roof.castShadow = true; roof.position.y = 0.88; hs.add(roof);
+    hs.add(box(0.28, 0.5, 0.03, 0x5b3a1e, -0.25, 0.3, 0.51, false)); hs.add(box(0.26, 0.22, 0.03, 0xbfe3ff, 0.3, 0.55, 0.51, false));
+    const garden = new THREE.Group(); hs.add(garden); garden.position.set(0, 0, 0.75);
+    [0xf472b6, 0xfacc15, 0xef4444, 0xa855f7, 0xffffff].forEach((c, k) => { garden.add(mesh(new THREE.SphereGeometry(0.06, 6, 5), M(c), -0.5 + k * 0.25, 0.12, 0, false)); garden.add(mesh(new THREE.CylinderGeometry(0.01, 0.01, 0.12, 4), M(0x3f9d3a), -0.5 + k * 0.25, 0.06, 0, false)); });
+    // field tiles
+    const tiles = [];
+    for (let i = 0; i < 16; i++) {
+      const tp = tilePos(i); const tm = box(TS - 0.05, 0.08, TS - 0.05, 0x8b5a2b, tp.x, 0.04, tp.z, false);
+      tm.userData.farmTile = { u, i }; root.add(tm); tiles.push({ m: tm, crop: null, key: '' });
+    }
+    // barn: fence + shed
+    const barn = new THREE.Group(); barn.position.copy(L.barn); root.add(barn);
+    const wd = M(0x9a6a3a);
+    for (const [x, z, w, d] of [[0, -0.62, 1.95, 0.04], [0, 0.62, 1.95, 0.04], [-0.97, 0, 0.04, 1.24], [0.97, 0, 0.04, 1.24]]) { barn.add(mesh(new THREE.BoxGeometry(w, 0.05, d), wd, x, 0.28, z, false)); barn.add(mesh(new THREE.BoxGeometry(w, 0.05, d), wd, x, 0.14, z, false)); }
+    for (const [x, z] of [[-0.97, -0.62], [0.97, -0.62], [-0.97, 0.62], [0.97, 0.62]]) barn.add(mesh(new THREE.BoxGeometry(0.07, 0.38, 0.07), wd, x, 0.19, z));
+    barn.add(box(0.7, 0.45, 0.4, 0xb45309, -0.6, 0.23, -0.4)); barn.add(box(0.8, 0.06, 0.5, 0x7f1d1d, -0.6, 0.48, -0.4));
+    // fence decor
+    const fence = new THREE.Group(); root.add(fence);
+    for (const [x, z, w, d] of [[0, -DESA.PD / 2 + 0.45, DESA.PW - 0.5, 0.04], [-DESA.PW / 2 + 0.25, -0.1, 0.04, DESA.PD - 1.1], [DESA.PW / 2 - 0.25, -0.1, 0.04, DESA.PD - 1.1]]) fence.add(mesh(new THREE.BoxGeometry(w, 0.05, d), wd, x, 0.3, z, false));
+    // sign
+    const sg = new THREE.Group(); sg.position.copy(L.sign); root.add(sg);
+    sg.add(mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.8, 5), wd, 0, 0.4, 0));
+    const sm = new THREE.MeshStandardMaterial({ map: signTex(u) }); sg.add(mesh(new THREE.BoxGeometry(1.2, 0.3, 0.04), [wd, wd, wd, wd, sm, wd], 0, 0.75, 0));
+    const badge = mesh(new THREE.SphereGeometry(0.09, 10, 8), new THREE.MeshStandardMaterial({ color: 0xfacc15, metalness: 0.6, roughness: 0.3, emissive: 0x7a5a00, emissiveIntensity: 0.3 }), 0.7, 0.75, 0.03, false); sg.add(badge);
+    const v = { u, idx, root, tiles, roofM, garden, fence, barn, badge, animals: [], aKey: '' };
+    FARMS.set(u, v); return v;
+  }
+  function renderFarm(v, s, now) {
+    v.roofM.color.setHex(ROOFS[s.house?.roof || 0]); v.garden.visible = !!s.house?.garden; v.fence.visible = !!s.house?.fence;
+    v.badge.visible = (s.badges || []).length > 0;
+    const act = new Set(tilesIdx(s));
+    v.tiles.forEach((T, i) => {
+      const t = s.tiles[i] || { s: 'grass' };
+      T.m.visible = act.has(i);
+      const col = t.s === 'grass' ? 0x6bbf4e : (t.s === 'crop' && wateredToday(t, now)) ? 0x4a2f17 : 0x8b5a2b;
+      T.m.material.color.setHex(col);
+      const k = t.s === 'crop' ? `${t.c}:${Math.min(4, Math.floor(Math.min(1, (t.g || 0) / CROPS[t.c].hours) * 4.999))}` : t.s === 'dead' ? 'dead' : '';
+      if (k !== T.key) {
+        if (T.crop) { v.root.remove(T.crop); T.crop = null; }
+        if (k && act.has(i)) { T.crop = cropMesh(t, now); T.crop.position.copy(tilePos(i)).add(V(0, 0.08, 0)); v.root.add(T.crop); }
+        T.key = k;
+      }
+    });
+    const ak = s.animals.map(a => a.t).join(',') + '|' + s.barn;
+    if (ak !== v.aKey) {
+      v.animals.forEach(a => v.barn.remove(a.g)); v.animals = [];
+      s.animals.forEach((a, j) => { const g = animalMesh(a.t); g.userData.farmAnimal = { u: v.u, j }; g.traverse(o => o.userData.farmAnimal = { u: v.u, j }); v.barn.add(g);
+        const x = -0.55 + (j % 3) * 0.55, z = 0.05 + Math.floor(j / 3) * 0.35; g.position.set(x + 0.2, 0, z); v.animals.push({ g, home: V(x + 0.2, 0, z), ph: j * 1.7, tgt: V(x + 0.2, 0, z) }); });
+      v.aKey = ak;
+    }
+  }
+  function animateFarms(t, dt) {
+    for (const v of FARMS.values()) v.animals.forEach((A, j) => {
+      const g = A.g, p = g.position;
+      if (p.distanceTo(A.tgt) < 0.03) { if (Math.random() < dt * 0.4) A.tgt.set(clamp(A.home.x + (Math.random() - 0.5) * 0.5, -0.8, 0.85), 0, clamp(A.home.z + (Math.random() - 0.5) * 0.5, -0.45, 0.5)); }
+      else { const d = A.tgt.clone().sub(p); const st = Math.min(d.length(), dt * 0.25); p.addScaledVector(d.normalize(), st); g.rotation.y = Math.atan2(d.x, d.z); }
+      g.children[0].position.y = Math.abs(Math.sin(t * 6 + A.ph)) * 0.02;
+      g.children[0].rotation.x = (Math.sin(t * 1.3 + A.ph) > 0.85) ? 0.35 : 0; // peck / graze
+    });
+  }
+
+  // ---------------- other players ----------------
+  let LIST = [];
+  async function refreshList() {
+    try { LIST = await api.rpc('farm_list'); } catch (e) { return; }
+    LIST.forEach((r, i) => {
+      if (i >= DESA.cols * DESA.rows) return;
+      let v = FARMS.get(r.username); if (!v) v = buildFarm(r.username, i);
+      const s = (ME && ME.u === r.username) ? ME.s : r.state;
+      if (s && s.tiles) renderFarm(v, s, Date.now());
+    });
+  }
+  refreshList(); setInterval(refreshList, 60000);
+
+  // ---------------- UI ----------------
+  const css = document.createElement('style'); css.textContent = `
+  #gHud{position:fixed;left:12px;right:12px;top:10px;display:none;gap:8px;align-items:center;z-index:5;font-family:Poppins,sans-serif}
+  body.game #gHud{display:flex} body.game #top, body.game #bottom, body.game #upd{display:none}
+  .gchip{background:rgba(255,255,255,.95);border-radius:12px;padding:6px 10px;box-shadow:0 3px 10px rgba(0,0,0,.15);font-weight:800;font-size:13px;display:flex;align-items:center;gap:5px;white-space:nowrap}
+  #gEn{flex:1;min-width:80px} #gEnBar{flex:1;height:9px;border-radius:6px;background:#e5e7eb;overflow:hidden} #gEnBar i{display:block;height:100%;background:linear-gradient(90deg,#22c55e,#a3e635)}
+  #gBar{position:fixed;left:0;right:0;bottom:12px;display:none;justify-content:center;gap:6px;padding:0 8px;z-index:5}
+  body.gp #gBar, body.gp #gTip{display:none!important}
+  .gpanel{z-index:9}
+  #gExit{border:0;border-radius:12px;background:rgba(255,255,255,.95);width:36px;height:34px;font:800 15px Poppins;box-shadow:0 3px 10px rgba(0,0,0,.15)}
+  #bottom{flex-wrap:wrap} #btnPlay{flex:1 1 auto;font-size:15px!important;padding:12px!important} #bottom .brk{flex-basis:100%;height:0}
+  body.game #gBar{display:flex}
+  #gBar button{border:0;border-radius:14px;background:#fff;padding:9px 10px;font:700 12.5px Poppins,sans-serif;white-space:nowrap;box-shadow:0 4px 12px rgba(0,0,0,.18);color:#14181f}
+  #gBar button.pri{background:#16a34a;color:#fff} #gBar .dot{display:inline-block;min-width:16px;height:16px;border-radius:9px;background:#ef4444;color:#fff;font-size:10px;line-height:16px;margin-left:4px}
+  #btnPlay{background:#16a34a!important;color:#fff!important}
+  .gpanel .pb{padding:6px 14px 18px}
+  .gitem{display:flex;align-items:center;gap:10px;padding:9px 4px;border-bottom:1px solid #f0ede6}
+  .gitem .ic{font-size:26px;width:36px;text-align:center} .gitem .tx{flex:1;min-width:0} .gitem b{display:block;font-size:14px} .gitem span{font-size:12px;color:#5b6472}
+  .gitem button{border:0;border-radius:10px;padding:7px 11px;font:700 12.5px Poppins,sans-serif;background:#16a34a;color:#fff} .gitem button:disabled{background:#d1d5db;color:#6b7280}
+  .gmis{padding:9px 2px;border-bottom:1px solid #f0ede6} .gmis b{font-size:13.5px} .gmis .bar{height:8px;border-radius:5px;background:#eef2f7;margin-top:5px;overflow:hidden} .gmis .bar i{display:block;height:100%;background:#f59e0b}
+  .gmis.done b{color:#16a34a} .gmis.done .bar i{background:#16a34a}
+  .gtabs{display:flex;gap:6px;margin:6px 0 4px} .gtabs button{border:0;border-radius:20px;padding:6px 12px;font:700 12.5px Poppins,sans-serif;background:#f3f4f6} .gtabs button.on{background:#14181f;color:#fff}
+  #gLogin .how input{width:100%;height:46px;border:2px solid #e5e7eb;border-radius:12px;padding:0 12px;font:600 16px Poppins,sans-serif;margin:6px 0 10px;box-sizing:border-box}
+  #gLogin .how button.go{width:100%;height:46px;border:0;border-radius:12px;background:#16a34a;color:#fff;font:800 15px Poppins,sans-serif}
+  #gTip{position:fixed;left:50%;bottom:74px;transform:translateX(-50%);background:rgba(20,24,31,.88);color:#fff;font:600 12.5px Poppins,sans-serif;padding:7px 12px;border-radius:12px;display:none;z-index:5;max-width:calc(100% - 40px);text-align:center}
+  body.game #gTip{display:block}
+  #gFloat{position:fixed;inset:0;pointer-events:none;z-index:6;overflow:hidden} #gFloat div{position:absolute;font:800 15px Poppins,sans-serif;color:#fff;text-shadow:0 2px 4px rgba(0,0,0,.6);transition:transform 1.1s ease-out,opacity 1.1s;white-space:nowrap}
+  `; document.head.appendChild(css);
+  const ui = document.createElement('div'); ui.innerHTML = `
+  <div id="gHud"><div class="gchip" id="gLv">Lv 1</div><div class="gchip">🪙 <span id="gCoin">0</span></div><div class="gchip" id="gEn">⚡<div id="gEnBar"><i></i></div><span id="gEnT">100</span></div><button id="gExit">✕</button></div>
+  <div id="gTip">Ketuk tanah untuk mencangkul · ketuk lagi untuk menanam</div>
+  <div id="gBar"><button id="gSeed" class="pri">🌱 Benih</button><button id="gShop">🏪 Toko</button><button id="gBag">🎒 Tas</button><button id="gMis">🎯 Misi<span class="dot" id="gMisDot" style="display:none">!</span></button><button id="gRank">🏆</button></div>
+  <div id="gFloat"></div>
+  <div class="panel gpanel" id="gLogin"><div class="ph"><h3>🌾 Main Kebunku</h3><button data-close>✕</button></div><div class="how">
+    Punya kebun & ternak sendiri di <b>Desa Tani</b>! Masukkan username IG kamu (harus sudah jadi warga) dan buat PIN 4–6 angka. PIN dipakai setiap kali main, jangan sampai lupa.
+    <input id="gU" placeholder="username IG kamu" autocomplete="off" autocapitalize="off"><input id="gP" placeholder="PIN 4–6 angka" inputmode="numeric" type="password" maxlength="6">
+    <button class="go" id="gGo">Masuk / Klaim Kebun</button><div id="gErr" style="color:#dc2626;font-weight:700;margin-top:8px;font-size:13px"></div>
+    <div style="font-size:12px;color:#6b7280;margin-top:10px">${api.online ? '' : '⚠️ Mode uji: progres tersimpan di HP ini saja.'}</div></div></div>
+  <div class="panel gpanel" id="gP_seed"><div class="ph"><h3>🌱 Pilih Benih</h3><button data-close>✕</button></div><div class="pb" id="gSeedList"></div></div>
+  <div class="panel gpanel" id="gP_shop"><div class="ph"><h3>🏪 Toko Pasar Pulau</h3><button data-close>✕</button></div><div class="pb" id="gShopList"></div></div>
+  <div class="panel gpanel" id="gP_bag"><div class="ph"><h3>🎒 Tas & Jual</h3><button data-close>✕</button></div><div class="pb" id="gBagList"></div></div>
+  <div class="panel gpanel" id="gP_mis"><div class="ph"><h3>🎯 Misi</h3><button data-close>✕</button></div><div class="pb" id="gMisList"></div></div>
+  <div class="panel gpanel" id="gP_rank"><div class="ph"><h3>🏆 Papan Peringkat</h3><button data-close>✕</button></div><div class="pb"><div class="gtabs" id="gRankTabs"><button data-k="coins" class="on">🪙 Terkaya</button><button data-k="hearts">❤️ Peternak</button><button data-k="missions_done">🎯 Misi</button><button data-k="harvests">🧺 Panen</button></div><div id="gRankList"></div></div></div>`;
+  document.body.appendChild(ui);
+  const panels = ['gLogin', 'gP_seed', 'gP_shop', 'gP_bag', 'gP_mis', 'gP_rank'];
+  const openP = id => { panels.forEach(p => $(p).classList.toggle('on', p === id)); document.body.classList.add('gp'); };
+  const closeP = () => { panels.forEach(p => $(p).classList.remove('on')); document.body.classList.remove('gp'); };
+  ui.querySelectorAll('[data-close]').forEach(b => b.onclick = closeP);
+  // entry button
+  const playBtn = document.createElement('button'); playBtn.id = 'btnPlay'; playBtn.textContent = '🌾 Main Kebunku';
+  const GAME_ON = api.online || /[?&]test=1/.test(location.search);
+  if (GAME_ON) $('upd').style.bottom = '128px';
+  if (GAME_ON) { const brk = document.createElement('div'); brk.className = 'brk'; $('bottom').insertBefore(brk, $('bottom').firstChild); $('bottom').insertBefore(playBtn, brk); }
+  playBtn.onclick = () => { if (ME) enterGame(); else { openP('gLogin'); try { const c = JSON.parse(localStorage.getItem('pn_login') || 'null'); if (c) { $('gU').value = c.u; $('gP').value = c.p; } } catch {} } };
+
+  // ---------------- session ----------------
+  let ME = null, saveT = 0, dirty = false;
+  const fmt = n => n.toLocaleString('id-ID');
+  async function login() {
+    const u = W.norm($('gU').value), p = $('gP').value.trim();
+    $('gErr').textContent = '';
+    const ent = W.ENT.find(e => e.u.toLowerCase() === u);
+    if (!ent) { $('gErr').textContent = 'Username belum terdaftar. Komen JADI WARGA di reel @pulau.netizen dulu ya.'; return; }
+    if (!/^\d{4,6}$/.test(p)) { $('gErr').textContent = 'PIN harus 4–6 angka.'; return; }
+    $('gGo').disabled = true; $('gGo').textContent = 'Memuat…';
+    let r; try { r = await api.rpc('farm_login', { p_user: u, p_pin: p }); } catch (e) { r = { ok: false, err: 'Tidak bisa terhubung ke server. Coba lagi.' }; }
+    $('gGo').disabled = false; $('gGo').textContent = 'Masuk / Klaim Kebun';
+    if (!r.ok) { $('gErr').textContent = r.err || 'Gagal masuk'; return; }
+    try { localStorage.setItem('pn_login', JSON.stringify({ u, p })); } catch {}
+    const s = r.state && r.state.tiles ? r.state : newState();
+    ME = { u, p, s, ent };
+    const msgs = []; tickState(ME.s, Date.now(), msgs);
+    if (r.new || !r.state || !r.state.tiles) { ME.s.animals.push({ t: 'ayam', n: NAMES[Math.floor(Math.random() * NAMES.length)], h: 2, fed: null, pet: null, col: null }); msgs.unshift('🎉 Selamat datang di Desa Tani! Kamu dapat 300 koin, benih, pakan, dan seekor ayam.'); }
+    await refreshList();
+    let v = FARMS.get(u); if (!v) { const idx = Math.max(LIST.length, ...[...FARMS.values()].map(f => f.idx + 1), 0); v = buildFarm(u, idx); }
+    ME.v = v; renderFarm(v, ME.s, Date.now());
+    markDirty(); closeP(); enterGame(); msgs.forEach((m, i) => setTimeout(() => W.toast(m), i * 2600));
+  }
+  $('gGo').onclick = login; $('gP').addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
+  function enterGame() {
+    document.body.classList.add('game'); W.select(null);
+    const p = ME.v.root.position; W.flyTo(V(p.x - 0.1, 0.2, p.z + 0.2), 10.5, V(0.04, 1.35, 1));
+    const S = ME.ent.sim; S.manual = true; ME.ent.m.root.position.set(p.x + 0.9, p.y, p.z + 1.4); ME.walk = null; updateHUD();
+  }
+  $('gExit').onclick = () => { document.body.classList.remove('game'); closeP(); if (ME) { ME.ent.sim.manual = false; ME.ent.sim.st = 'idle'; } save(true); };
+  function markDirty() { dirty = true; clearTimeout(saveT); saveT = setTimeout(save, 2500); }
+  async function save(force) {
+    if (!ME || (!dirty && !force)) return; dirty = false;
+    const s = ME.s, w = s.weekly;
+    try { const r = await api.rpc('farm_save', { p_user: ME.u, p_pin: ME.p, p_state: s, p_coins: s.coins, p_level: s.level, p_hearts: heartsTotal(s), p_harvests: s.stats.harvest, p_week: w.week, p_missions: w.list.filter(m => m.done).length });
+      if (!r.ok) W.toast('⚠️ Gagal menyimpan: ' + (r.err || '')); } catch (e) { dirty = true; }
+  }
+  addEventListener('visibilitychange', () => { if (document.hidden) save(); });
+
+  function updateHUD() {
+    if (!ME) return; const s = ME.s;
+    $('gLv').textContent = `Lv ${s.level}`; $('gCoin').textContent = fmt(s.coins);
+    const me = maxEnergy(s); $('gEnBar').firstChild.style.width = `${100 * s.energy / me}%`; $('gEnT').textContent = s.energy;
+    $('gSeed').textContent = `${CROPS[s.seed]?.e || '🌱'} ${(s.inv['seed_' + s.seed] || 0)}`;
+    const anyDone = [...s.daily.list, ...s.weekly.list].some(m => !m.done);
+    $('gMisDot').style.display = anyDone ? 'inline-block' : 'none';
+  }
+  const floatTxt = (txt, wp) => {
+    const v = wp.clone().project(camera); const d = document.createElement('div'); d.textContent = txt;
+    d.style.left = ((v.x + 1) / 2 * innerWidth - 30) + 'px'; d.style.top = ((1 - v.y) / 2 * innerHeight - 20) + 'px'; $('gFloat').appendChild(d);
+    requestAnimationFrame(() => { d.style.transform = 'translateY(-50px)'; d.style.opacity = '0'; }); setTimeout(() => d.remove(), 1200);
+  };
+  const tip = t => $('gTip').textContent = t;
+
+  // ---------------- actions ----------------
+  function useEnergy(n) { const s = ME.s; if (s.energy < n) { W.toast('😮‍💨 Energimu habis. Istirahat sampai besok, atau minum Es Teh Jumbo dari toko.'); return false; } s.energy -= n; return true; }
+  function work(worldPos, dur = 0.7) { // walk my character next to the spot and swing
+    const me = ME.ent.m.root.position; const tgt = worldPos.clone().add(V(0, 0, 0.45)); tgt.y = ME.v.root.position.y;
+    ME.walk = { from: me.clone(), to: tgt, t0: performance.now(), d: Math.min(900, 250 + me.distanceTo(tgt) * 260), work: dur, look: worldPos.clone() };
+  }
+  function tapTile(i) {
+    const s = ME.s, t = s.tiles[i], now = Date.now(), wp = ME.v.root.localToWorld(tilePos(i).add(V(0, 0.3, 0)));
+    tickState(s, now); const msgs = [];
+    if (t.s === 'grass') { if (!useEnergy(ENERGY.till)) return; t.s = 'soil'; emit(s, 'till', 1, null, msgs); addXP(s, 1, msgs); floatTxt('🪓 dicangkul', wp); tip('Tanah siap. Ketuk lagi untuk menanam benih.'); }
+    else if (t.s === 'dead') { if (!useEnergy(ENERGY.clear)) return; Object.assign(t, { s: 'soil', c: null, g: 0, wt: null }); floatTxt('🧹 dibersihkan', wp); tip('Tanaman layu dibersihkan. Jangan lupa siram tiap hari ya.'); }
+    else if (t.s === 'soil') {
+      const k = s.seed; if (!(s.inv['seed_' + k] > 0)) { W.toast(`Benih ${CROPS[k].n} habis. Beli di 🏪 Toko atau pilih benih lain.`); openSeeds(); return; }
+      if (!useEnergy(ENERGY.plant)) return; s.inv['seed_' + k]--; Object.assign(t, { s: 'crop', c: k, g: 0, wt: null, p: now, u: now }); emit(s, 'plant', 1, null, msgs); addXP(s, 2, msgs);
+      floatTxt(`🌱 ${CROPS[k].n}`, wp); tip('Sudah ditanam! Ketuk lagi untuk menyiram 💧');
+    } else if (t.s === 'crop') {
+      if (isReady(t)) { if (!useEnergy(ENERGY.harvest)) return; const c = CROPS[t.c]; s.inv[t.c] = (s.inv[t.c] || 0) + c.yield; s.stats.harvest += c.yield;
+        emit(s, 'harvest', c.yield, t.c, msgs); addXP(s, 4 + Math.round(c.hours / 2), msgs); floatTxt(`+${c.yield} ${c.e}`, wp); Object.assign(t, { s: 'soil', c: null, g: 0, wt: null }); tip('Panen! Jual hasilnya di 🎒 Tas.'); }
+      else if (!wateredToday(t, now)) { if (!useEnergy(ENERGY.water)) return; t.wt = now; t.u = now; emit(s, 'water', 1, null, msgs); addXP(s, 1, msgs); floatTxt('💧 disiram', wp);
+        const left = CROPS[t.c].hours - (t.g || 0); tip(`Tumbuh selama hari ini. Siap panen ±${left < 1 ? Math.ceil(left * 60) + ' menit' : Math.ceil(left) + ' jam'} lagi (kalau disiram tiap hari).`); }
+      else { const pct = Math.floor(100 * (t.g || 0) / CROPS[t.c].hours); W.toast(`${CROPS[t.c].e} ${CROPS[t.c].n} sudah disiram hari ini · tumbuh ${pct}%`); return; }
+    } else return;
+    work(wp); after(msgs);
+  }
+  function tapAnimal(j) {
+    const s = ME.s, a = s.animals[j], now = Date.now(), dk = dayKey(now), A = ANIMALS[a.t]; tickState(s, now); const msgs = [];
+    const wp = ME.v.animals[j].g.getWorldPosition(V(0, 0, 0)).add(V(0, 0.4, 0));
+    if (a.fed !== dk) { if (!(s.inv.pakan > 0)) { W.toast('🌾 Pakan habis! Beli di 🏪 Toko.'); return; } if (!useEnergy(ENERGY.feed)) return; s.inv.pakan--; a.fed = dk; emit(s, 'feed', 1, null, msgs); addXP(s, 2, msgs); floatTxt('🌾 makan!', wp); tip(`${a.n} kenyang. Ketuk lagi untuk mengambil ${A.prodN.toLowerCase()}.`); }
+    else if (a.col !== dk) { if (!useEnergy(ENERGY.collect)) return; a.col = dk; const gold = a.h >= 7 && Math.random() < 0.15 + (a.h - 7) * 0.08; const item = gold ? A.gold : A.prod;
+      s.inv[item] = (s.inv[item] || 0) + 1; s.stats.collect++; emit(s, 'collect', 1, null, msgs); addXP(s, 3, msgs); floatTxt(`+1 ${gold ? '🌟 ' + A.goldN : A.pe + ' ' + A.prodN}`, wp); tip(`Elus ${a.n} biar makin sayang ❤️`); }
+    else if (a.pet !== dk) { if (!useEnergy(ENERGY.pet)) return; a.pet = dk; a.h = Math.min(10, a.h + 1); emit(s, 'pet', 1, null, msgs); addXP(s, 2, msgs); floatTxt(`❤️ ${a.h}/10`, wp); tip(`${a.n} senang! Hewan dengan ❤️ 7+ kadang memberi ${A.goldN}.`); }
+    else { W.toast(`${A.e} ${a.n} sudah dirawat hari ini ❤️ ${a.h}/10. Datang lagi besok!`); return; }
+    work(wp, 0.5); after(msgs);
+  }
+  function after(msgs) { renderFarm(ME.v, ME.s, Date.now()); updateHUD(); markDirty(); msgs.forEach((m, i) => setTimeout(() => W.toast(m), 300 + i * 2600)); }
+
+  // ---------------- panels ----------------
+  function openSeeds() {
+    const s = ME.s, el = $('gSeedList'); el.innerHTML = '';
+    Object.entries(CROPS).forEach(([k, c]) => { const n = s.inv['seed_' + k] || 0; const d = document.createElement('div'); d.className = 'gitem';
+      d.innerHTML = `<div class="ic">${c.e}</div><div class="tx"><b>${c.n} ${k === s.seed ? '✅' : ''}</b><span>Punya ${n} benih · panen ${c.hours < 24 ? c.hours + ' jam' : c.hours / 24 + ' hari'}${c.lv > s.level ? ' · buka di Lv ' + c.lv : ''}</span></div><button ${n ? '' : 'disabled'}>Pakai</button>`;
+      d.querySelector('button').onclick = () => { s.seed = k; updateHUD(); closeP(); tip(`Benih ${c.n} dipilih. Ketuk tanah yang sudah dicangkul.`); }; el.appendChild(d); });
+    const b = document.createElement('div'); b.style.marginTop = '10px'; b.innerHTML = '<button style="width:100%;height:42px;border:0;border-radius:12px;background:#f59e0b;color:#fff;font:800 14px Poppins">🏪 Beli benih di Toko</button>'; b.firstChild.onclick = openShop; el.appendChild(b);
+    openP('gP_seed');
+  }
+  function openShop() {
+    const s = ME.s, el = $('gShopList'); el.innerHTML = `<div style="font-size:13px;color:#5b6472;margin:4px 0 6px">Koin kamu: <b>🪙 ${fmt(s.coins)}</b></div>`;
+    SHOP.forEach(it => {
+      let locked = it.lv > s.level, note = it.d;
+      if (it.id.startsWith('animal_') && s.animals.length >= s.barn) note = `Kandang penuh (${s.barn}). Beli kandang lebih besar.`;
+      if (it.id === 'barn2' && s.barn >= 4 || it.id === 'barn3' && s.barn >= 6 || it.id === 'field4' && s.field >= 4 || it.id === 'fence' && s.house.fence || it.id === 'garden' && s.house.garden) note = 'Sudah punya ✅';
+      const d = document.createElement('div'); d.className = 'gitem';
+      d.innerHTML = `<div class="ic">${it.e}</div><div class="tx"><b>${it.n}</b><span>${locked ? '🔒 Buka di Level ' + it.lv : note}</span></div><button>🪙 ${fmt(it.price)}</button>`;
+      const btn = d.querySelector('button'); btn.disabled = locked || s.coins < it.price || note.startsWith('Kandang penuh') || note === 'Sudah punya ✅';
+      btn.onclick = () => buy(it); el.appendChild(d);
+    });
+    openP('gP_shop');
+  }
+  function buy(it) {
+    const s = ME.s; if (s.coins < it.price) return; const msgs = [];
+    if (it.id.startsWith('seed_')) s.inv[it.id] = (s.inv[it.id] || 0) + 1;
+    else if (it.id === 'pakan') s.inv.pakan = (s.inv.pakan || 0) + 5;
+    else if (it.id === 'esteh') { s.energy = Math.min(maxEnergy(s) + 30, s.energy + 30); }
+    else if (it.id.startsWith('animal_')) { const t = it.id.slice(7); s.animals.push({ t, n: NAMES[Math.floor(Math.random() * NAMES.length)], h: 1, fed: null, pet: null, col: null }); msgs.push(`${ANIMALS[t].e} Hewan baru datang ke kandangmu!`); }
+    else if (it.id === 'barn2') s.barn = 4; else if (it.id === 'barn3') s.barn = 6;
+    else if (it.id === 'field4') s.field = 4;
+    else if (it.id === 'roof') s.house.roof = ((s.house.roof || 0) + 1) % ROOFS.length;
+    else if (it.id === 'fence') s.house.fence = true; else if (it.id === 'garden') s.house.garden = true;
+    s.coins -= it.price; after(msgs); openShop();
+  }
+  function openBag() {
+    const s = ME.s, el = $('gBagList'); el.innerHTML = '';
+    const goods = Object.entries(s.inv).filter(([k, n]) => ITEMS[k] && n > 0);
+    let total = 0; goods.forEach(([k, n]) => total += ITEMS[k].price * n);
+    const top = document.createElement('div'); top.innerHTML = `<div style="display:flex;gap:8px;margin:4px 0 8px"><div class="gchip">🌾 Pakan: ${s.inv.pakan || 0}</div><div class="gchip">🪙 ${fmt(s.coins)}</div></div>`;
+    el.appendChild(top);
+    if (!goods.length) el.insertAdjacentHTML('beforeend', '<p style="color:#6b7280;font-size:13.5px">Belum ada hasil panen. Tanam, siram, lalu panen!</p>');
+    goods.forEach(([k, n]) => { const it = ITEMS[k]; const d = document.createElement('div'); d.className = 'gitem';
+      d.innerHTML = `<div class="ic">${it.e}</div><div class="tx"><b>${it.n} ×${n}</b><span>🪙 ${it.price} / buah</span></div><button>Jual 🪙 ${fmt(it.price * n)}</button>`;
+      d.querySelector('button').onclick = () => sell(k, n); el.appendChild(d); });
+    if (goods.length > 1) { const b = document.createElement('div'); b.style.marginTop = '10px'; b.innerHTML = `<button style="width:100%;height:44px;border:0;border-radius:12px;background:#16a34a;color:#fff;font:800 14px Poppins">Jual semua · 🪙 ${fmt(total)}</button>`; b.firstChild.onclick = () => { goods.forEach(([k, n]) => sell(k, n, true)); after([]); openBag(); }; el.appendChild(b); }
+    const seeds = Object.entries(s.inv).filter(([k, n]) => k.startsWith('seed_') && n > 0).map(([k, n]) => `${CROPS[k.slice(5)].e}×${n}`).join('  ');
+    el.insertAdjacentHTML('beforeend', `<h4 style="margin:14px 0 4px;font-size:11px;letter-spacing:.8px;color:#5b6472">BENIH</h4><div style="font-size:15px">${seeds || '-'}</div>
+      <h4 style="margin:14px 0 4px;font-size:11px;letter-spacing:.8px;color:#5b6472">TERNAK (${s.animals.length}/${s.barn})</h4>${s.animals.map(a => `<div style="font-size:13.5px;padding:3px 0">${ANIMALS[a.t].e} <b>${a.n}</b> · ❤️ ${a.h}/10</div>`).join('') || '-'}`);
+    openP('gP_bag');
+  }
+  function sell(k, n, quiet) { const s = ME.s, msgs = []; const v = ITEMS[k].price * n; s.inv[k] = 0; s.coins += v; s.stats.sold += v; emit(s, 'sell', v, null, msgs); addXP(s, Math.ceil(v / 50), msgs); if (!quiet) { after(msgs); openBag(); } else msgs.forEach(m => W.toast(m)); }
+  function openMis() {
+    const s = ME.s, el = $('gMisList'); tickState(s, Date.now());
+    const row = (m, pool, rew) => { const d = pool.find(x => x.id === m.id); return `<div class="gmis ${m.done ? 'done' : ''}"><b>${m.done ? '✅' : '⬜'} ${d.t}</b> <span style="float:right;font-size:12px;color:#5b6472">${fmt(m.p)}/${fmt(d.n)} · 🪙 ${rew || d.r}</span><div class="bar"><i style="width:${100 * m.p / d.n}%"></i></div></div>`; };
+    const end = new Date(Date.parse(s.weekly.week ? new Date().toISOString() : 0));
+    el.innerHTML = `<h4 style="margin:6px 0 2px;font-size:11px;letter-spacing:.8px;color:#5b6472">MISI HARIAN · ganti tiap tengah malam</h4>${s.daily.list.map(m => row(m, DAILY_POOL, 50)).join('')}
+      <h4 style="margin:16px 0 2px;font-size:11px;letter-spacing:.8px;color:#5b6472">MISI MINGGUAN · ganti tiap Senin</h4>${s.weekly.list.map(m => row(m, WEEKLY_POOL)).join('')}
+      <div style="margin-top:12px;background:${s.weekly.bonus ? '#dcfce7' : '#fff7e6'};border-radius:12px;padding:10px 12px;font-size:13px;font-weight:600">${s.weekly.bonus ? '🏅 Kamu WARGA TELADAN minggu ini! Namamu bisa disebut Bang Tanjung di video.' : `🏅 Selesaikan 3 misi mingguan: +${WEEK_BONUS} koin & lencana WARGA TELADAN (namamu bisa muncul di video Bang Tanjung)`}</div>
+      <div style="margin-top:8px;font-size:12.5px;color:#5b6472">🔥 Login beruntun: ${s.streak} hari · 🏅 Lencana: ${(s.badges || []).length}</div>`;
+    openP('gP_mis');
+  }
+  let rankKey = 'coins';
+  async function openRank() {
+    openP('gP_rank'); await refreshList(); const el = $('gRankList'); const wk = weekKey(Date.now());
+    const val = r => rankKey === 'missions_done' ? (r.week_key === wk ? r.missions_done : 0) : r[rankKey] || 0;
+    const rows = LIST.map(r => ME && r.username === ME.u ? { ...r, coins: ME.s.coins, hearts: heartsTotal(ME.s), harvests: ME.s.stats.harvest, missions_done: ME.s.weekly.list.filter(m => m.done).length, week_key: ME.s.weekly.week } : r)
+      .sort((a, b) => val(b) - val(a)).slice(0, 30);
+    const unit = { coins: '🪙', hearts: '❤️', missions_done: '🎯', harvests: '🧺' }[rankKey];
+    el.innerHTML = rows.map((r, i) => `<div class="gitem" data-u="${r.username}" style="cursor:pointer"><div class="ic" style="font-size:18px;font-weight:800">${['🥇', '🥈', '🥉'][i] || i + 1}</div><div class="tx"><b>@${r.username}</b><span>Lv ${r.level || 1} · kunjungi kebun ›</span></div><b>${unit} ${fmt(val(r))}</b></div>`).join('') || '<p style="color:#6b7280">Belum ada pemain. Jadilah yang pertama!</p>';
+    el.querySelectorAll('[data-u]').forEach(d => d.onclick = () => { const v = FARMS.get(d.dataset.u); if (v) { closeP(); const p = v.root.position; W.flyTo(V(p.x, 0.3, p.z), 9, V(0.1, 1.1, 1)); } });
+  }
+  $('gRankTabs').querySelectorAll('button').forEach(b => b.onclick = () => { rankKey = b.dataset.k; $('gRankTabs').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); openRank(); });
+  $('gSeed').onclick = openSeeds; $('gShop').onclick = openShop; $('gBag').onclick = openBag; $('gMis').onclick = openMis; $('gRank').onclick = openRank;
+  // leaderboard also reachable outside the game
+  const rankBtn = document.createElement('button'); rankBtn.textContent = '🏆'; rankBtn.style.cssText = 'background:#fff;color:#14181f;flex:0 0 auto'; rankBtn.onclick = openRank; if (GAME_ON) playBtn.after(rankBtn);
+
+  // ---------------- input ----------------
+  const ray = new THREE.Raycaster(); let pd = null;
+  addEventListener('pointerdown', e => { pd = [e.clientX, e.clientY]; }, true);
+  addEventListener('pointerup', e => {
+    if (!document.body.classList.contains('game') || !ME || e.target !== renderer.domElement) return;
+    if (!pd || Math.hypot(e.clientX - pd[0], e.clientY - pd[1]) > 8) return;
+    ray.setFromCamera(V((e.clientX / innerWidth) * 2 - 1, -(e.clientY / innerHeight) * 2 + 1, 0), camera);
+    const objs = [...ME.v.tiles.map(T => T.m).filter(m => m.visible), ...ME.v.tiles.map(T => T.crop).filter(Boolean), ...ME.v.animals.map(a => a.g)];
+    const h = ray.intersectObjects(objs, true)[0]; if (!h) return;
+    e.stopPropagation();
+    let o = h.object; while (o && !o.userData.farmTile && !o.userData.farmAnimal && o !== ME.v.root) o = o.parent;
+    if (o && o.userData.farmTile) tapTile(o.userData.farmTile.i);
+    else if (h.object.userData.farmAnimal) tapAnimal(h.object.userData.farmAnimal.j);
+    else { const T = ME.v.tiles.findIndex(T => T.crop && (T.crop === h.object || T.crop.getObjectById(h.object.id))); if (T >= 0) tapTile(T); }
+  }, true);
+
+  // ---------------- per-frame ----------------
+  let lastSlow = 0;
+  window.__gameTick = (t, dt, now) => {
+    animateFarms(t, dt || 0.016);
+    if (ME && ME.ent.sim.manual) {
+      const m = ME.ent.m, w = ME.walk;
+      if (w) { const k = Math.min(1, (now - w.t0) / w.d); m.root.position.lerpVectors(w.from, w.to, k); m.root.rotation.y = Math.atan2(w.to.x - w.from.x, w.to.z - w.from.z) || m.root.rotation.y;
+        if (k < 1) vPose(m, { t, walk: k * 12 }); else { m.root.rotation.y = Math.atan2(w.look.x - m.root.position.x, w.look.z - m.root.position.z); vPose(m, { t: t * 1.6, hammer: 1 }); if ((now - w.t0) > w.d + w.work * 1000) ME.walk = null; } }
+      else vPose(m, { t });
+    }
+    if (ME && now - lastSlow > 30000) { lastSlow = now; tickState(ME.s, Date.now()); renderFarm(ME.v, ME.s, Date.now()); updateHUD(); }
+  };
+  window.__game = { get me() { return ME; }, CROPS, ANIMALS, refreshList, FARMS, api, tapTile, tapAnimal, openShop, openMis, openBag, openRank, buy: id => buy(SHOP.find(x => x.id === id)), tickState };
 }
