@@ -6,9 +6,9 @@
 //  char  : 'A3:n' / 'A4:n' = karakter seragam yang sudah ada di video; kosong = karakter warga
 // =====================================================================
 window.PULAU = {
-  updated: '5 November 2026, 14.10 WIB',
+  updated: '5 November 2026, 16.45 WIB',
   day: 4,
-  total: 107,
+  total: 113,
   warga: [
     // ---- Pegawai resmi ----
     { u: 'lando_094', job: 'TNI Angkatan Laut', zone: 'pelabuhan', status: 'pegawai', since: 'Day 2', lantik: 'Day 4', rumah: 'Rumah atap oranye, Kampung Penduduk', char: 'A4:0' },
@@ -46,7 +46,8 @@ window.PULAU = {
     // ---- Penduduk baru (disambut di Day berikutnya) ----
     ...['nararya_pua', 'chikkiyooo', 'yoelgideondaendra', 'bevillivvv_', 'syaw0ou', 'isntk_la', 'gitamarine91', 'abeztebezt', 'zhidan_tis',
         'daraa_lathifah', 'dezan_joestar', 'muhyusri314977', 'pall_palepale',
-        'nyy.ajaaa', 'a53guc1', 'barunaadi', 'yogaas_60', 'pdeviolivia', 'protogen54', 'pia._kacang', 'just.hooman012']
+        'nyy.ajaaa', 'a53guc1', 'barunaadi', 'yogaas_60', 'pdeviolivia', 'protogen54', 'pia._kacang', 'just.hooman012',
+        'febrian_aang', 'ayu.irawan_31', 'mutiaraa_tulip', 'syarif.avdal', 'gilangniha134', 'nathanaelbpw', 'nazla4079', 'cheryll_ajah', 'uyiyaa_']
       .map(u => ({ u, zone: 'kampung', status: 'baru', since: 'Day 5' })),
   ],
 };
