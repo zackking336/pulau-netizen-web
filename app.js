@@ -2714,10 +2714,6 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     { id: 'garden', n: 'Taman Bunga', e: '🌷', price: 600, lv: 3, d: 'Bunga di depan rumah' },
     { id: 'pet_kucing', n: 'Kucing Peliharaan', e: '🐈', price: 500, lv: 2, d: 'Menemani di kebun' },
     { id: 'pet_anjing', n: 'Anjing Peliharaan', e: '🐕', price: 700, lv: 3, d: 'Menjaga kebunmu' },
-    { id: 'hat_caping', n: 'Caping Petani', e: '👒', price: 200, lv: 1, d: 'Kostum: dipakai karaktermu di pulau' },
-    { id: 'hat_koboi', n: 'Topi Koboi', e: '🤠', price: 350, lv: 2, d: 'Kostum peternak sejati' },
-    { id: 'hat_bunga', n: 'Mahkota Bunga', e: '🌸', price: 300, lv: 2, d: 'Kostum cantik' },
-    { id: 'hat_mahkota', n: 'Mahkota Emas', e: '👑', price: 5000, lv: 6, d: 'Kostum para sultan desa' },
   ];
   const ENERGY = { fish: 3, till: 4, plant: 2, water: 2, harvest: 1, feed: 2, pet: 1, collect: 1, clear: 2 };
   const DAILY_POOL = [
@@ -3061,7 +3057,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
   #gFloat{position:fixed;inset:0;pointer-events:none;z-index:6;overflow:hidden} #gFloat div{position:absolute;font:800 15px Poppins,sans-serif;color:#fff;text-shadow:0 2px 4px rgba(0,0,0,.6);transition:transform 1.1s ease-out,opacity 1.1s;white-space:nowrap}
   `; document.head.appendChild(css);
   const ui = document.createElement('div'); ui.innerHTML = `
-  <div id="gHud"><div class="gchip" id="gWx" style="cursor:pointer">☀️</div><div class="gchip" id="gLv">Lv 1</div><div class="gchip">🪙 <span id="gCoin">0</span></div><div class="gchip" id="gEn">⚡<div id="gEnBar"><i></i></div><span id="gEnT">100</span></div><button id="gExit">✕</button></div>
+  <div id="gHud"><div class="gchip" id="gWx" style="cursor:pointer">☀️</div><div class="gchip" id="gCloB" style="cursor:pointer">👗</div><div class="gchip" id="gLv">Lv 1</div><div class="gchip">🪙 <span id="gCoin">0</span></div><div class="gchip" id="gEn">⚡<div id="gEnBar"><i></i></div><span id="gEnT">100</span></div><button id="gExit">✕</button></div>
   <div id="gTip">Ketuk tanah untuk mencangkul · ketuk lagi untuk menanam</div>
   <div id="gBar"><button id="gSeed" class="pri">🌱 Benih</button><button id="gShop">🏪<small>Toko</small></button><button id="gBag">🎒<small>Tas</small></button><button id="gMis">🎯<small>Misi</small><span class="dot" id="gMisDot" style="display:none">!</span></button><button id="gFishB">🎣<small>Mancing</small></button><button id="gChatB">💬<small>Chat</small><span class="dot" id="gChatDot" style="display:none"></span></button><button id="gRank">🏆<small>Juara</small></button></div>
   <div id="gFishBar"><button id="gCast" class="pri">🎣 Lempar Kail</button><button id="gFishBag">🎒</button><button id="gFishBack">🏡 Pulang</button></div>
@@ -3078,12 +3074,13 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
   <div class="panel gpanel" id="gP_bag"><div class="ph"><h3>🎒 Tas & Jual</h3><button data-close>✕</button></div><div class="pb" id="gBagList"></div></div>
   <div class="panel gpanel" id="gP_mis"><div class="ph"><h3>🎯 Kegiatan Desa</h3><button data-close>✕</button></div><div class="pb"><div class="gtabs" id="gActTabs" style="flex-wrap:wrap"><button data-k="mis" class="on">🎯 Misi</button><button data-k="order">📋 Pesanan</button><button data-k="gr">🤝 Gotong Royong</button><button data-k="event">🎪 Event</button><button data-k="cal">📅 Kalender</button></div><div id="gMisList"></div></div></div>
   <div class="panel gpanel" id="gP_chat"><div class="ph"><h3>💬 Obrolan Desa <span id="gOnline" style="font-size:12px;color:#16a34a;font-weight:700;margin-left:6px"></span></h3><button data-close>✕</button></div><div class="pb" id="gChatList" style="flex:1;min-height:200px"></div><div id="gChatIn"><input id="gMsg" maxlength="140" placeholder="Tulis pesan… (sopan ya 🙏)" autocomplete="off"><button id="gSend">Kirim</button></div></div>
+  <div class="panel gpanel" id="gP_closet" style="max-height:56vh"><div class="ph"><h3>👗 Lemari & Butik</h3><button data-close>✕</button></div><div class="pb"><div class="gtabs" id="gClosetTabs" style="flex-wrap:wrap"><button data-k="hat" class="on">🎩 Topi</button><button data-k="top">👕 Baju</button><button data-k="bottom">👖 Celana</button><button data-k="acc">🕶️ Aksesoris</button><button data-k="shop">✨ Butik</button></div><div id="gClosetList"></div></div></div>
   <div class="panel gpanel" id="gP_rank"><div class="ph"><h3>🏆 Papan Peringkat</h3><button data-close>✕</button></div><div class="pb"><div class="gtabs" id="gRankTabs"><button data-k="coins" class="on">🪙 Terkaya</button><button data-k="hearts">❤️ Peternak</button><button data-k="missions_done">🎯 Misi</button><button data-k="harvests">🧺 Panen</button><button data-k="fish">🎣 Ikan</button></div><div id="gRankList"></div></div></div>`;
   document.body.appendChild(ui);
-  const panels = ['gLogin', 'gP_seed', 'gP_shop', 'gP_bag', 'gP_mis', 'gP_rank', 'gP_chat'];
+  const panels = ['gLogin', 'gP_seed', 'gP_shop', 'gP_bag', 'gP_mis', 'gP_rank', 'gP_chat', 'gP_closet'];
   const openP = id => { panels.forEach(p => $(p).classList.toggle('on', p === id)); document.body.classList.add('gp'); };
   const closeP = () => { panels.forEach(p => $(p).classList.remove('on')); document.body.classList.remove('gp'); };
-  ui.querySelectorAll('[data-close]').forEach(b => b.onclick = closeP);
+  ui.querySelectorAll('[data-close]').forEach(b => b.onclick = () => { const wasCloset = $('gP_closet').classList.contains('on'); closeP(); if (wasCloset && ME && FISHING.st === 'off') enterGame(); });
   // entry button
   const playBtn = document.createElement('button'); playBtn.id = 'btnPlay'; playBtn.textContent = '🌾 Main Kebunku';
   const GAME_ON = api.online || /[?&]test=1/.test(location.search);
@@ -3113,7 +3110,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     await refreshList();
     let v = FARMS.get(u); if (!v) { const idx = Math.max(LIST.length, ...[...FARMS.values()].map(f => f.idx + 1), 0); v = buildFarm(u, idx); }
     ME.v = v; renderFarm(v, ME.s, Date.now());
-    applyCostume(u, ME.s); pollHelps(); grLoad();
+    migrateWardrobe(ME.s); applyCostume(u, ME.s); pollHelps(); grLoad();
     markDirty(); closeP(); enterGame(); api.rpc('farm_ping', { p_user: u, p_pin: p }).catch(() => {}); pollChat(); msgs.forEach((m, i) => setTimeout(() => W.toast(m), i * 2600));
   }
   $('gGo').onclick = login; $('gP').addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
@@ -3199,7 +3196,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     SHOP.forEach(it => {
       let locked = it.lv > s.level, note = it.d;
       if (it.id.startsWith('animal_') && s.animals.length >= s.barn) note = `Kandang penuh (${s.barn}). Beli kandang lebih besar.`;
-      if (it.id.startsWith('pet_') && s.pet === it.id.slice(4) || it.id.startsWith('hat_') && (s.hats || []).includes(it.id.slice(4)) || it.id === 'barn3' && s.barn >= 6 || it.id === 'field4' && s.field >= 4 || it.id === 'fence' && s.house.fence || it.id === 'garden' && s.house.garden) note = 'Sudah punya ✅';
+      if (it.id.startsWith('pet_') && s.pet === it.id.slice(4) ||  it.id === 'barn3' && s.barn >= 6 || it.id === 'field4' && s.field >= 4 || it.id === 'fence' && s.house.fence || it.id === 'garden' && s.house.garden) note = 'Sudah punya ✅';
       const d = document.createElement('div'); d.className = 'gitem';
       d.innerHTML = `<div class="ic">${it.e}</div><div class="tx"><b>${it.n}</b><span>${locked ? '🔒 Buka di Level ' + it.lv : note}</span></div><button>🪙 ${fmt(it.price)}</button>`;
       const btn = d.querySelector('button'); btn.disabled = locked || s.coins < it.price || note.startsWith('Kandang penuh') || note === 'Sudah punya ✅';
@@ -3219,7 +3216,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     else if (it.id === 'roof') s.house.roof = ((s.house.roof || 0) + 1) % ROOFS.length;
     else if (it.id === 'fence') s.house.fence = true; else if (it.id === 'garden') s.house.garden = true;
     else if (it.id.startsWith('pet_')) { s.pet = it.id.slice(4); msgs.push(`${it.e} ${it.n} sekarang tinggal di kebunmu!`); }
-    else if (it.id.startsWith('hat_')) { s.hats = [...new Set([...(s.hats || []), it.id.slice(4)])]; s.hat = it.id.slice(4); msgs.push(`${it.e} Kostum dipakai! Karaktermu di pulau ikut berganti.`); applyCostume(ME.u, s); }
+
     s.coins -= it.price; after(msgs); openShop();
   }
   function openBag() {
@@ -3238,14 +3235,14 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     el.insertAdjacentHTML('beforeend', `<h4 style="margin:14px 0 4px;font-size:11px;letter-spacing:.8px;color:#5b6472">BENIH</h4><div style="font-size:15px">${seeds || '-'}</div>
       <h4 style="margin:14px 0 4px;font-size:11px;letter-spacing:.8px;color:#5b6472">TERNAK (${s.animals.length}/${s.barn})</h4>${s.animals.map(a => `<div style="font-size:13.5px;padding:3px 0">${ANIMALS[a.t].e} <b>${a.n}</b> · ❤️ ${a.h}/10</div>`).join('') || '-'}`);
     const al = s.album || {}; const cnt = c => ALBUM[c].filter(k => al[c]?.[k]).length;
-    el.insertAdjacentHTML('beforeend', `<h4 style="margin:16px 0 4px;font-size:11px;letter-spacing:.8px;color:#5b6472">👒 KOSTUM & PELIHARAAN</h4>
-      <div style="display:flex;flex-wrap:wrap;gap:6px">${['', ...(s.hats || [])].map(h => `<button class="gbtn" data-hat="${h}" style="${(s.hat || '') === h ? 'background:#14181f' : ''}">${h ? { caping: '👒 Caping', koboi: '🤠 Koboi', bunga: '🌸 Mahkota Bunga', mahkota: '👑 Mahkota' }[h] : '🚫 Tanpa topi'}</button>`).join('')}</div>
-      <div style="font-size:13px;margin-top:6px">${s.pet ? (s.pet === 'kucing' ? '🐈 Kucing' : '🐕 Anjing') + ' menemanimu di kebun' : 'Belum punya peliharaan (beli di 🏪 Toko)'}</div>
+    el.insertAdjacentHTML('beforeend', `<h4 style="margin:16px 0 4px;font-size:11px;letter-spacing:.8px;color:#5b6472">🐾 PELIHARAAN & GAYA</h4>
+      <div style="font-size:13px;margin-top:2px">${s.pet ? (s.pet === 'kucing' ? '🐈 Kucing' : '🐕 Anjing') + ' menemanimu di kebun' : 'Belum punya peliharaan (beli di 🏪 Toko)'}</div>
+      <button class="gbig" id="gToCloset" style="background:#db2777">👗 Buka Lemari & Butik Fashion</button>
       <h4 style="margin:16px 0 4px;font-size:11px;letter-spacing:.8px;color:#5b6472">📖 ALBUM KOLEKSI</h4>
       ${[['fish', '🎣 Ikan', k => FISH[k].e + ' ' + FISH[k].n], ['crop', '🌱 Tanaman', k => CROPS[k].e + ' ' + CROPS[k].n], ['animal', '🐔 Ternak', k => ANIMALS[k].e + ' ' + ANIMALS[k].n], ['gold', '🌟 Barang Langka', k => ITEMS[k].e + ' ' + ITEMS[k].n]].map(([c, t, nm]) =>
         `<div style="margin:6px 0"><b style="font-size:13px">${t} ${cnt(c)}/${ALBUM[c].length}</b> <span style="font-size:11.5px;color:#b45309">→ gelar ${TITLES[c].n}</span><div style="font-size:12.5px;color:#374151;margin-top:2px">${ALBUM[c].map(k => al[c]?.[k] ? nm(k) : '❔ ???').join(' · ')}</div></div>`).join('')}
       ${(s.titles || []).length ? `<div style="margin-top:6px;font-size:12.5px">Pakai gelar: ${['', ...s.titles].map(t => `<button class="gbtn" data-ttl="${t}" style="${(s.title || '') === t ? 'background:#14181f' : ''}">${t ? TITLES[t].n : 'Tanpa gelar'}</button>`).join(' ')}</div>` : ''}`);
-    el.querySelectorAll('[data-hat]').forEach(b => b.onclick = () => { s.hat = b.dataset.hat; applyCostume(ME.u, s); after([]); openBag(); });
+    $('gToCloset').onclick = openCloset;
     el.querySelectorAll('[data-ttl]').forEach(b => b.onclick = () => { s.title = b.dataset.ttl; after([]); openBag(); });
     openP('gP_bag');
   }
@@ -3405,21 +3402,134 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     const tail = mesh(new THREE.CylinderGeometry(0.015, 0.012, 0.18 * sc, 4), M(col), 0, 0.24 * sc, -0.2 * sc, false); tail.rotation.x = -0.8; tail.userData.tail = true; b.add(tail);
     return g;
   }
-  // ---- kostum karakter (terlihat oleh semua pengunjung) ----
-  function hatMesh(k) {
+  // ================= FASHION: lemari, butik, item langka event =================
+  const RAR = { biasa: { n: 'Biasa', c: '#6b7280' }, langka: { n: 'Langka', c: '#2563eb' }, epik: { n: 'Epik', c: '#9333ea' }, legend: { n: 'Legendaris', c: '#d97706' } };
+  const SLOTS = { hat: '🎩 Topi', top: '👕 Baju', bottom: '👖 Celana', acc: '🕶️ Aksesoris' };
+  const OUTFITS = {
+    // topi
+    hat_caping: { slot: 'hat', n: 'Caping Petani', e: '👒', price: 200, rar: 'biasa', k: 'caping' },
+    hat_kupluk: { slot: 'hat', n: 'Kupluk Rajut', e: '🧶', price: 250, rar: 'biasa', k: 'kupluk', c: 0xdc2626 },
+    hat_pantai: { slot: 'hat', n: 'Topi Pantai', e: '👒', price: 300, rar: 'biasa', k: 'pantai', c: 0xfde68a },
+    hat_koboi: { slot: 'hat', n: 'Topi Koboi', e: '🤠', price: 450, rar: 'langka', k: 'koboi' },
+    hat_bunga: { slot: 'hat', n: 'Mahkota Bunga', e: '🌸', price: 400, rar: 'langka', k: 'bunga' },
+    hat_chef: { slot: 'hat', n: 'Topi Koki', e: '👨‍🍳', price: 600, rar: 'langka', k: 'chef' },
+    hat_mahkota: { slot: 'hat', n: 'Mahkota Emas', e: '👑', price: 6000, rar: 'legend', k: 'mahkota', lv: 6 },
+    // baju
+    top_merah: { slot: 'top', n: 'Kaos Merah', e: '👕', price: 120, rar: 'biasa', pat: 'polos', c: [0xdc2626] },
+    top_kuning: { slot: 'top', n: 'Kaos Kuning', e: '👕', price: 120, rar: 'biasa', pat: 'polos', c: [0xfacc15] },
+    top_hitam: { slot: 'top', n: 'Kaos Hitam', e: '👕', price: 150, rar: 'biasa', pat: 'polos', c: [0x111827] },
+    top_pink: { slot: 'top', n: 'Kaos Pink', e: '👕', price: 150, rar: 'biasa', pat: 'polos', c: [0xf472b6] },
+    top_belang: { slot: 'top', n: 'Kaos Belang ala Bang Tanjung', e: '🧡', price: 350, rar: 'langka', pat: 'belang', c: [0xf97316, 0xffffff] },
+    top_polka: { slot: 'top', n: 'Baju Polkadot', e: '🔴', price: 380, rar: 'langka', pat: 'polka', c: [0x1d4ed8, 0xffffff] },
+    top_hawaii: { slot: 'top', n: 'Kemeja Hawaii', e: '🌺', price: 500, rar: 'langka', pat: 'bunga', c: [0x0ea5e9, 0xf472b6, 0xfacc15] },
+    top_batik: { slot: 'top', n: 'Kemeja Batik', e: '🟫', price: 800, rar: 'epik', pat: 'batik', c: [0x7c2d12, 0xfbbf24], lv: 3 },
+    top_pelangi: { slot: 'top', n: 'Baju Pelangi', e: '🌈', price: 1500, rar: 'epik', pat: 'pelangi', lv: 4 },
+    // celana
+    bot_jeans: { slot: 'bottom', n: 'Celana Jeans', e: '👖', price: 150, rar: 'biasa', pat: 'polos', c: [0x1e3a8a] },
+    bot_hitam: { slot: 'bottom', n: 'Celana Hitam', e: '👖', price: 150, rar: 'biasa', pat: 'polos', c: [0x111827] },
+    bot_coklat: { slot: 'bottom', n: 'Celana Coklat', e: '👖', price: 150, rar: 'biasa', pat: 'polos', c: [0x78350f] },
+    bot_sarung: { slot: 'bottom', n: 'Sarung Kotak-kotak', e: '🟩', price: 400, rar: 'langka', pat: 'kotak', c: [0x166534, 0x14532d] },
+    bot_pelangi: { slot: 'bottom', n: 'Celana Pelangi', e: '🌈', price: 1200, rar: 'epik', pat: 'pelangi', lv: 4 },
+    // aksesoris
+    acc_kacamata: { slot: 'acc', n: 'Kacamata Hitam', e: '🕶️', price: 300, rar: 'biasa', k: 'kacamata' },
+    acc_syal: { slot: 'acc', n: 'Syal Merah', e: '🧣', price: 350, rar: 'biasa', k: 'syal', c: 0xdc2626 },
+    acc_ransel: { slot: 'acc', n: 'Tas Ransel', e: '🎒', price: 450, rar: 'langka', k: 'ransel', c: 0x2563eb },
+    acc_kalung: { slot: 'acc', n: 'Kalung Emas', e: '📿', price: 1200, rar: 'epik', k: 'kalung' },
+    acc_sayap: { slot: 'acc', n: 'Sayap Malaikat', e: '🪽', price: 9000, rar: 'legend', k: 'sayap', lv: 7 },
+  };
+  // item langka khusus event minggu ini (berubah tiap minggu; id memakai nomor minggu → koleksi unik)
+  const EV_SETS = {
+    mancing: [{ slot: 'hat', n: 'Topi Nelayan', e: '🎣', k: 'nelayan' }, { slot: 'top', n: 'Rompi Pemancing', e: '🦺', pat: 'rompi' }, { slot: 'acc', n: 'Kalung Mutiara', e: '🦪', k: 'mutiara' }],
+    panen: [{ slot: 'hat', n: 'Caping Emas', e: '👒', k: 'caping_emas' }, { slot: 'top', n: 'Batik Panen Raya', e: '🌾', pat: 'batik' }, { slot: 'acc', n: 'Selendang Padi', e: '🧣', k: 'syal' }],
+    semangka: [{ slot: 'hat', n: 'Topi Semangka', e: '🍉', k: 'semangka' }, { slot: 'top', n: 'Kaos Semangka', e: '🍉', pat: 'semangka' }, { slot: 'acc', n: 'Kacamata Semangka', e: '🕶️', k: 'kacamata', c: 0xdc2626 }],
+  };
+  const HUES = [0xfacc15, 0x22d3ee, 0xf472b6, 0xa3e635, 0xc084fc, 0xfb923c, 0x34d399, 0xf87171];
+  function eventItems(wk) {
+    const ev = eventOf(wk), num = +wk.slice(6), hue = HUES[num % HUES.length], hue2 = HUES[(num + 3) % HUES.length];
+    return EV_SETS[ev].map((it, i) => ({ ...it, id: `ev${num}_${it.slot}`, n: `${it.n} #${num}`, price: [2500, 3000, 4000][i], rar: i === 2 ? 'legend' : 'epik', c: it.pat ? [hue, hue2] : (it.c || hue), ev: true, wk }));
+  }
+  const outfitDef = id => OUTFITS[id] || (id && id.startsWith('ev') ? (() => { const num = +id.slice(2, id.indexOf('_')); const yr = new Date().getUTCFullYear(); const wk = `${yr}-W${String(num).padStart(2, '0')}`; return eventItems(wk).find(x => x.id === id); })() : null);
+  function patTex(pat, c) {
+    const hex = v => '#' + new THREE.Color(v).getHexString();
+    return canvasTex(256, 256, (x, w, h) => {
+      const C = (c || [0xffffff]).map(hex); x.fillStyle = C[0]; x.fillRect(0, 0, w, h);
+      if (pat === 'belang') { x.fillStyle = C[1]; for (let y = 0; y < h; y += 42) x.fillRect(0, y, w, 21); }
+      if (pat === 'polka') { x.fillStyle = C[1]; for (let y = 10; y < h; y += 40) for (let xx = (y / 40 % 2) * 20 + 10; xx < w; xx += 40) { x.beginPath(); x.arc(xx, y, 8, 0, 7); x.fill(); } }
+      if (pat === 'bunga') { for (let i = 0; i < 26; i++) { const xx = (i * 97) % w, y = (i * 61) % h; x.fillStyle = C[1 + (i % 2)]; for (let k = 0; k < 5; k++) { x.beginPath(); x.arc(xx + Math.cos(k * 1.26) * 9, y + Math.sin(k * 1.26) * 9, 6, 0, 7); x.fill(); } x.fillStyle = '#fff'; x.beginPath(); x.arc(xx, y, 4, 0, 7); x.fill(); } }
+      if (pat === 'batik') { x.strokeStyle = C[1]; x.lineWidth = 4; for (let y = 0; y < h; y += 48) for (let xx = 0; xx < w; xx += 48) { x.beginPath(); x.arc(xx + 24, y + 24, 16, 0, 7); x.stroke(); x.beginPath(); x.moveTo(xx, y + 24); x.lineTo(xx + 24, y); x.lineTo(xx + 48, y + 24); x.lineTo(xx + 24, y + 48); x.closePath(); x.stroke(); } }
+      if (pat === 'pelangi') { ['#ef4444', '#f97316', '#facc15', '#22c55e', '#3b82f6', '#8b5cf6'].forEach((cc, i) => { x.fillStyle = cc; x.fillRect(0, i * h / 6, w, h / 6 + 1); }); }
+      if (pat === 'kotak') { x.fillStyle = C[1]; for (let y = 0; y < h; y += 32) for (let xx = (y / 32 % 2) * 32; xx < w; xx += 64) x.fillRect(xx, y, 32, 32); x.strokeStyle = 'rgba(255,255,255,.35)'; x.lineWidth = 3; for (let i = 0; i < w; i += 32) { x.beginPath(); x.moveTo(i, 0); x.lineTo(i, h); x.stroke(); } }
+      if (pat === 'rompi') { x.fillStyle = C[1]; x.fillRect(0, 0, w * 0.22, h); x.fillRect(w * 0.78, 0, w * 0.22, h); x.fillStyle = 'rgba(0,0,0,.25)'; for (let y = 60; y < h; y += 70) { x.fillRect(w * 0.3, y, 40, 30); x.fillRect(w * 0.58, y, 40, 30); } }
+      if (pat === 'semangka') { x.fillStyle = '#ef4444'; x.fillRect(0, 0, w, h * 0.75); x.fillStyle = '#16a34a'; x.fillRect(0, h * 0.82, w, h * 0.18); x.fillStyle = '#fff'; x.fillRect(0, h * 0.75, w, h * 0.07); x.fillStyle = '#111'; for (let i = 0; i < 18; i++) { x.beginPath(); x.ellipse((i * 53) % w, 20 + (i * 37) % (h * 0.6), 4, 7, 0.3, 0, 7); x.fill(); } }
+    });
+  }
+  function hatMesh(k, c) {
     const g = new THREE.Group(); g.name = 'kostum';
-    if (k === 'caping') { const c = mesh(new THREE.ConeGeometry(0.48, 0.24, 14), M(0xe3c27a), 0, 0.36, 0); g.add(c); }
+    const gold = () => new THREE.MeshStandardMaterial({ color: 0xfacc15, metalness: 0.7, roughness: 0.25, emissive: 0x6b4f00, emissiveIntensity: 0.3 });
+    if (k === 'caping' || k === 'caping_emas') g.add(mesh(new THREE.ConeGeometry(0.48, 0.24, 14), k === 'caping_emas' ? gold() : M(0xe3c27a), 0, 0.36, 0));
     if (k === 'koboi') { g.add(mesh(new THREE.CylinderGeometry(0.46, 0.46, 0.03, 16), M(0x7c4a1e), 0, 0.27, 0)); g.add(mesh(new THREE.CylinderGeometry(0.22, 0.26, 0.24, 12), M(0x7c4a1e), 0, 0.4, 0)); g.add(mesh(new THREE.CylinderGeometry(0.265, 0.265, 0.05, 12), M(0x111111), 0, 0.31, 0)); }
-    if (k === 'bunga') [0xf472b6, 0xfacc15, 0xffffff, 0xa855f7, 0xef4444, 0xf472b6].forEach((c, i) => { const a = i / 6 * Math.PI * 2; g.add(mesh(new THREE.SphereGeometry(0.06, 6, 5), M(c), Math.cos(a) * 0.26, 0.24, Math.sin(a) * 0.26, false)); });
-    if (k === 'mahkota') { const gm = new THREE.MeshStandardMaterial({ color: 0xfacc15, metalness: 0.7, roughness: 0.25, emissive: 0x6b4f00, emissiveIntensity: 0.3 }); g.add(mesh(new THREE.CylinderGeometry(0.24, 0.24, 0.1, 12, 1, true), gm, 0, 0.32, 0, false)); for (let i = 0; i < 6; i++) { const a = i / 6 * Math.PI * 2; g.add(mesh(new THREE.ConeGeometry(0.045, 0.12, 4), gm, Math.cos(a) * 0.23, 0.42, Math.sin(a) * 0.23, false)); } }
+    if (k === 'bunga') [0xf472b6, 0xfacc15, 0xffffff, 0xa855f7, 0xef4444, 0xf472b6].forEach((cc, i) => { const a = i / 6 * Math.PI * 2; g.add(mesh(new THREE.SphereGeometry(0.06, 6, 5), M(cc), Math.cos(a) * 0.26, 0.24, Math.sin(a) * 0.26, false)); });
+    if (k === 'mahkota') { const gm = gold(); g.add(mesh(new THREE.CylinderGeometry(0.24, 0.24, 0.1, 12, 1, true), gm, 0, 0.32, 0, false)); for (let i = 0; i < 6; i++) { const a = i / 6 * Math.PI * 2; g.add(mesh(new THREE.ConeGeometry(0.045, 0.12, 4), gm, Math.cos(a) * 0.23, 0.42, Math.sin(a) * 0.23, false)); } }
+    if (k === 'kupluk') { const h = mesh(new THREE.SphereGeometry(0.31, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2), M(c || 0xdc2626), 0, 0.08, 0); h.scale.y = 1.15; g.add(h); g.add(mesh(new THREE.SphereGeometry(0.07, 8, 6), M(0xffffff), 0, 0.45, 0)); }
+    if (k === 'pantai') { g.add(mesh(new THREE.CylinderGeometry(0.5, 0.52, 0.03, 18), M(c || 0xfde68a), 0, 0.26, 0)); g.add(mesh(new THREE.SphereGeometry(0.25, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2), M(c || 0xfde68a), 0, 0.26, 0)); g.add(mesh(new THREE.CylinderGeometry(0.255, 0.255, 0.05, 14), M(0xf472b6), 0, 0.3, 0)); }
+    if (k === 'chef') { g.add(mesh(new THREE.CylinderGeometry(0.24, 0.26, 0.18, 14), M(0xffffff), 0, 0.33, 0)); const t = mesh(new THREE.SphereGeometry(0.3, 12, 8), M(0xffffff), 0, 0.5, 0); t.scale.y = 0.6; g.add(t); }
+    if (k === 'nelayan') { g.add(mesh(new THREE.CylinderGeometry(0.42, 0.44, 0.04, 16), M(c || 0x22d3ee), 0, 0.27, 0)); g.add(mesh(new THREE.CylinderGeometry(0.25, 0.28, 0.2, 14), M(c || 0x22d3ee), 0, 0.37, 0)); g.add(mesh(new THREE.SphereGeometry(0.05, 6, 5), gold(), 0.27, 0.37, 0.05)); }
+    if (k === 'semangka') { const r = mesh(new THREE.SphereGeometry(0.32, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2), M(0x16a34a), 0, 0.08, 0); g.add(r); g.add(mesh(new THREE.CylinderGeometry(0.31, 0.31, 0.03, 14), M(0xef4444), 0, 0.09, 0)); g.add(mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.1, 4), M(0x7c4a1e), 0, 0.45, 0)); }
     return g;
   }
+  function accMesh(k, c) {
+    const g = new THREE.Group(); g.name = 'aksesoris'; const head = [], body = [];
+    const gold = new THREE.MeshStandardMaterial({ color: 0xfacc15, metalness: 0.75, roughness: 0.25 });
+    if (k === 'kacamata') { const m = M(c || 0x111111); for (const sx of [-1, 1]) head.push(mesh(new THREE.BoxGeometry(0.13, 0.08, 0.03), m, sx * 0.1, 0.05, 0.285, false)); head.push(mesh(new THREE.BoxGeometry(0.08, 0.02, 0.02), m, 0, 0.07, 0.29, false)); }
+    if (k === 'syal') { const t = mesh(new THREE.TorusGeometry(0.2, 0.06, 6, 16), M(c || 0xdc2626), 0, 1.05, 0.02, false); t.rotation.x = Math.PI / 2; body.push(t); body.push(mesh(new THREE.BoxGeometry(0.1, 0.3, 0.05), M(c || 0xdc2626), 0.1, 0.88, 0.25, false)); }
+    if (k === 'ransel') { body.push(mesh(new THREE.BoxGeometry(0.36, 0.4, 0.18), M(c || 0x2563eb), 0, 0.82, -0.32)); body.push(mesh(new THREE.BoxGeometry(0.3, 0.14, 0.05), M(0x1e3a8a), 0, 0.7, -0.42, false)); }
+    if (k === 'kalung' || k === 'mutiara') { const t = mesh(new THREE.TorusGeometry(0.2, 0.015, 5, 20), k === 'mutiara' ? M(0xf8fafc) : gold, 0, 1.0, 0.06, false); t.rotation.x = Math.PI / 2.4; body.push(t); body.push(mesh(new THREE.SphereGeometry(0.04, 8, 6), k === 'mutiara' ? M(c || 0xf472b6) : gold, 0, 0.9, 0.29, false)); }
+    if (k === 'sayap') { const wm = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xfff7cc, emissiveIntensity: 0.25, side: THREE.DoubleSide, transparent: true, opacity: 0.92 });
+      for (const sx of [-1, 1]) { const sh = new THREE.Shape(); sh.moveTo(0, 0); sh.quadraticCurveTo(sx * 0.55, 0.5, sx * 0.7, 0.05); sh.quadraticCurveTo(sx * 0.45, -0.25, 0, -0.1); const w = new THREE.Mesh(new THREE.ShapeGeometry(sh), wm); w.position.set(sx * 0.05, 0.95, -0.28); w.userData.wing = sx; body.push(w); } }
+    return { head, body };
+  }
+  const torsoMesh = m => m.body.children.find(c => c.geometry && c.geometry.type === 'SphereGeometry' && Math.abs((c.geometry.parameters.radius || 0) - 0.34) < 0.01);
   function applyCostume(u, s) {
     const e = W.ENT.find(x => x.u === u); if (!e) return;
-    const k = s && s.hat || ''; if ((e.m.head.userData.hat || '') === k) return;
-    const old = e.m.head.getObjectByName('kostum'); if (old) e.m.head.remove(old);
-    if (k) e.m.head.add(hatMesh(k)); e.m.head.userData.hat = k;
+    const wear = s && s.wear || (s && s.hat ? { hat: 'hat_' + s.hat } : {});
+    const key = JSON.stringify(wear); if (e.m.root.userData.wearKey === key) return; e.m.root.userData.wearKey = key;
+    const m = e.m, torso = torsoMesh(m);
+    if (!m.root.userData.orig) m.root.userData.orig = { torso: torso && torso.material, legs: m.legs.map(l => l.children[0].material) };
+    const O = m.root.userData.orig;
+    // clear previous
+    [m.head, m.body].forEach(p => p.children.filter(c => c.name === 'kostum' || c.userData.fashion).forEach(c => p.remove(c)));
+    if (torso) torso.material = O.torso; m.legs.forEach((l, i) => l.children[0].material = O.legs[i]);
+    const hd = outfitDef(wear.hat); if (hd) m.head.add(hatMesh(hd.k, hd.c));
+    const td = outfitDef(wear.top); if (td && torso) torso.material = td.pat === 'polos' ? M(td.c[0]) : new THREE.MeshStandardMaterial({ map: patTex(td.pat, td.c), roughness: 0.8 });
+    const bd = outfitDef(wear.bottom); if (bd) { const bm = bd.pat === 'polos' ? M(bd.c[0]) : new THREE.MeshStandardMaterial({ map: patTex(bd.pat, bd.c), roughness: 0.8 }); m.legs.forEach(l => l.children[0].material = bm); }
+    const ad = outfitDef(wear.acc); if (ad) { const a = accMesh(ad.k, ad.c); a.head.forEach(o => { o.userData.fashion = true; m.head.add(o); }); a.body.forEach(o => { o.userData.fashion = true; m.body.add(o); }); }
   }
+  function migrateWardrobe(s) {
+    s.closet = s.closet || []; s.wear = s.wear || {};
+    (s.hats || []).forEach(h => { const id = 'hat_' + h; if (!s.closet.includes(id)) s.closet.push(id); }); if (s.hat && !s.wear.hat) s.wear.hat = 'hat_' + s.hat; delete s.hats; delete s.hat;
+  }
+  let closetTab = 'hat';
+  function openCloset(tab) {
+    if (typeof tab === 'string') closetTab = tab; const s = ME.s; migrateWardrobe(s); const el = $('gClosetList');
+    $('gClosetTabs').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.k === closetTab));
+    const card = (id, d, owned, extra = '') => { const on = s.wear[d.slot] === id; const R = RAR[d.rar];
+      return `<div class="gitem"><div class="ic">${d.e}</div><div class="tx"><b>${d.n}</b><span style="color:${R.c};font-weight:700">${d.ev ? '✨ ' : ''}${R.n}</span>${extra}</div>${owned ? `<button data-w="${id}" style="${on ? 'background:#14181f' : ''}">${on ? 'Dipakai' : 'Pakai'}</button>` : `<button data-b="${id}" ${s.coins < d.price || (d.lv && d.lv > s.level) ? 'disabled' : ''}>${d.lv && d.lv > s.level ? '🔒 Lv ' + d.lv : '🪙 ' + fmt(d.price)}</button>`}</div>`; };
+    if (closetTab === 'shop') {
+      const wk = weekKey(Date.now()), evs = eventItems(wk), ev = EVENTS[eventOf(wk)];
+      const left = Math.ceil((dayEnd(Date.now()) + (6 - ((new Date(Date.now() + WIB).getUTCDay() + 6) % 7)) * 864e5 - Date.now()) / 864e5);
+      el.innerHTML = `<div style="background:linear-gradient(135deg,#fdf2f8,#fef3c7);border-radius:14px;padding:10px 12px;margin:4px 0 6px"><b>✨ Koleksi Terbatas ${ev.n}</b><div style="font-size:12px;color:#7a4b00">Hanya dijual minggu ini · sisa ${left} hari · setelah itu tidak akan dijual lagi!</div></div>` +
+        evs.map(d => card(d.id, d, s.closet.includes(d.id))).join('') +
+        Object.entries(SLOTS).map(([sl, t]) => `<h4 style="margin:12px 0 2px;font-size:11px;letter-spacing:.8px;color:#5b6472">${t.toUpperCase()}</h4>` + Object.entries(OUTFITS).filter(([id, d]) => d.slot === sl).map(([id, d]) => card(id, d, s.closet.includes(id))).join('')).join('');
+    } else {
+      const own = s.closet.filter(id => outfitDef(id)?.slot === closetTab);
+      el.innerHTML = `<div class="gitem"><div class="ic">🚫</div><div class="tx"><b>Tanpa ${SLOTS[closetTab].slice(3).toLowerCase()}</b><span>Pakai gaya bawaan</span></div><button data-w="" data-slot="${closetTab}" style="${!s.wear[closetTab] ? 'background:#14181f' : ''}">${!s.wear[closetTab] ? 'Dipakai' : 'Pakai'}</button></div>` +
+        own.map(id => card(id, outfitDef(id), true)).join('') + (own.length ? '' : `<p style="color:#6b7280;font-size:13px">Belum punya. Belanja di tab ✨ Butik!</p>`);
+    }
+    el.querySelectorAll('[data-w]').forEach(b => b.onclick = () => { const id = b.dataset.w, d = outfitDef(id); s.wear[d ? d.slot : b.dataset.slot] = id || undefined; if (!id) delete s.wear[b.dataset.slot]; applyCostume(ME.u, s); after([]); openCloset(); });
+    el.querySelectorAll('[data-b]').forEach(b => b.onclick = () => { const id = b.dataset.b, d = outfitDef(id); if (!d || s.coins < d.price) return; s.coins -= d.price; s.closet.push(id); s.wear[d.slot] = id; applyCostume(ME.u, s); after([`${d.e} ${d.n} dibeli & langsung dipakai!${d.ev ? ' Item langka edisi terbatas ✨' : ''}`]); openCloset(); });
+    if (!$('gP_closet').classList.contains('on')) { openP('gP_closet'); ME.walk = null; const p = ME.v.root.localToWorld(V(-0.55, 0, 0.05)); p.y = ME.v.root.position.y; ME.ent.m.root.position.copy(p); ME.ent.m.root.rotation.y = 0; W.flyTo(V(p.x, p.y - 0.05, p.z), 4.7, V(-0.12, 0.16, 1)); }
+  }
+  const wingTick = t => { for (const e of W.ENT) { if (!e.m.root.userData.wearKey || !e.m.root.userData.wearKey.includes('sayap')) continue; e.m.body.children.forEach(c => { if (c.userData.wing) c.rotation.y = c.userData.wing * (0.25 + Math.sin(t * 3) * 0.25); }); } };
   // ---- hujan (visual) ----
   const RAIN = (() => { const n = 700, g = new THREE.BufferGeometry(), p = new Float32Array(n * 6); g.setAttribute('position', new THREE.BufferAttribute(p, 3));
     const l = new THREE.LineSegments(g, new THREE.LineBasicMaterial({ color: 0xcfe8ff, transparent: true, opacity: 0.55 })); l.frustumCulled = false; l.visible = false; scene.add(l);
@@ -3549,6 +3659,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
   }
   $('gHelpW').onclick = () => nearFarm && helpFarm(nearFarm.u, 'water'); $('gHelpF').onclick = () => nearFarm && helpFarm(nearFarm.u, 'feed'); $('gHelpBack').onclick = () => enterGame();
   $('gWx').onclick = () => { const dk = dayKey(Date.now()), w = weatherOf(dk), pr = pricesToday(dk); const up = Object.entries(pr).filter(([k, m]) => m > 1).map(([k]) => ITEMS[k].e + ' ' + ITEMS[k].n).join(', '); W.toast(`${w.e} ${w.n} · ${w.season}. ${w.tip} Harga naik hari ini: ${up}.`); };
+  $('gCloB').onclick = () => openCloset(); $('gClosetTabs').querySelectorAll('button').forEach(b => b.onclick = () => openCloset(b.dataset.k));
   $('gFishB').onclick = startFishing; $('gFishBack').onclick = stopFishing; $('gCast').onclick = onCast; $('gPull').onclick = onPull; $('gFishBag').onclick = () => openBag();
 
   // ---------------- chat ----------------
@@ -3626,7 +3737,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
   let lastSlow = 0;
   window.__gameTick = (t, dt, now) => {
     animateFarms(t, dt || 0.016);
-    fishTick(t, dt || 0.016, now); bubbleTick(now); rainTick(t); if (!window.__nearT || now - window.__nearT > 400) { window.__nearT = now; updateNear(); }
+    fishTick(t, dt || 0.016, now); bubbleTick(now); rainTick(t); wingTick(t); if (!window.__nearT || now - window.__nearT > 400) { window.__nearT = now; updateNear(); }
     if (ME && ME.ent.sim.manual && FISHING.st === 'off') {
       const m = ME.ent.m, w = ME.walk;
       if (w) { const k = Math.min(1, (now - w.t0) / w.d); m.root.position.lerpVectors(w.from, w.to, k); m.root.rotation.y = Math.atan2(w.to.x - w.from.x, w.to.z - w.from.z) || m.root.rotation.y;
@@ -3635,5 +3746,5 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     }
     if (ME && now - lastSlow > 30000) { lastSlow = now; tickState(ME.s, Date.now()); renderFarm(ME.v, ME.s, Date.now()); updateHUD(); }
   };
-  window.__game = { weatherOf, pricesToday, ordersToday, grGoal, grGive, helpFarm, fillOrder, renderAct, eventOf, applyCostume, sendChat, pollChat, CHAT, startFishing, onCast, onPull, FISHING, get me() { return ME; }, CROPS, ANIMALS, refreshList, FARMS, api, tapTile, tapAnimal, openShop, openMis, openBag, openRank, buy: id => buy(SHOP.find(x => x.id === id)), tickState };
+  window.__game = { openCloset, eventItems, OUTFITS, weatherOf, pricesToday, ordersToday, grGoal, grGive, helpFarm, fillOrder, renderAct, eventOf, applyCostume, sendChat, pollChat, CHAT, startFishing, onCast, onPull, FISHING, get me() { return ME; }, CROPS, ANIMALS, refreshList, FARMS, api, tapTile, tapAnimal, openShop, openMis, openBag, openRank, buy: id => buy(SHOP.find(x => x.id === id)), tickState };
 }
