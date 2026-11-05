@@ -3067,14 +3067,15 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
   <div class="panel gpanel" id="gLogin"><div class="ph"><h3>🌾 Main Kebunku</h3><button data-close>✕</button></div><div class="how">
     Punya kebun & ternak sendiri di <b>Desa Tani</b>! Masukkan username IG kamu (harus sudah jadi warga) dan buat PIN 4–6 angka. PIN dipakai setiap kali main, jangan sampai lupa.
     <input id="gU" placeholder="username IG kamu" autocomplete="off" autocapitalize="off"><input id="gP" placeholder="PIN 4–6 angka" inputmode="numeric" type="password" maxlength="6">
-    <button class="go" id="gGo">Masuk / Klaim Kebun</button><div id="gErr" style="color:#dc2626;font-weight:700;margin-top:8px;font-size:13px"></div>
+    <button class="go" id="gGo">Masuk / Klaim Kebun</button>
+    <div id="gLook" style="display:none;margin-top:4px"></div><div id="gErr" style="color:#dc2626;font-weight:700;margin-top:8px;font-size:13px"></div>
     <div style="font-size:12px;color:#6b7280;margin-top:10px">${api.online ? '' : '⚠️ Mode uji: progres tersimpan di HP ini saja.'}</div></div></div>
   <div class="panel gpanel" id="gP_seed"><div class="ph"><h3>🌱 Pilih Benih</h3><button data-close>✕</button></div><div class="pb" id="gSeedList"></div></div>
   <div class="panel gpanel" id="gP_shop"><div class="ph"><h3>🏪 Toko Pasar Pulau</h3><button data-close>✕</button></div><div class="pb" id="gShopList"></div></div>
   <div class="panel gpanel" id="gP_bag"><div class="ph"><h3>🎒 Tas & Jual</h3><button data-close>✕</button></div><div class="pb" id="gBagList"></div></div>
   <div class="panel gpanel" id="gP_mis"><div class="ph"><h3>🎯 Kegiatan Desa</h3><button data-close>✕</button></div><div class="pb"><div class="gtabs" id="gActTabs" style="flex-wrap:wrap"><button data-k="mis" class="on">🎯 Misi</button><button data-k="order">📋 Pesanan</button><button data-k="gr">🤝 Gotong Royong</button><button data-k="event">🎪 Event</button><button data-k="cal">📅 Kalender</button></div><div id="gMisList"></div></div></div>
   <div class="panel gpanel" id="gP_chat"><div class="ph"><h3>💬 Obrolan Desa <span id="gOnline" style="font-size:12px;color:#16a34a;font-weight:700;margin-left:6px"></span></h3><button data-close>✕</button></div><div class="pb" id="gChatList" style="flex:1;min-height:200px"></div><div id="gChatIn"><input id="gMsg" maxlength="140" placeholder="Tulis pesan… (sopan ya 🙏)" autocomplete="off"><button id="gSend">Kirim</button></div></div>
-  <div class="panel gpanel" id="gP_closet" style="max-height:56vh"><div class="ph"><h3>👗 Lemari & Butik</h3><button data-close>✕</button></div><div class="pb"><div class="gtabs" id="gClosetTabs" style="flex-wrap:wrap"><button data-k="hat" class="on">🎩 Topi</button><button data-k="top">👕 Baju</button><button data-k="bottom">👖 Celana</button><button data-k="acc">🕶️ Aksesoris</button><button data-k="shop">✨ Butik</button></div><div id="gClosetList"></div></div></div>
+  <div class="panel gpanel" id="gP_closet" style="max-height:56vh"><div class="ph"><h3>👗 Lemari & Butik</h3><button data-close>✕</button></div><div class="pb"><div class="gtabs" id="gClosetTabs" style="flex-wrap:wrap"><button data-k="look">💇 Rambut</button><button data-k="hat" class="on">🎩 Topi</button><button data-k="top">👕 Baju</button><button data-k="bottom">👖 Celana</button><button data-k="acc">🕶️ Aksesoris</button><button data-k="shop">✨ Butik</button></div><div id="gClosetList"></div></div></div>
   <div class="panel gpanel" id="gP_rank"><div class="ph"><h3>🏆 Papan Peringkat</h3><button data-close>✕</button></div><div class="pb"><div class="gtabs" id="gRankTabs"><button data-k="coins" class="on">🪙 Terkaya</button><button data-k="hearts">❤️ Peternak</button><button data-k="missions_done">🎯 Misi</button><button data-k="harvests">🧺 Panen</button><button data-k="fish">🎣 Ikan</button></div><div id="gRankList"></div></div></div>`;
   document.body.appendChild(ui);
   const panels = ['gLogin', 'gP_seed', 'gP_shop', 'gP_bag', 'gP_mis', 'gP_rank', 'gP_chat', 'gP_closet'];
@@ -3103,6 +3104,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     if (!r.ok) { $('gErr').textContent = r.err || 'Gagal masuk'; return; }
     try { localStorage.setItem('pn_login', JSON.stringify({ u, p })); } catch {}
     const s = r.state && r.state.tiles ? r.state : newState();
+    if (!s.look) { const ok = await chooseLook(u, s); if (!ok) return; }
     if (s.inv.umpan === undefined) s.inv.umpan = 10; s.stats.fish = s.stats.fish || 0;
     ME = { u, p, s, ent };
     const msgs = []; tickState(ME.s, Date.now(), msgs);
@@ -3112,6 +3114,28 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     ME.v = v; renderFarm(v, ME.s, Date.now());
     migrateWardrobe(ME.s); applyCostume(u, ME.s); pollHelps(); grLoad();
     markDirty(); closeP(); enterGame(); api.rpc('farm_ping', { p_user: u, p_pin: p }).catch(() => {}); pollChat(); msgs.forEach((m, i) => setTimeout(() => W.toast(m), i * 2600));
+  }
+  function chooseLook(u, s) {
+    return new Promise(res => {
+      const box = $('gLook'); $('gGo').style.display = 'none'; ['gU', 'gP'].forEach(id => $(id).style.display = 'none');
+      const st = { g: null, hair: null, hc: HAIR_C[0], hjc: 0xf9a8d4 };
+      const HAIRS = { w: [['panjang', '💇‍♀️ Rambut Panjang'], ['kuncir', '🎀 Kuncir Kuda'], ['sanggul', '👩 Sanggul'], ['hijab', '🧕 Berhijab']], p: [['pendek', '👦 Rambut Pendek'], ['jabrik', '🦔 Jabrik'], ['peci', '🧢 Peci']] };
+      const draw = () => {
+        box.innerHTML = `<b style="font-size:15px">Hai @${esc(u)}! Pilih karaktermu 👇</b>
+          <div style="display:flex;gap:10px;margin:10px 0">${[['w', '👩', 'Perempuan', '#fdf2f8', '#db2777'], ['p', '👨', 'Laki-laki', '#eff6ff', '#2563eb']].map(([k, e, t, bg, bc]) => `<button data-g="${k}" style="flex:1;border:3px solid ${st.g === k ? bc : '#e5e7eb'};background:${bg};border-radius:16px;padding:14px 6px;font:800 15px Poppins"><div style="font-size:40px">${e}</div>${t}</button>`).join('')}</div>
+          ${st.g ? `<div style="font-size:13px;font-weight:700;margin:4px 0">Gaya rambut</div><div style="display:flex;flex-wrap:wrap;gap:6px">${HAIRS[st.g].map(([k, t]) => `<button data-h="${k}" class="gbtn" style="padding:8px 10px;font-size:12.5px;${st.hair === k ? 'background:#14181f' : ''}">${t}</button>`).join('')}</div>
+          ${st.hair === 'hijab' ? `<div style="font-size:13px;font-weight:700;margin:10px 0 4px">Warna hijab</div><div style="display:flex;gap:8px">${[0xf9a8d4, 0x99f6e4, 0xc4b5fd, 0xfde68a, 0x1f2937, 0xffffff].map(c => `<button data-hj="${c}" style="width:34px;height:34px;border-radius:50%;border:3px solid ${st.hjc === c ? '#14181f' : '#e5e7eb'};background:#${c.toString(16).padStart(6, '0')}"></button>`).join('')}</div>`
+            : st.hair && st.hair !== 'peci' ? `<div style="font-size:13px;font-weight:700;margin:10px 0 4px">Warna rambut</div><div style="display:flex;gap:8px">${HAIR_C.map(c => `<button data-hc="${c}" style="width:34px;height:34px;border-radius:50%;border:3px solid ${st.hc === c ? '#f59e0b' : '#e5e7eb'};background:#${c.toString(16).padStart(6, '0')}"></button>`).join('')}</div>` : ''}` : ''}
+          <button class="go" id="gLookGo" style="margin-top:14px" ${st.g && st.hair ? '' : 'disabled'}>Mulai Main 🌾</button>
+          <div style="font-size:11.5px;color:#6b7280;margin-top:6px">Kamu tetap bebas memakai baju apa pun dari Butik. Gaya rambut bisa diganti lagi di 👗 Lemari.</div>`;
+        box.querySelectorAll('[data-g]').forEach(b => b.onclick = () => { st.g = b.dataset.g; st.hair = HAIRS[st.g][0][0]; draw(); });
+        box.querySelectorAll('[data-h]').forEach(b => b.onclick = () => { st.hair = b.dataset.h; draw(); });
+        box.querySelectorAll('[data-hc]').forEach(b => b.onclick = () => { st.hc = +b.dataset.hc; draw(); });
+        box.querySelectorAll('[data-hj]').forEach(b => b.onclick = () => { st.hjc = +b.dataset.hj; draw(); });
+        const go = $('gLookGo'); if (go) go.onclick = () => { s.look = { ...st }; box.style.display = 'none'; $('gGo').style.display = ''; ['gU', 'gP'].forEach(id => $(id).style.display = ''); res(true); };
+      };
+      box.style.display = 'block'; draw();
+    });
   }
   $('gGo').onclick = login; $('gP').addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
   function enterGame() {
@@ -3410,8 +3434,8 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     hat_caping: { slot: 'hat', n: 'Caping Petani', e: '👒', price: 200, rar: 'biasa', k: 'caping' },
     hat_kupluk: { slot: 'hat', n: 'Kupluk Rajut', e: '🧶', price: 250, rar: 'biasa', k: 'kupluk', c: 0xdc2626 },
     hat_pantai: { slot: 'hat', n: 'Topi Pantai', e: '👒', price: 300, rar: 'biasa', k: 'pantai', c: 0xfde68a },
-    hat_koboi: { slot: 'hat', n: 'Topi Koboi', e: '🤠', price: 450, rar: 'langka', k: 'koboi' },
-    hat_bunga: { slot: 'hat', n: 'Mahkota Bunga', e: '🌸', price: 400, rar: 'langka', k: 'bunga' },
+    hat_koboi: { g: 'p', slot: 'hat', n: 'Topi Koboi', e: '🤠', price: 450, rar: 'langka', k: 'koboi' },
+    hat_bunga: { g: 'w', slot: 'hat', n: 'Mahkota Bunga', e: '🌸', price: 400, rar: 'langka', k: 'bunga' },
     hat_chef: { slot: 'hat', n: 'Topi Koki', e: '👨‍🍳', price: 600, rar: 'langka', k: 'chef' },
     hat_mahkota: { slot: 'hat', n: 'Mahkota Emas', e: '👑', price: 6000, rar: 'legend', k: 'mahkota', lv: 6 },
     // baju
@@ -3422,13 +3446,13 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     top_belang: { slot: 'top', n: 'Kaos Belang ala Bang Tanjung', e: '🧡', price: 350, rar: 'langka', pat: 'belang', c: [0xf97316, 0xffffff] },
     top_polka: { slot: 'top', n: 'Baju Polkadot', e: '🔴', price: 380, rar: 'langka', pat: 'polka', c: [0x1d4ed8, 0xffffff] },
     top_hawaii: { slot: 'top', n: 'Kemeja Hawaii', e: '🌺', price: 500, rar: 'langka', pat: 'bunga', c: [0x0ea5e9, 0xf472b6, 0xfacc15] },
-    top_batik: { slot: 'top', n: 'Kemeja Batik', e: '🟫', price: 800, rar: 'epik', pat: 'batik', c: [0x7c2d12, 0xfbbf24], lv: 3 },
+    top_batik: { g: 'p', slot: 'top', n: 'Kemeja Batik', e: '🟫', price: 800, rar: 'epik', pat: 'batik', c: [0x7c2d12, 0xfbbf24], lv: 3 },
     top_pelangi: { slot: 'top', n: 'Baju Pelangi', e: '🌈', price: 1500, rar: 'epik', pat: 'pelangi', lv: 4 },
     // celana
     bot_jeans: { slot: 'bottom', n: 'Celana Jeans', e: '👖', price: 150, rar: 'biasa', pat: 'polos', c: [0x1e3a8a] },
     bot_hitam: { slot: 'bottom', n: 'Celana Hitam', e: '👖', price: 150, rar: 'biasa', pat: 'polos', c: [0x111827] },
     bot_coklat: { slot: 'bottom', n: 'Celana Coklat', e: '👖', price: 150, rar: 'biasa', pat: 'polos', c: [0x78350f] },
-    bot_sarung: { slot: 'bottom', n: 'Sarung Kotak-kotak', e: '🟩', price: 400, rar: 'langka', pat: 'kotak', c: [0x166534, 0x14532d] },
+    bot_sarung: { g: 'p', slot: 'bottom', n: 'Sarung Kotak-kotak', e: '🟩', price: 400, rar: 'langka', pat: 'kotak', c: [0x166534, 0x14532d] },
     bot_pelangi: { slot: 'bottom', n: 'Celana Pelangi', e: '🌈', price: 1200, rar: 'epik', pat: 'pelangi', lv: 4 },
     // aksesoris
     acc_kacamata: { slot: 'acc', n: 'Kacamata Hitam', e: '🕶️', price: 300, rar: 'biasa', k: 'kacamata' },
@@ -3436,17 +3460,48 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     acc_ransel: { slot: 'acc', n: 'Tas Ransel', e: '🎒', price: 450, rar: 'langka', k: 'ransel', c: 0x2563eb },
     acc_kalung: { slot: 'acc', n: 'Kalung Emas', e: '📿', price: 1200, rar: 'epik', k: 'kalung' },
     acc_sayap: { slot: 'acc', n: 'Sayap Malaikat', e: '🪽', price: 9000, rar: 'legend', k: 'sayap', lv: 7 },
+    // ===== koleksi wanita =====
+    hat_hijab_pink: { g: 'w', slot: 'hat', n: 'Hijab Pastel Pink', e: '🧕', price: 250, rar: 'biasa', k: 'hijab', c: 0xf9a8d4 },
+    hat_hijab_mint: { g: 'w', slot: 'hat', n: 'Hijab Pastel Mint', e: '🧕', price: 250, rar: 'biasa', k: 'hijab', c: 0x99f6e4 },
+    hat_hijab_lilac: { g: 'w', slot: 'hat', n: 'Hijab Lilac', e: '🧕', price: 250, rar: 'biasa', k: 'hijab', c: 0xc4b5fd },
+    hat_hijab_bunga: { g: 'w', slot: 'hat', n: 'Hijab Motif Bunga', e: '🌸', price: 700, rar: 'langka', k: 'hijab', pat: 'bunga', c: [0xfdf2f8, 0xf472b6, 0xa78bfa] },
+    hat_hijab_mutiara: { g: 'w', slot: 'hat', n: 'Hijab Pesta Mutiara', e: '💎', price: 2200, rar: 'epik', k: 'hijab_mutiara', c: 0xfef3c7, lv: 4 },
+    hat_pita: { g: 'w', slot: 'hat', n: 'Pita Rambut Besar', e: '🎀', price: 300, rar: 'biasa', k: 'pita', c: 0xec4899 },
+    hat_bando: { g: 'w', slot: 'hat', n: 'Bando Mutiara', e: '🤍', price: 500, rar: 'langka', k: 'bando' },
+    hat_jepit: { g: 'w', slot: 'hat', n: 'Jepit Bunga Sepatu', e: '🌺', price: 350, rar: 'biasa', k: 'jepit' },
+    hat_lebar: { g: 'w', slot: 'hat', n: 'Topi Lebar Berpita', e: '👒', price: 650, rar: 'langka', k: 'lebar', c: 0xfef3c7 },
+    hat_tiara: { g: 'w', slot: 'hat', n: 'Tiara Kristal', e: '👸', price: 6500, rar: 'legend', k: 'tiara', lv: 6 },
+    top_renda: { g: 'w', slot: 'top', n: 'Blus Renda Putih', e: '🤍', price: 400, rar: 'langka', pat: 'renda', c: [0xffffff, 0xfce7f3] },
+    top_crop: { g: 'w', slot: 'top', n: 'Atasan Lilac', e: '💜', price: 200, rar: 'biasa', pat: 'polos', c: [0xc4b5fd] },
+    top_floral: { g: 'w', slot: 'top', n: 'Blus Floral', e: '🌷', price: 450, rar: 'langka', pat: 'bunga', c: [0xfef3c7, 0xf472b6, 0x34d399] },
+    top_kebaya: { g: 'w', slot: 'top', n: 'Kebaya Modern', e: '🥻', price: 1400, rar: 'epik', pat: 'kebaya', c: [0xbe185d, 0xfacc15], lv: 3 },
+    top_glitter: { g: 'w', slot: 'top', n: 'Gaun Pesta Berkilau', e: '✨', price: 2400, rar: 'epik', pat: 'glitter', c: [0x7c3aed, 0xfde68a], lv: 4, glow: true },
+    top_putri: { g: 'w', slot: 'top', n: 'Korset Gaun Putri', e: '👗', price: 5500, rar: 'legend', pat: 'putri', c: [0x93c5fd, 0xffffff], lv: 6, glow: true },
+    bot_rok_pink: { g: 'w', slot: 'bottom', n: 'Rok Mekar Pink', e: '🩷', price: 300, rar: 'biasa', skirt: 'mekar', pat: 'polos', c: [0xf9a8d4] },
+    bot_rok_plisket: { g: 'w', slot: 'bottom', n: 'Rok Plisket Krem', e: '🤎', price: 450, rar: 'langka', skirt: 'plisket', pat: 'plisket', c: [0xe7d3b0, 0xd6bf8f] },
+    bot_rok_batik: { g: 'w', slot: 'bottom', n: 'Rok Batik Panjang', e: '🟫', price: 800, rar: 'langka', skirt: 'panjang', pat: 'batik', c: [0x78350f, 0xfbbf24] },
+    bot_tutu: { g: 'w', slot: 'bottom', n: 'Rok Tutu Balerina', e: '🩰', price: 900, rar: 'epik', skirt: 'tutu', pat: 'polos', c: [0xfbcfe8] },
+    bot_gamis: { g: 'w', slot: 'bottom', n: 'Gamis Satin', e: '🥻', price: 1200, rar: 'epik', skirt: 'panjang', pat: 'polos', c: [0x0f766e], shine: true, lv: 3 },
+    bot_gaun: { g: 'w', slot: 'bottom', n: 'Rok Gaun Putri', e: '👗', price: 5500, rar: 'legend', skirt: 'gaun', pat: 'putri', c: [0x93c5fd, 0xffffff], lv: 6, glow: true },
+    acc_tas: { g: 'w', slot: 'acc', n: 'Tas Jinjing', e: '👜', price: 500, rar: 'langka', k: 'tas', c: 0xdb2777 },
+    acc_anting: { g: 'w', slot: 'acc', n: 'Anting Mutiara', e: '💎', price: 600, rar: 'langka', k: 'anting' },
+    acc_payung: { g: 'w', slot: 'acc', n: 'Payung Renda', e: '⛱️', price: 1100, rar: 'epik', k: 'payung', c: 0xfbcfe8 },
+    acc_kipas: { g: 'w', slot: 'acc', n: 'Kipas Bunga', e: '🪭', price: 700, rar: 'langka', k: 'kipas', c: 0xf472b6 },
+    acc_kupu: { g: 'w', slot: 'acc', n: 'Sayap Kupu-kupu Pelangi', e: '🦋', price: 9000, rar: 'legend', k: 'kupu', lv: 7 },
   };
   // item langka khusus event minggu ini (berubah tiap minggu; id memakai nomor minggu → koleksi unik)
   const EV_SETS = {
-    mancing: [{ slot: 'hat', n: 'Topi Nelayan', e: '🎣', k: 'nelayan' }, { slot: 'top', n: 'Rompi Pemancing', e: '🦺', pat: 'rompi' }, { slot: 'acc', n: 'Kalung Mutiara', e: '🦪', k: 'mutiara' }],
-    panen: [{ slot: 'hat', n: 'Caping Emas', e: '👒', k: 'caping_emas' }, { slot: 'top', n: 'Batik Panen Raya', e: '🌾', pat: 'batik' }, { slot: 'acc', n: 'Selendang Padi', e: '🧣', k: 'syal' }],
-    semangka: [{ slot: 'hat', n: 'Topi Semangka', e: '🍉', k: 'semangka' }, { slot: 'top', n: 'Kaos Semangka', e: '🍉', pat: 'semangka' }, { slot: 'acc', n: 'Kacamata Semangka', e: '🕶️', k: 'kacamata', c: 0xdc2626 }],
+    mancing: [{ slot: 'hat', n: 'Topi Nelayan', e: '🎣', k: 'nelayan' }, { slot: 'top', n: 'Rompi Pemancing', e: '🦺', pat: 'rompi' }, { slot: 'acc', n: 'Kalung Mutiara', e: '🦪', k: 'mutiara' },
+      { g: 'w', slot: 'hat', n: 'Hijab Ombak Samudra', e: '🌊', k: 'hijab', pat: 'ombak' }, { g: 'w', slot: 'bottom', n: 'Gaun Putri Duyung', e: '🧜‍♀️', skirt: 'duyung', pat: 'sisik', glow: true }],
+    panen: [{ slot: 'hat', n: 'Caping Emas', e: '👒', k: 'caping_emas' }, { slot: 'top', n: 'Batik Panen Raya', e: '🌾', pat: 'batik' }, { slot: 'acc', n: 'Selendang Padi', e: '🧣', k: 'syal' },
+      { g: 'w', slot: 'top', n: 'Kebaya Panen Raya', e: '🥻', pat: 'kebaya', glow: true }, { g: 'w', slot: 'hat', n: 'Mahkota Padi Emas', e: '🌾', k: 'tiara' }],
+    semangka: [{ slot: 'hat', n: 'Topi Semangka', e: '🍉', k: 'semangka' }, { slot: 'top', n: 'Kaos Semangka', e: '🍉', pat: 'semangka' }, { slot: 'acc', n: 'Kacamata Semangka', e: '🕶️', k: 'kacamata', c: 0xdc2626 },
+      { g: 'w', slot: 'bottom', n: 'Dress Semangka Mekar', e: '🍉', skirt: 'mekar', pat: 'semangka' }, { g: 'w', slot: 'hat', n: 'Pita Semangka', e: '🎀', k: 'pita', c: 0xef4444 }],
   };
   const HUES = [0xfacc15, 0x22d3ee, 0xf472b6, 0xa3e635, 0xc084fc, 0xfb923c, 0x34d399, 0xf87171];
   function eventItems(wk) {
     const ev = eventOf(wk), num = +wk.slice(6), hue = HUES[num % HUES.length], hue2 = HUES[(num + 3) % HUES.length];
-    return EV_SETS[ev].map((it, i) => ({ ...it, id: `ev${num}_${it.slot}`, n: `${it.n} #${num}`, price: [2500, 3000, 4000][i], rar: i === 2 ? 'legend' : 'epik', c: it.pat ? [hue, hue2] : (it.c || hue), ev: true, wk }));
+    return EV_SETS[ev].map((it, i) => ({ ...it, id: `ev${num}_${i}`, n: `${it.n} #${num}`, price: [2500, 3000, 4000, 3500, 4500][i], rar: i >= 2 ? 'legend' : 'epik', c: it.pat ? [hue, hue2] : (it.c || hue), ev: true, wk }));
   }
   const outfitDef = id => OUTFITS[id] || (id && id.startsWith('ev') ? (() => { const num = +id.slice(2, id.indexOf('_')); const yr = new Date().getUTCFullYear(); const wk = `${yr}-W${String(num).padStart(2, '0')}`; return eventItems(wk).find(x => x.id === id); })() : null);
   function patTex(pat, c) {
@@ -3460,10 +3515,17 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
       if (pat === 'pelangi') { ['#ef4444', '#f97316', '#facc15', '#22c55e', '#3b82f6', '#8b5cf6'].forEach((cc, i) => { x.fillStyle = cc; x.fillRect(0, i * h / 6, w, h / 6 + 1); }); }
       if (pat === 'kotak') { x.fillStyle = C[1]; for (let y = 0; y < h; y += 32) for (let xx = (y / 32 % 2) * 32; xx < w; xx += 64) x.fillRect(xx, y, 32, 32); x.strokeStyle = 'rgba(255,255,255,.35)'; x.lineWidth = 3; for (let i = 0; i < w; i += 32) { x.beginPath(); x.moveTo(i, 0); x.lineTo(i, h); x.stroke(); } }
       if (pat === 'rompi') { x.fillStyle = C[1]; x.fillRect(0, 0, w * 0.22, h); x.fillRect(w * 0.78, 0, w * 0.22, h); x.fillStyle = 'rgba(0,0,0,.25)'; for (let y = 60; y < h; y += 70) { x.fillRect(w * 0.3, y, 40, 30); x.fillRect(w * 0.58, y, 40, 30); } }
+      if (pat === 'renda') { x.fillStyle = C[1]; for (let y = 0; y < h; y += 28) for (let xx = 0; xx < w; xx += 28) { x.beginPath(); x.arc(xx + 14, y + 14, 9, 0, 7); x.fill(); } x.strokeStyle = '#fff'; x.lineWidth = 2; for (let y = 0; y < h; y += 28) for (let xx = 0; xx < w; xx += 28) { x.beginPath(); x.arc(xx + 14, y + 14, 5, 0, 7); x.stroke(); } }
+      if (pat === 'kebaya') { x.strokeStyle = C[1]; x.lineWidth = 3; for (let i = 0; i < 14; i++) { const xx = (i * 73) % w, y = (i * 47) % h; for (let k = 0; k < 6; k++) { x.beginPath(); x.ellipse(xx + Math.cos(k) * 10, y + Math.sin(k) * 10, 7, 3, k, 0, 7); x.stroke(); } } x.fillStyle = C[1]; x.fillRect(w * 0.46, 0, w * 0.08, h); }
+      if (pat === 'glitter' || pat === 'putri' || pat === 'sisik') { if (pat === 'putri') { const g = x.createLinearGradient(0, 0, 0, h); g.addColorStop(0, C[0]); g.addColorStop(1, '#ffffff'); x.fillStyle = g; x.fillRect(0, 0, w, h); }
+        if (pat === 'sisik') { const g = x.createLinearGradient(0, 0, 0, h); g.addColorStop(0, C[0]); g.addColorStop(1, C[1]); x.fillStyle = g; x.fillRect(0, 0, w, h); x.strokeStyle = 'rgba(255,255,255,.55)'; x.lineWidth = 2; for (let y = 0; y < h; y += 16) for (let xx = (y / 16 % 2) * 12; xx < w; xx += 24) { x.beginPath(); x.arc(xx, y, 12, 0, Math.PI); x.stroke(); } }
+        for (let i = 0; i < 160; i++) { x.fillStyle = i % 3 ? 'rgba(255,255,255,.85)' : C[1]; const xx = (i * 89) % w, y = (i * 53 + i * i) % h, r = 1 + (i % 3); x.beginPath(); x.arc(xx, y, r, 0, 7); x.fill(); } }
+      if (pat === 'plisket') { for (let xx = 0; xx < w; xx += 16) { x.fillStyle = (xx / 16) % 2 ? C[1] : C[0]; x.fillRect(xx, 0, 16, h); } }
+      if (pat === 'ombak') { x.strokeStyle = C[1]; x.lineWidth = 6; for (let y = 10; y < h; y += 30) { x.beginPath(); for (let xx = 0; xx <= w; xx += 8) x.lineTo(xx, y + Math.sin(xx / 20) * 8); x.stroke(); } }
       if (pat === 'semangka') { x.fillStyle = '#ef4444'; x.fillRect(0, 0, w, h * 0.75); x.fillStyle = '#16a34a'; x.fillRect(0, h * 0.82, w, h * 0.18); x.fillStyle = '#fff'; x.fillRect(0, h * 0.75, w, h * 0.07); x.fillStyle = '#111'; for (let i = 0; i < 18; i++) { x.beginPath(); x.ellipse((i * 53) % w, 20 + (i * 37) % (h * 0.6), 4, 7, 0.3, 0, 7); x.fill(); } }
     });
   }
-  function hatMesh(k, c) {
+  function hatMesh(k, c, pat) {
     const g = new THREE.Group(); g.name = 'kostum';
     const gold = () => new THREE.MeshStandardMaterial({ color: 0xfacc15, metalness: 0.7, roughness: 0.25, emissive: 0x6b4f00, emissiveIntensity: 0.3 });
     if (k === 'caping' || k === 'caping_emas') g.add(mesh(new THREE.ConeGeometry(0.48, 0.24, 14), k === 'caping_emas' ? gold() : M(0xe3c27a), 0, 0.36, 0));
@@ -3474,6 +3536,17 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     if (k === 'pantai') { g.add(mesh(new THREE.CylinderGeometry(0.5, 0.52, 0.03, 18), M(c || 0xfde68a), 0, 0.26, 0)); g.add(mesh(new THREE.SphereGeometry(0.25, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2), M(c || 0xfde68a), 0, 0.26, 0)); g.add(mesh(new THREE.CylinderGeometry(0.255, 0.255, 0.05, 14), M(0xf472b6), 0, 0.3, 0)); }
     if (k === 'chef') { g.add(mesh(new THREE.CylinderGeometry(0.24, 0.26, 0.18, 14), M(0xffffff), 0, 0.33, 0)); const t = mesh(new THREE.SphereGeometry(0.3, 12, 8), M(0xffffff), 0, 0.5, 0); t.scale.y = 0.6; g.add(t); }
     if (k === 'nelayan') { g.add(mesh(new THREE.CylinderGeometry(0.42, 0.44, 0.04, 16), M(c || 0x22d3ee), 0, 0.27, 0)); g.add(mesh(new THREE.CylinderGeometry(0.25, 0.28, 0.2, 14), M(c || 0x22d3ee), 0, 0.37, 0)); g.add(mesh(new THREE.SphereGeometry(0.05, 6, 5), gold(), 0.27, 0.37, 0.05)); }
+    if (k === 'hijab' || k === 'hijab_mutiara') { const hm = Array.isArray(c) ? new THREE.MeshStandardMaterial({ map: patTex('bunga', c), roughness: 0.8 }) : (typeof c === 'object' && c && c.isMaterial) ? c : M(c || 0xf9a8d4);
+      const hm2 = pat ? new THREE.MeshStandardMaterial({ map: patTex(pat, Array.isArray(c) ? c : [c, 0xffffff]), roughness: 0.8 }) : hm;
+      const hj = mesh(new THREE.SphereGeometry(0.335, 14, 10), hm2, 0, 0.02, -0.075); g.add(hj); const dr = mesh(new THREE.ConeGeometry(0.44, 0.5, 14), hm2, 0, -0.3, -0.04); g.add(dr);
+      if (k === 'hijab_mutiara') for (let i = 0; i < 9; i++) { const a = -1.1 + i * 0.275; g.add(mesh(new THREE.SphereGeometry(0.03, 6, 5), new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 0.4, roughness: 0.2 }), Math.sin(a) * 0.33, 0.2 + Math.cos(a) * 0.05, Math.cos(a) * 0.2, false)); } }
+    if (k === 'pita') { const pm = M(c || 0xec4899); for (const sx of [-1, 1]) { const b = mesh(new THREE.ConeGeometry(0.11, 0.2, 4), pm, sx * 0.1, 0.34, -0.02, false); b.rotation.z = sx * Math.PI / 2; g.add(b); } g.add(mesh(new THREE.SphereGeometry(0.05, 8, 6), pm, 0, 0.34, -0.02, false)); }
+    if (k === 'bando') { const t = mesh(new THREE.TorusGeometry(0.29, 0.02, 6, 20, Math.PI), M(0xfdf2f8), 0, 0.12, 0, false); t.rotation.y = Math.PI / 2; g.add(t); for (let i = 0; i < 7; i++) { const a = (i / 6) * Math.PI; g.add(mesh(new THREE.SphereGeometry(0.03, 6, 5), new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 0.3, roughness: 0.15 }), 0, 0.12 + Math.sin(a) * 0.29, Math.cos(a) * 0.29, false)); } }
+    if (k === 'jepit') { [0xef4444, 0xf97316, 0xef4444, 0xf97316, 0xef4444].forEach((cc, i) => { const a = i / 5 * Math.PI * 2; g.add(mesh(new THREE.SphereGeometry(0.05, 6, 5), M(cc), 0.25 + Math.cos(a) * 0.05, 0.15 + Math.sin(a) * 0.05, 0.08, false)); }); g.add(mesh(new THREE.SphereGeometry(0.03, 6, 5), M(0xfacc15), 0.27, 0.15, 0.1, false)); }
+    if (k === 'lebar') { g.add(mesh(new THREE.CylinderGeometry(0.6, 0.62, 0.025, 20), M(c || 0xfef3c7), 0, 0.25, 0)); g.add(mesh(new THREE.SphereGeometry(0.25, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2), M(c || 0xfef3c7), 0, 0.25, 0)); g.add(mesh(new THREE.CylinderGeometry(0.255, 0.255, 0.06, 14), M(0xec4899), 0, 0.29, 0)); for (const sx of [-1, 1]) { const b = mesh(new THREE.BoxGeometry(0.05, 0.22, 0.02), M(0xec4899), 0.08 * sx, 0.18, -0.3, false); b.rotation.z = sx * 0.3; g.add(b); } }
+    if (k === 'tiara') { const sm = new THREE.MeshStandardMaterial({ color: Array.isArray(c) ? c[0] : (c || 0xe5e7eb), metalness: 0.85, roughness: 0.15, emissive: 0x334155, emissiveIntensity: 0.25 }); const gem = new THREE.MeshStandardMaterial({ color: 0x60a5fa, emissive: 0x2563eb, emissiveIntensity: 0.6, metalness: 0.3, roughness: 0.1 });
+      const band = mesh(new THREE.TorusGeometry(0.27, 0.018, 6, 24, Math.PI), sm, 0, 0.18, 0.02, false); band.rotation.x = -0.3; g.add(band); for (let i = 0; i < 5; i++) { const a = 0.35 + i * 0.6; const sp = mesh(new THREE.ConeGeometry(0.035, i === 2 ? 0.2 : 0.12, 4), sm, Math.cos(a) * 0.27, 0.22 + (i === 2 ? 0.08 : 0.04), Math.sin(a) * 0.27 * 0.9, false); g.add(sp); }
+      g.add(mesh(new THREE.OctahedronGeometry(0.055), gem, 0, 0.33, 0.27, false)); }
     if (k === 'semangka') { const r = mesh(new THREE.SphereGeometry(0.32, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2), M(0x16a34a), 0, 0.08, 0); g.add(r); g.add(mesh(new THREE.CylinderGeometry(0.31, 0.31, 0.03, 14), M(0xef4444), 0, 0.09, 0)); g.add(mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.1, 4), M(0x7c4a1e), 0, 0.45, 0)); }
     return g;
   }
@@ -3484,48 +3557,108 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     if (k === 'syal') { const t = mesh(new THREE.TorusGeometry(0.2, 0.06, 6, 16), M(c || 0xdc2626), 0, 1.05, 0.02, false); t.rotation.x = Math.PI / 2; body.push(t); body.push(mesh(new THREE.BoxGeometry(0.1, 0.3, 0.05), M(c || 0xdc2626), 0.1, 0.88, 0.25, false)); }
     if (k === 'ransel') { body.push(mesh(new THREE.BoxGeometry(0.36, 0.4, 0.18), M(c || 0x2563eb), 0, 0.82, -0.32)); body.push(mesh(new THREE.BoxGeometry(0.3, 0.14, 0.05), M(0x1e3a8a), 0, 0.7, -0.42, false)); }
     if (k === 'kalung' || k === 'mutiara') { const t = mesh(new THREE.TorusGeometry(0.2, 0.015, 5, 20), k === 'mutiara' ? M(0xf8fafc) : gold, 0, 1.0, 0.06, false); t.rotation.x = Math.PI / 2.4; body.push(t); body.push(mesh(new THREE.SphereGeometry(0.04, 8, 6), k === 'mutiara' ? M(c || 0xf472b6) : gold, 0, 0.9, 0.29, false)); }
+    if (k === 'tas') { const hb = []; hb.push(mesh(new THREE.BoxGeometry(0.22, 0.17, 0.09), M(c || 0xdb2777), 0, -0.55, 0.05)); const hd = mesh(new THREE.TorusGeometry(0.07, 0.012, 5, 12, Math.PI), M(0xfacc15), 0, -0.46, 0.05, false); hb.push(hd); return { head, body, hand: hb }; }
+    if (k === 'payung') { const hb = []; hb.push(mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.9, 5), M(0x7c4a1e), 0, -0.05, 0.05, false)); const top = mesh(new THREE.ConeGeometry(0.55, 0.22, 12, 1, true), new THREE.MeshStandardMaterial({ color: c || 0xfbcfe8, side: THREE.DoubleSide }), 0, 0.42, 0.05); hb.push(top);
+      for (let i = 0; i < 12; i++) { const a = i / 12 * Math.PI * 2; hb.push(mesh(new THREE.SphereGeometry(0.03, 5, 4), M(0xffffff), Math.cos(a) * 0.55, 0.31, Math.sin(a) * 0.55 + 0.05, false)); } return { head, body, hand: hb }; }
+    if (k === 'kipas') { const hb = []; const sh = new THREE.Shape(); sh.moveTo(0, 0); sh.absarc(0, 0, 0.22, 0.3, Math.PI - 0.3, false); sh.lineTo(0, 0); const f = new THREE.Mesh(new THREE.ShapeGeometry(sh), new THREE.MeshStandardMaterial({ map: patTex('bunga', [c || 0xf472b6, 0xffffff, 0xfacc15]), side: THREE.DoubleSide })); f.position.set(0, -0.5, 0.1); hb.push(f); return { head, body, hand: hb }; }
+    if (k === 'anting') { const gm = new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 0.4, roughness: 0.15 }); for (const sx of [-1, 1]) { head.push(mesh(new THREE.SphereGeometry(0.035, 8, 6), gm, sx * 0.29, -0.08, 0.02, false)); head.push(mesh(new THREE.SphereGeometry(0.015, 6, 5), new THREE.MeshStandardMaterial({ color: 0xfacc15, metalness: 0.8 }), sx * 0.29, -0.03, 0.02, false)); } }
+    if (k === 'kupu') { const cols = [[0xf472b6, 0xa78bfa], [0x60a5fa, 0x34d399]];
+      for (const sx of [-1, 1]) for (const [j, yy] of [[0, 1.05], [1, 0.8]]) { const sh = new THREE.Shape(); sh.moveTo(0, 0); sh.bezierCurveTo(sx * 0.2, 0.35 - j * 0.3, sx * 0.6, 0.3 - j * 0.35, sx * 0.5, -0.05 - j * 0.1); sh.lineTo(0, 0);
+        const mat_ = new THREE.MeshStandardMaterial({ map: patTex('glitter', cols[j]), side: THREE.DoubleSide, transparent: true, opacity: 0.93, emissive: cols[j][0], emissiveIntensity: 0.25 });
+        const w = new THREE.Mesh(new THREE.ShapeGeometry(sh), mat_); w.position.set(sx * 0.04, yy, -0.29); w.userData.wing = sx; body.push(w); } }
     if (k === 'sayap') { const wm = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xfff7cc, emissiveIntensity: 0.25, side: THREE.DoubleSide, transparent: true, opacity: 0.92 });
       for (const sx of [-1, 1]) { const sh = new THREE.Shape(); sh.moveTo(0, 0); sh.quadraticCurveTo(sx * 0.55, 0.5, sx * 0.7, 0.05); sh.quadraticCurveTo(sx * 0.45, -0.25, 0, -0.1); const w = new THREE.Mesh(new THREE.ShapeGeometry(sh), wm); w.position.set(sx * 0.05, 0.95, -0.28); w.userData.wing = sx; body.push(w); } }
-    return { head, body };
+    return { head, body, hand: [] };
   }
+  const HAIR_C = [0x1c1410, 0x4a2c17, 0x7c4a1e, 0x8b5a2b];
+  function baseHair(look) {
+    const g = new THREE.Group(); g.name = 'basehair'; const hc = M(look.hc || 0x1c1410);
+    if (look.hair === 'pendek') g.add(mesh(new THREE.SphereGeometry(0.305, 12, 7, 0, Math.PI * 2, 0, Math.PI / 2.4), hc, 0, 0.03, -0.02));
+    if (look.hair === 'jabrik') { g.add(mesh(new THREE.SphereGeometry(0.305, 12, 7, 0, Math.PI * 2, 0, Math.PI / 2.4), hc, 0, 0.03, -0.02)); for (let i = 0; i < 7; i++) { const a = i / 7 * Math.PI * 2; const sp = mesh(new THREE.ConeGeometry(0.06, 0.18, 4), hc, Math.cos(a) * 0.16, 0.28, Math.sin(a) * 0.16 - 0.03, false); sp.rotation.set(Math.sin(a) * 0.5, 0, -Math.cos(a) * 0.5); g.add(sp); } }
+    if (look.hair === 'peci') g.add(mesh(new THREE.CylinderGeometry(0.25, 0.27, 0.17, 12), M(0x161616), 0, 0.22, 0));
+    if (look.hair === 'panjang' || look.hair === 'kuncir' || look.hair === 'sanggul') {
+      g.add(mesh(new THREE.SphereGeometry(0.315, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2.1), hc, 0, 0.02, -0.02));
+      const fr = mesh(new THREE.BoxGeometry(0.5, 0.08, 0.08), hc, 0, 0.17, 0.24); fr.rotation.x = -0.3; g.add(fr); // poni
+      if (look.hair === 'panjang') { const back = mesh(new THREE.BoxGeometry(0.56, 0.62, 0.18), hc, 0, -0.18, -0.2); g.add(back); for (const sx of [-1, 1]) g.add(mesh(new THREE.BoxGeometry(0.1, 0.46, 0.14), hc, sx * 0.27, -0.12, 0.02)); }
+      if (look.hair === 'kuncir') { g.add(mesh(new THREE.SphereGeometry(0.06, 8, 6), M(0xec4899), 0, 0.15, -0.3, false)); const pt = mesh(new THREE.CylinderGeometry(0.09, 0.03, 0.45, 8), hc, 0, -0.08, -0.38); pt.rotation.x = 0.35; g.add(pt); }
+      if (look.hair === 'sanggul') g.add(mesh(new THREE.SphereGeometry(0.14, 10, 8), hc, 0, 0.12, -0.33));
+    }
+    if (look.hair === 'hijab') { const hm = M(look.hjc || 0xf9a8d4); g.add(mesh(new THREE.SphereGeometry(0.335, 14, 10), hm, 0, 0.02, -0.075)); g.add(mesh(new THREE.ConeGeometry(0.44, 0.5, 14), hm, 0, -0.3, -0.04)); }
+    if (look.g === 'w') { for (const sx of [-1, 1]) { const l = mesh(new THREE.BoxGeometry(0.07, 0.015, 0.01), M(0x111111), sx * 0.1, 0.095, 0.27, false); l.rotation.z = sx * -0.25; g.add(l); } }
+    return g;
+  }
+  function skirtMesh(type, mat_) {
+    const g = new THREE.Group(); g.name = 'skirt';
+    if (type === 'mekar') g.add(mesh(new THREE.CylinderGeometry(0.3, 0.46, 0.34, 18, 1, true), mat_, 0, 0.42, 0));
+    if (type === 'plisket') g.add(mesh(new THREE.CylinderGeometry(0.3, 0.4, 0.42, 24, 1, true), mat_, 0, 0.38, 0));
+    if (type === 'tutu') { for (let i = 0; i < 3; i++) g.add(mesh(new THREE.CylinderGeometry(0.3, 0.55 - i * 0.05, 0.08, 20, 1, true), mat_, 0, 0.48 - i * 0.05, 0)); }
+    if (type === 'panjang') g.add(mesh(new THREE.CylinderGeometry(0.3, 0.42, 0.62, 20, 1, true), mat_, 0, 0.3, 0));
+    if (type === 'gaun' || type === 'duyung') { g.add(mesh(new THREE.CylinderGeometry(0.3, type === 'gaun' ? 0.68 : 0.36, 0.64, 24, 1, true), mat_, 0, 0.3, 0));
+      if (type === 'duyung') { const f = mesh(new THREE.ConeGeometry(0.5, 0.3, 18, 1, true), mat_, 0, 0.0, 0); f.rotation.x = Math.PI; g.add(f); }
+      else for (let i = 0; i < 16; i++) { const a = i / 16 * Math.PI * 2; g.add(mesh(new THREE.SphereGeometry(0.035, 6, 5), new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xdbeafe, emissiveIntensity: 0.5 }), Math.cos(a) * 0.67, 0.0, Math.sin(a) * 0.67, false)); } }
+    g.traverse(o => { if (o.isMesh && o.material) { o.material = o.material.clone(); o.material.side = THREE.DoubleSide; } });
+    return g;
+  }
+  const isGenerated = e => !e.ps && !e.char;
   const torsoMesh = m => m.body.children.find(c => c.geometry && c.geometry.type === 'SphereGeometry' && Math.abs((c.geometry.parameters.radius || 0) - 0.34) < 0.01);
   function applyCostume(u, s) {
     const e = W.ENT.find(x => x.u === u); if (!e) return;
-    const wear = s && s.wear || (s && s.hat ? { hat: 'hat_' + s.hat } : {});
-    const key = JSON.stringify(wear); if (e.m.root.userData.wearKey === key) return; e.m.root.userData.wearKey = key;
+    const wear = s && s.wear || (s && s.hat ? { hat: 'hat_' + s.hat } : {}); const look = s && s.look || null;
+    const key = JSON.stringify([wear, look]); if (e.m.root.userData.wearKey === key) return; e.m.root.userData.wearKey = key;
     const m = e.m, torso = torsoMesh(m);
     if (!m.root.userData.orig) m.root.userData.orig = { torso: torso && torso.material, legs: m.legs.map(l => l.children[0].material) };
     const O = m.root.userData.orig;
     // clear previous
-    [m.head, m.body].forEach(p => p.children.filter(c => c.name === 'kostum' || c.userData.fashion).forEach(c => p.remove(c)));
-    if (torso) torso.material = O.torso; m.legs.forEach((l, i) => l.children[0].material = O.legs[i]);
-    const hd = outfitDef(wear.hat); if (hd) m.head.add(hatMesh(hd.k, hd.c));
+    [m.head, m.body, m.arms[1]].forEach(p => p.children.filter(c => c.name === 'kostum' || c.name === 'basehair' || c.name === 'skirt' || c.userData.fashion).forEach(c => p.remove(c)));
+    if (torso) torso.material = O.torso; m.legs.forEach((l, i) => { l.children[0].material = O.legs[i]; l.visible = true; });
+    // base look (gender & rambut) — untuk karakter warga biasa; pegawai tetap pakai topi seragamnya
+    if (!m.root.userData.origHead) m.root.userData.origHead = m.head.children.slice(6);
+    m.root.userData.origHead.forEach(c => c.visible = !(look && isGenerated(e)));
+    if (look && isGenerated(e)) m.head.add(baseHair(look)); else if (look && look.g === 'w') { const bh = baseHair({ g: 'w', hair: 'none' }); m.head.add(bh); }
+    const hd = outfitDef(wear.hat); if (hd) { if (hd.k === 'hijab' || hd.k === 'hijab_mutiara') { const bh = m.head.getObjectByName('basehair'); if (bh) bh.children.forEach((c, i) => { if (i < 2 || c.geometry?.type === 'BoxGeometry' && c.geometry.parameters.width > 0.3) c.visible = false; }); } m.head.add(hatMesh(hd.k, hd.c, hd.pat === 'ombak' || hd.pat === 'bunga' ? hd.pat : null)); }
     const td = outfitDef(wear.top); if (td && torso) torso.material = td.pat === 'polos' ? M(td.c[0]) : new THREE.MeshStandardMaterial({ map: patTex(td.pat, td.c), roughness: 0.8 });
-    const bd = outfitDef(wear.bottom); if (bd) { const bm = bd.pat === 'polos' ? M(bd.c[0]) : new THREE.MeshStandardMaterial({ map: patTex(bd.pat, bd.c), roughness: 0.8 }); m.legs.forEach(l => l.children[0].material = bm); }
-    const ad = outfitDef(wear.acc); if (ad) { const a = accMesh(ad.k, ad.c); a.head.forEach(o => { o.userData.fashion = true; m.head.add(o); }); a.body.forEach(o => { o.userData.fashion = true; m.body.add(o); }); }
+    if (td && torso && (td.glow || td.shine)) { torso.material.emissive = new THREE.Color(td.c[0]); torso.material.emissiveIntensity = 0.18; torso.material.roughness = 0.35; torso.material.metalness = 0.15; }
+    const bd = outfitDef(wear.bottom); if (bd) { const bm = bd.pat === 'polos' ? new THREE.MeshStandardMaterial({ color: bd.c[0], roughness: bd.shine ? 0.3 : 0.8, metalness: bd.shine ? 0.15 : 0 }) : new THREE.MeshStandardMaterial({ map: patTex(bd.pat, bd.c), roughness: 0.7 });
+      if (bd.glow) { bm.emissive = new THREE.Color(bd.c[0]); bm.emissiveIntensity = 0.15; }
+      if (bd.skirt) { const sk = skirtMesh(bd.skirt, bm); m.body.add(sk); if (bd.skirt === 'panjang' || bd.skirt === 'gaun' || bd.skirt === 'duyung') m.legs.forEach(l => l.visible = false); }
+      else m.legs.forEach(l => l.children[0].material = bm); }
+    const ad = outfitDef(wear.acc); if (ad) { const a = accMesh(ad.k, ad.c); a.head.forEach(o => { o.userData.fashion = true; m.head.add(o); }); a.body.forEach(o => { o.userData.fashion = true; m.body.add(o); }); (a.hand || []).forEach(o => { o.userData.fashion = true; m.arms[1].add(o); }); }
   }
   function migrateWardrobe(s) {
     s.closet = s.closet || []; s.wear = s.wear || {};
     (s.hats || []).forEach(h => { const id = 'hat_' + h; if (!s.closet.includes(id)) s.closet.push(id); }); if (s.hat && !s.wear.hat) s.wear.hat = 'hat_' + s.hat; delete s.hats; delete s.hat;
   }
-  let closetTab = 'hat';
+  let closetTab = 'hat', genderFilter = null;
+  const gOk = d => genderFilter === 'all' || !d.g || d.g === genderFilter;
   function openCloset(tab) {
-    if (typeof tab === 'string') closetTab = tab; const s = ME.s; migrateWardrobe(s); const el = $('gClosetList');
+    if (typeof tab === 'string') closetTab = tab; const s = ME.s; migrateWardrobe(s); const el = $('gClosetList'); if (!genderFilter) genderFilter = s.look?.g || 'all';
     $('gClosetTabs').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.k === closetTab));
-    const card = (id, d, owned, extra = '') => { const on = s.wear[d.slot] === id; const R = RAR[d.rar];
+    const card = (id, d, owned, extra = '') => { const on = s.wear[d.slot] === id; const R = RAR[d.rar]; extra = extra || (d.g === 'w' ? '<span style="color:#db2777"> · 👩</span>' : d.g === 'p' ? '<span style="color:#2563eb"> · 👨</span>' : '');
       return `<div class="gitem"><div class="ic">${d.e}</div><div class="tx"><b>${d.n}</b><span style="color:${R.c};font-weight:700">${d.ev ? '✨ ' : ''}${R.n}</span>${extra}</div>${owned ? `<button data-w="${id}" style="${on ? 'background:#14181f' : ''}">${on ? 'Dipakai' : 'Pakai'}</button>` : `<button data-b="${id}" ${s.coins < d.price || (d.lv && d.lv > s.level) ? 'disabled' : ''}>${d.lv && d.lv > s.level ? '🔒 Lv ' + d.lv : '🪙 ' + fmt(d.price)}</button>`}</div>`; };
-    if (closetTab === 'shop') {
+    if (closetTab === 'look') {
+      const L = s.look || { g: 'p', hair: 'pendek', hc: HAIR_C[0] };
+      const HAIRS = { w: [['panjang', '💇‍♀️ Panjang'], ['kuncir', '🎀 Kuncir'], ['sanggul', '👩 Sanggul'], ['hijab', '🧕 Hijab']], p: [['pendek', '👦 Pendek'], ['jabrik', '🦔 Jabrik'], ['peci', '🧢 Peci']] };
+      el.innerHTML = `<div style="font-size:13px;font-weight:700;margin:6px 0">Karakter: ${L.g === 'w' ? '👩 Perempuan' : '👨 Laki-laki'}</div><div style="display:flex;flex-wrap:wrap;gap:6px">${HAIRS[L.g].map(([k, t]) => `<button class="gbtn" data-lh="${k}" style="padding:8px 10px;${L.hair === k ? 'background:#14181f' : ''}">${t}</button>`).join('')}</div>
+        <div style="font-size:13px;font-weight:700;margin:12px 0 4px">Warna rambut</div><div style="display:flex;gap:8px">${HAIR_C.map(c => `<button data-lc="${c}" style="width:34px;height:34px;border-radius:50%;border:3px solid ${L.hc === c ? '#f59e0b' : '#e5e7eb'};background:#${c.toString(16).padStart(6, '0')}"></button>`).join('')}</div>
+        <div style="font-size:13px;font-weight:700;margin:12px 0 4px">Warna hijab</div><div style="display:flex;gap:8px">${[0xf9a8d4, 0x99f6e4, 0xc4b5fd, 0xfde68a, 0x1f2937, 0xffffff].map(c => `<button data-lj="${c}" style="width:34px;height:34px;border-radius:50%;border:3px solid ${L.hjc === c ? '#14181f' : '#e5e7eb'};background:#${c.toString(16).padStart(6, '0')}"></button>`).join('')}</div>`;
+      const upd = f => { s.look = { ...L, ...f }; applyCostume(ME.u, s); after([]); openCloset(); };
+      el.querySelectorAll('[data-lh]').forEach(b => b.onclick = () => upd({ hair: b.dataset.lh }));
+      el.querySelectorAll('[data-lc]').forEach(b => b.onclick = () => upd({ hc: +b.dataset.lc }));
+      el.querySelectorAll('[data-lj]').forEach(b => b.onclick = () => upd({ hjc: +b.dataset.lj }));
+    } else if (closetTab === 'shop') {
       const wk = weekKey(Date.now()), evs = eventItems(wk), ev = EVENTS[eventOf(wk)];
       const left = Math.ceil((dayEnd(Date.now()) + (6 - ((new Date(Date.now() + WIB).getUTCDay() + 6) % 7)) * 864e5 - Date.now()) / 864e5);
       el.innerHTML = `<div style="background:linear-gradient(135deg,#fdf2f8,#fef3c7);border-radius:14px;padding:10px 12px;margin:4px 0 6px"><b>✨ Koleksi Terbatas ${ev.n}</b><div style="font-size:12px;color:#7a4b00">Hanya dijual minggu ini · sisa ${left} hari · setelah itu tidak akan dijual lagi!</div></div>` +
-        evs.map(d => card(d.id, d, s.closet.includes(d.id))).join('') +
-        Object.entries(SLOTS).map(([sl, t]) => `<h4 style="margin:12px 0 2px;font-size:11px;letter-spacing:.8px;color:#5b6472">${t.toUpperCase()}</h4>` + Object.entries(OUTFITS).filter(([id, d]) => d.slot === sl).map(([id, d]) => card(id, d, s.closet.includes(id))).join('')).join('');
+        `<div class="gtabs" style="margin:6px 0">${[['w', '👩 Wanita'], ['p', '👨 Pria'], ['all', '🌈 Semua']].map(([k, t]) => `<button data-gf="${k}" class="${genderFilter === k ? 'on' : ''}">${t}</button>`).join('')}</div>` +
+        evs.filter(gOk).map(d => card(d.id, d, s.closet.includes(d.id))).join('') +
+        Object.entries(SLOTS).map(([sl, t]) => `<h4 style="margin:12px 0 2px;font-size:11px;letter-spacing:.8px;color:#5b6472">${t.toUpperCase()}</h4>` + Object.entries(OUTFITS).filter(([id, d]) => d.slot === sl && gOk(d)).sort((a, b) => (a[1].g === s.look?.g ? -1 : 0) - (b[1].g === s.look?.g ? -1 : 0)).map(([id, d]) => card(id, d, s.closet.includes(id))).join('')).join('');
     } else {
       const own = s.closet.filter(id => outfitDef(id)?.slot === closetTab);
       el.innerHTML = `<div class="gitem"><div class="ic">🚫</div><div class="tx"><b>Tanpa ${SLOTS[closetTab].slice(3).toLowerCase()}</b><span>Pakai gaya bawaan</span></div><button data-w="" data-slot="${closetTab}" style="${!s.wear[closetTab] ? 'background:#14181f' : ''}">${!s.wear[closetTab] ? 'Dipakai' : 'Pakai'}</button></div>` +
         own.map(id => card(id, outfitDef(id), true)).join('') + (own.length ? '' : `<p style="color:#6b7280;font-size:13px">Belum punya. Belanja di tab ✨ Butik!</p>`);
     }
     el.querySelectorAll('[data-w]').forEach(b => b.onclick = () => { const id = b.dataset.w, d = outfitDef(id); s.wear[d ? d.slot : b.dataset.slot] = id || undefined; if (!id) delete s.wear[b.dataset.slot]; applyCostume(ME.u, s); after([]); openCloset(); });
+    el.querySelectorAll('[data-gf]').forEach(b => b.onclick = () => { genderFilter = b.dataset.gf; openCloset(); });
     el.querySelectorAll('[data-b]').forEach(b => b.onclick = () => { const id = b.dataset.b, d = outfitDef(id); if (!d || s.coins < d.price) return; s.coins -= d.price; s.closet.push(id); s.wear[d.slot] = id; applyCostume(ME.u, s); after([`${d.e} ${d.n} dibeli & langsung dipakai!${d.ev ? ' Item langka edisi terbatas ✨' : ''}`]); openCloset(); });
     if (!$('gP_closet').classList.contains('on')) { openP('gP_closet'); ME.walk = null; const p = ME.v.root.localToWorld(V(-0.55, 0, 0.05)); p.y = ME.v.root.position.y; ME.ent.m.root.position.copy(p); ME.ent.m.root.rotation.y = 0; W.flyTo(V(p.x, p.y - 0.05, p.z), 4.7, V(-0.12, 0.16, 1)); }
   }
