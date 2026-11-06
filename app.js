@@ -2935,9 +2935,20 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     { id: 'roof', n: 'Cat Atap Rumah', e: '🎨', price: 250, lv: 1, d: 'Ganti warna atap' },
     { id: 'fence', n: 'Pagar Kayu', e: '🪵', price: 450, lv: 2, d: 'Pagar keliling kebun' },
     { id: 'garden', n: 'Taman Bunga', e: '🌷', price: 600, lv: 3, d: 'Bunga di depan rumah' },
-    { id: 'pet_kucing', n: 'Kucing Peliharaan', e: '🐈', price: 500, lv: 2, d: 'Menemani di kebun' },
-    { id: 'pet_anjing', n: 'Anjing Peliharaan', e: '🐕', price: 700, lv: 3, d: 'Menjaga kebunmu' },
+    { id: 'pet_pick', n: 'Peliharaan Kesayangan', e: '🐾', price: 0, lv: 5, d: 'Kucing oren, hitam, putih, telon & lainnya' },
   ];
+  const PETS = {
+    kucing_oren:  { n: 'Kucing Oren',  e: '🐈', def: 'Oyen',   k: 'cat', base: 0xf08a24, mark: 0xb4520f, belly: 0xfde7c8, eye: 0x16a34a, rec: true, sw: 'repeating-linear-gradient(110deg,#f08a24 0 7px,#b4520f 7px 10px)', d: 'Si oyen legendaris. Lincah & bikin rame kebun.' },
+    kucing_hitam: { n: 'Kucing Hitam', e: '🐈‍⬛', def: 'Item',   k: 'cat', base: 0x1f2328, mark: 0x1f2328, belly: 0x2b3036, eye: 0xfacc15, sw: '#1f2328', d: 'Kalem, misterius, matanya kuning.' },
+    kucing_putih: { n: 'Kucing Putih', e: '🐈', def: 'Salju',  k: 'cat', base: 0xf8fafc, mark: 0xf8fafc, belly: 0xffffff, eye: 0x3b82f6, sw: '#f1f5f9', d: 'Bulu seputih salju, mata biru.' },
+    kucing_telon: { n: 'Kucing Telon', e: '🐈', def: 'Belang', k: 'cat', base: 0xf8fafc, mark: 0xf08a24, mark2: 0x1f2328, belly: 0xffffff, eye: 0x16a34a, sw: 'radial-gradient(circle at 30% 35%,#f08a24 0 28%,transparent 29%),radial-gradient(circle at 70% 65%,#1f2328 0 24%,transparent 25%),#f8fafc', d: 'Belang tiga: putih, oren, hitam. Pembawa hoki!' },
+    kucing_abu:   { n: 'Kucing Abu',   e: '🐈', def: 'Kelabu', k: 'cat', base: 0x9ca3af, mark: 0x4b5563, belly: 0xe5e7eb, eye: 0xf59e0b, sw: 'repeating-linear-gradient(110deg,#9ca3af 0 7px,#4b5563 7px 10px)', d: 'Abu-abu loreng, suka tidur siang.' },
+    kucing_siam:  { n: 'Kucing Siam',  e: '🐈', def: 'Moka',   k: 'cat', base: 0xf3e7d3, mark: 0x5b3a29, belly: 0xfaf3e8, eye: 0x38bdf8, point: true, sw: 'radial-gradient(circle at 50% 50%,#f3e7d3 0 45%,#5b3a29 46%)', d: 'Krem dengan wajah, telinga & ekor coklat.' },
+    anjing:       { n: 'Anjing',       e: '🐕', def: 'Bruno',  k: 'dog', base: 0x92400e, mark: 0x78350f, belly: 0xfcd9a8, eye: 0x111111, sw: '#92400e', d: 'Setia menjaga kebunmu.' },
+    kelinci:      { n: 'Kelinci',      e: '🐇', def: 'Kapas',  k: 'rabbit', base: 0xf5f5f4, mark: 0xfda4af, belly: 0xffffff, eye: 0x111111, sw: '#f5f5f4', d: 'Imut, suka loncat-loncat.' },
+  };
+  const PET_ALIAS = { kucing: 'kucing_oren' };
+  const petDef = t => PETS[PET_ALIAS[t] || t];
   const ENERGY = { fish: 3, till: 4, plant: 2, water: 2, harvest: 1, feed: 2, pet: 1, collect: 1, clear: 2 };
   const DAILY_POOL = [
     { id: 'water', t: 'Siram tanaman', n: 8 }, { id: 'harvest', t: 'Panen hasil kebun', n: 4 }, { id: 'feed', t: 'Beri makan ternak', n: 2 },
@@ -3071,7 +3082,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
   }
   function addXP(s, n, msgs) {
     s.xp += n;
-    while (s.xp >= xpNeed(s.level)) { s.xp -= xpNeed(s.level); s.level++; if (msgs) msgs.push(`⭐ Naik ke Level ${s.level}! Barang baru terbuka di toko.`); }
+    while (s.xp >= xpNeed(s.level)) { s.xp -= xpNeed(s.level); s.level++; if (msgs) msgs.push(`⭐ Naik ke Level ${s.level}! Barang baru terbuka di toko.`); if (s.level === 5 && !s.pet) { s._petOffer = 1; if (msgs) msgs.push('🐾 Level 5! Sekarang kamu bisa memilih peliharaan kesayangan. Kucing oren direkomendasikan 😺'); } }
   }
   const heartsTotal = s => s.animals.reduce((a, b) => a + b.h, 0);
 
@@ -3179,7 +3190,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     v.badge.visible = (s.badges || []).length > 0;
     const ttl = s.title && TITLES[s.title] ? TITLES[s.title].n : '';
     if (ttl !== v.title) { v.signM.map.dispose(); v.signM.map = signTex(v.u, ttl); v.signM.needsUpdate = true; v.title = ttl; }
-    if ((s.pet || '') !== v.petKey) { if (v.pet) v.root.remove(v.pet.g); v.pet = null; if (s.pet) { const g = petMesh(s.pet); g.position.set(0.3, 0.05, 1.3); v.root.add(g); v.pet = { g, tgt: g.position.clone(), ph: Math.random() * 6 }; } v.petKey = s.pet || ''; }
+    const pk = s.pet ? s.pet + '|' + (s.petName || '') : ''; if (pk !== v.petKey) { if (v.pet) v.root.remove(v.pet.g); v.pet = null; if (s.pet && petDef(s.pet)) { const g = petMesh(s.pet, s.petName || petDef(s.pet).def); g.position.set(0.3, 0.05, 1.3); v.root.add(g); v.pet = { g, tgt: g.position.clone(), ph: Math.random() * 6, jump: 0 }; } v.petKey = pk; }
     const act = new Set(tilesIdx(s));
     v.tiles.forEach((T, i) => {
       const t = s.tiles[i] || { s: 'grass' };
@@ -3203,8 +3214,11 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
   }
   function animateFarms(t, dt) {
     for (const v of FARMS.values()) if (v.pet) { const P = v.pet, p = P.g.position;
-      if (p.distanceTo(P.tgt) < 0.05) { if (Math.random() < dt * 0.5) P.tgt.set((Math.random() - 0.5) * 3.6, 0.05, -1.6 + Math.random() * 3.4); }
-      else { const d = P.tgt.clone().sub(p); p.addScaledVector(d.normalize(), Math.min(d.length(), dt * 0.6)); P.g.rotation.y = Math.atan2(d.x, d.z); P.g.children[0].position.y = Math.abs(Math.sin(t * 9 + P.ph)) * 0.03; }
+      if (P.jump > 0) { P.jump = Math.max(0, P.jump - dt * 2.5); P.g.position.y = 0.05 + Math.sin(P.jump * Math.PI) * 0.18; } else P.g.position.y = 0.05;
+      const own = ME && ME.v === v && ME.ent && ME.ent.m; let fol = false;
+      if (own) { const ap = v.root.worldToLocal(ME.ent.m.root.position.clone()); if (Math.abs(ap.x) < 4.5 && Math.abs(ap.z) < 4.5) { fol = true; const off = V(0.45, 0, 0.35); if (p.distanceTo(ap.clone().add(off)) > 0.7) P.tgt.set(ap.x + off.x, 0.05, ap.z + off.z); } }
+      if (p.distanceTo(P.tgt) < 0.05) { if (!fol && Math.random() < dt * 0.5) P.tgt.set((Math.random() - 0.5) * 3.6, 0.05, -1.6 + Math.random() * 3.4); }
+      else { const d = P.tgt.clone().sub(p); d.y = 0; p.addScaledVector(d.normalize(), Math.min(d.length(), dt * (fol ? 1.3 : 0.6))); P.g.rotation.y = Math.atan2(d.x, d.z); P.g.children[0].position.y = Math.abs(Math.sin(t * 9 + P.ph)) * 0.03; }
       P.g.children[0].children.forEach(c => { if (c.userData.tail) c.rotation.z = Math.sin(t * 8 + P.ph) * 0.6; }); }
     for (const v of FARMS.values()) v.animals.forEach((A, j) => {
       const g = A.g, p = g.position;
@@ -3240,6 +3254,11 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
   #gExit{border:0;border-radius:12px;background:rgba(255,255,255,.95);width:36px;height:34px;font:800 15px Poppins;box-shadow:0 3px 10px rgba(0,0,0,.15)}
   #bottom{flex-wrap:wrap} #btnPlay{flex:1 1 auto;font-size:15px!important;padding:12px!important} #bottom .brk{flex-basis:100%;height:0}
   body.game #gBar{display:grid}
+  .gpetgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px 8px;padding-top:8px}
+  .gpet{position:relative;border:2px solid #e5e7eb;border-radius:14px;background:#fff;padding:8px 2px 6px;text-align:center;font:700 11px Poppins,sans-serif;color:#14181f;cursor:pointer}
+  .gpet .sw{width:40px;height:40px;border-radius:50%;margin:0 auto 4px;border:2px solid rgba(0,0,0,.12);display:flex;align-items:center;justify-content:center;font-size:20px}
+  .gpet.on{border-color:#ea580c;background:#fff7ed;box-shadow:0 0 0 3px rgba(234,88,12,.18)}
+  .gpet .rec{position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:#ea580c;color:#fff;font-size:8.5px;padding:1px 6px;border-radius:8px;white-space:nowrap}
   /* naik di atas badge Netlify + 2 baris supaya semua tombol kelihatan */
   #gBar{bottom:calc(78px + env(safe-area-inset-bottom));grid-template-columns:repeat(4,1fr);gap:7px;left:12px;right:12px;padding:0;max-width:440px;margin:0 auto}
   #gBar button{min-width:0;padding:7px 2px} #gBar #gSeed{grid-column:span 2}
@@ -3302,6 +3321,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     <div id="gLook" style="display:none;margin-top:4px"></div><div id="gErr" style="color:#dc2626;font-weight:700;margin-top:8px;font-size:13px"></div>
     <div style="font-size:12px;color:#6b7280;margin-top:10px">${api.online ? '' : '⚠️ Mode uji: progres tersimpan di HP ini saja.'}</div></div></div>
   <div class="panel gpanel" id="gP_seed"><div class="ph"><h3>🌱 Pilih Benih</h3><button data-close>✕</button></div><div class="pb" id="gSeedList"></div></div>
+  <div class="panel gpanel" id="gP_pet" style="max-height:78vh"><div class="ph"><h3>🐾 Pilih Peliharaan Kesayangan</h3><button data-close>✕</button></div><div class="pb"><div id="gPetGrid" class="gpetgrid"></div><div id="gPetInfo" style="font-size:13px;color:#4b5563;margin:10px 2px"></div><label style="font-size:12px;font-weight:700;color:#5b6472">NAMA PELIHARAAN</label><input id="gPetName" maxlength="14" style="width:100%;height:44px;border:2px solid #e5e7eb;border-radius:12px;padding:0 12px;font:700 16px Poppins,sans-serif;margin:6px 0 10px;box-sizing:border-box"><button class="gbig" id="gPetOk" style="background:#ea580c">🐾 Adopsi</button></div></div>
   <div class="panel gpanel" id="gP_shop"><div class="ph"><h3>🏪 Toko Pasar Pulau</h3><button data-close>✕</button></div><div class="pb" id="gShopList"></div></div>
   <div class="panel gpanel" id="gP_bag"><div class="ph"><h3>🎒 Tas & Jual</h3><button data-close>✕</button></div><div class="pb" id="gBagList"></div></div>
   <div class="panel gpanel" id="gP_mis"><div class="ph"><h3>🎯 Kegiatan Desa</h3><button data-close>✕</button></div><div class="pb"><div class="gtabs" id="gActTabs" style="flex-wrap:wrap"><button data-k="mis" class="on">🎯 Misi</button><button data-k="order">📋 Pesanan</button><button data-k="gr">🤝 Gotong Royong</button><button data-k="event">🎪 Event</button><button data-k="cal">📅 Kalender</button></div><div id="gMisList"></div></div></div>
@@ -3309,7 +3329,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
   <div class="panel gpanel" id="gP_closet" style="max-height:56vh"><div class="ph"><h3>👗 Lemari & Butik</h3><button data-close>✕</button></div><div class="pb"><div class="gtabs" id="gClosetTabs" style="flex-wrap:wrap"><button data-k="look">💇 Rambut</button><button data-k="hat" class="on">🎩 Topi</button><button data-k="top">👕 Baju</button><button data-k="bottom">👖 Celana</button><button data-k="acc">🕶️ Aksesoris</button><button data-k="shop">✨ Butik</button></div><div id="gClosetList"></div></div></div>
   <div class="panel gpanel" id="gP_rank"><div class="ph"><h3>🏆 Papan Peringkat</h3><button data-close>✕</button></div><div class="pb"><div class="gtabs" id="gRankTabs"><button data-k="coins" class="on">🪙 Terkaya</button><button data-k="hearts">❤️ Peternak</button><button data-k="missions_done">🎯 Misi</button><button data-k="harvests">🧺 Panen</button><button data-k="fish">🎣 Ikan</button></div><div id="gRankList"></div></div></div>`;
   document.body.appendChild(ui);
-  const panels = ['gLogin', 'gP_seed', 'gP_shop', 'gP_bag', 'gP_mis', 'gP_rank', 'gP_chat', 'gP_closet'];
+  const panels = ['gLogin', 'gP_seed', 'gP_shop', 'gP_bag', 'gP_mis', 'gP_rank', 'gP_chat', 'gP_closet', 'gP_pet'];
   const openP = id => { panels.forEach(p => $(p).classList.toggle('on', p === id)); document.body.classList.add('gp'); };
   const closeP = () => { panels.forEach(p => $(p).classList.remove('on')); document.body.classList.remove('gp'); };
   ui.querySelectorAll('[data-close]').forEach(b => b.onclick = () => { const wasCloset = $('gP_closet').classList.contains('on'); closeP(); if (wasCloset && ME && FISHING.st === 'off') enterGame(); });
@@ -3344,7 +3364,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     let v = FARMS.get(u); if (!v) { const idx = Math.max(LIST.length, ...[...FARMS.values()].map(f => f.idx + 1), 0); v = buildFarm(u, idx); }
     ME.v = v; renderFarm(v, ME.s, Date.now());
     migrateWardrobe(ME.s); applyCostume(u, ME.s); pollHelps(); grLoad();
-    markDirty(); closeP(); enterGame(); api.rpc('farm_ping', { p_user: u, p_pin: p }).catch(() => {}); pollChat(); msgs.forEach((m, i) => setTimeout(() => W.toast(m), i * 2600));
+    markDirty(); closeP(); enterGame(); api.rpc('farm_ping', { p_user: u, p_pin: p }).catch(() => {}); pollChat(); msgs.forEach((m, i) => setTimeout(() => W.toast(m), i * 2600)); if (ME.s.level >= 5 && !ME.s.pet) setTimeout(openPetPicker, 1500 + msgs.length * 2600);
   }
   function chooseLook(u, s) {
     return new Promise(res => {
@@ -3435,7 +3455,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     else { W.toast(`${A.e} ${a.n} sudah dirawat hari ini ❤️ ${a.h}/10. Datang lagi besok!`); return; }
     work(wp, 0.5); after(msgs);
   }
-  function after(msgs) { renderFarm(ME.v, ME.s, Date.now()); updateHUD(); markDirty(); msgs.forEach((m, i) => setTimeout(() => W.toast(m), 300 + i * 2600)); }
+  function after(msgs) { renderFarm(ME.v, ME.s, Date.now()); updateHUD(); markDirty(); msgs.forEach((m, i) => setTimeout(() => W.toast(m), 300 + i * 2600)); if (ME.s._petOffer) { delete ME.s._petOffer; setTimeout(openPetPicker, 1200 + msgs.length * 2600); } }
 
   // ---------------- panels ----------------
   function openSeeds() {
@@ -3451,15 +3471,17 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     SHOP.forEach(it => {
       let locked = it.lv > s.level, note = it.d;
       if (it.id.startsWith('animal_') && s.animals.length >= s.barn) note = `Kandang penuh (${s.barn}). Beli kandang lebih besar.`;
-      if (it.id.startsWith('pet_') && s.pet === it.id.slice(4) ||  it.id === 'barn3' && s.barn >= 6 || it.id === 'field4' && s.field >= 4 || it.id === 'fence' && s.house.fence || it.id === 'garden' && s.house.garden) note = 'Sudah punya ✅';
+      if (it.id === 'pet_pick') note = s.pet ? `${petDef(s.pet)?.e || '🐾'} ${s.petName || petDef(s.pet)?.def} menemanimu · ganti 🪙 ${PET_CHANGE}` : '🎁 Gratis! ' + it.d;
+      if (it.id === 'barn3' && s.barn >= 6 || it.id === 'field4' && s.field >= 4 || it.id === 'fence' && s.house.fence || it.id === 'garden' && s.house.garden) note = 'Sudah punya ✅';
       const d = document.createElement('div'); d.className = 'gitem';
-      d.innerHTML = `<div class="ic">${it.e}</div><div class="tx"><b>${it.n}</b><span>${locked ? '🔒 Buka di Level ' + it.lv : note}</span></div><button>🪙 ${fmt(it.price)}</button>`;
-      const btn = d.querySelector('button'); btn.disabled = locked || s.coins < it.price || note.startsWith('Kandang penuh') || note === 'Sudah punya ✅';
+      d.innerHTML = `<div class="ic">${it.e}</div><div class="tx"><b>${it.n}</b><span>${locked ? '🔒 Buka di Level ' + it.lv : note}</span></div><button>${it.id === 'pet_pick' ? (s.pet ? 'Ganti' : 'Pilih') : '🪙 ' + fmt(it.price)}</button>`;
+      const btn = d.querySelector('button'); btn.disabled = it.id === 'pet_pick' ? locked : locked || s.coins < it.price || note.startsWith('Kandang penuh') || note === 'Sudah punya ✅';
       btn.onclick = () => buy(it); el.appendChild(d);
     });
     openP('gP_shop');
   }
   function buy(it) {
+    if (it.id === 'pet_pick') { openPetPicker(); return; }
     const s = ME.s; if (s.coins < it.price) return; const msgs = [];
     if (it.id.startsWith('seed_')) s.inv[it.id] = (s.inv[it.id] || 0) + 1;
     else if (it.id === 'pakan') s.inv.pakan = (s.inv.pakan || 0) + 5;
@@ -3470,7 +3492,6 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     else if (it.id === 'field4') s.field = 4;
     else if (it.id === 'roof') s.house.roof = ((s.house.roof || 0) + 1) % ROOFS.length;
     else if (it.id === 'fence') s.house.fence = true; else if (it.id === 'garden') s.house.garden = true;
-    else if (it.id.startsWith('pet_')) { s.pet = it.id.slice(4); msgs.push(`${it.e} ${it.n} sekarang tinggal di kebunmu!`); }
 
     s.coins -= it.price; after(msgs); openShop();
   }
@@ -3491,7 +3512,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
       <h4 style="margin:14px 0 4px;font-size:11px;letter-spacing:.8px;color:#5b6472">TERNAK (${s.animals.length}/${s.barn})</h4>${s.animals.map(a => `<div style="font-size:13.5px;padding:3px 0">${ANIMALS[a.t].e} <b>${a.n}</b> · ❤️ ${a.h}/10</div>`).join('') || '-'}`);
     const al = s.album || {}; const cnt = c => ALBUM[c].filter(k => al[c]?.[k]).length;
     el.insertAdjacentHTML('beforeend', `<h4 style="margin:16px 0 4px;font-size:11px;letter-spacing:.8px;color:#5b6472">🐾 PELIHARAAN & GAYA</h4>
-      <div style="font-size:13px;margin-top:2px">${s.pet ? (s.pet === 'kucing' ? '🐈 Kucing' : '🐕 Anjing') + ' menemanimu di kebun' : 'Belum punya peliharaan (beli di 🏪 Toko)'}</div>
+      <div style="font-size:13px;margin-top:2px">${s.pet ? `${petDef(s.pet).e} <b>${esc(s.petName || petDef(s.pet).def)}</b> (${petDef(s.pet).n}) · ❤️ ${s.petH || 0}/10` : (s.level >= 5 ? 'Belum punya peliharaan · pilih di 🏪 Toko' : '🔒 Peliharaan kesayangan terbuka di Level 5')}</div>
       <button class="gbig" id="gToCloset" style="background:#db2777">👗 Buka Lemari & Butik Fashion</button>
       <h4 style="margin:16px 0 4px;font-size:11px;letter-spacing:.8px;color:#5b6472">📖 ALBUM KOLEKSI</h4>
       ${[['fish', '🎣 Ikan', k => FISH[k].e + ' ' + FISH[k].n], ['crop', '🌱 Tanaman', k => CROPS[k].e + ' ' + CROPS[k].n], ['animal', '🐔 Ternak', k => ANIMALS[k].e + ' ' + ANIMALS[k].n], ['gold', '🌟 Barang Langka', k => ITEMS[k].e + ' ' + ITEMS[k].n]].map(([c, t, nm]) =>
@@ -3646,16 +3667,67 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     nearFarm = best; $('gHelp').style.display = best ? 'flex' : 'none'; if (best) $('gHelpT').textContent = `Kebun @${best.u}`;
   }
   // ---- peliharaan ----
-  function petMesh(t) {
-    const g = new THREE.Group(), b = new THREE.Group(); g.add(b);
-    const col = t === 'kucing' ? 0xf59e0b : 0x92400e, sc = t === 'kucing' ? 0.8 : 1;
-    b.add(mesh(new THREE.BoxGeometry(0.16 * sc, 0.14 * sc, 0.32 * sc), M(col), 0, 0.16 * sc, 0));
-    b.add(mesh(new THREE.BoxGeometry(0.16 * sc, 0.15 * sc, 0.15 * sc), M(col), 0, 0.28 * sc, 0.19 * sc));
-    for (const sx of [-1, 1]) { const e = mesh(new THREE.ConeGeometry(0.035 * sc, 0.08 * sc, 4), M(t === 'kucing' ? col : 0x78350f), sx * 0.05 * sc, 0.38 * sc, 0.17 * sc, false); if (t !== 'kucing') e.rotation.z = sx * 1.2; b.add(e); }
-    for (const sx of [-1, 1]) b.add(mesh(new THREE.SphereGeometry(0.014, 5, 4), M(0x111111), sx * 0.04 * sc, 0.3 * sc, 0.27 * sc, false));
-    for (const [x, z] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) b.add(mesh(new THREE.BoxGeometry(0.04 * sc, 0.1 * sc, 0.04 * sc), M(col), x * 0.05 * sc, 0.05 * sc, z * 0.11 * sc, false));
-    const tail = mesh(new THREE.CylinderGeometry(0.015, 0.012, 0.18 * sc, 4), M(col), 0, 0.24 * sc, -0.2 * sc, false); tail.rotation.x = -0.8; tail.userData.tail = true; b.add(tail);
-    return g;
+  function petMesh(t, name) {
+    const P = petDef(t) || PETS.kucing_oren, g = new THREE.Group(), b = new THREE.Group(); g.add(b);
+    const S = P.k === 'dog' ? 1 : P.k === 'rabbit' ? 0.75 : 0.8, mb = M(P.base), mm = M(P.mark), my = M(P.belly), pt = P.point ? mm : mb;
+    const bx = (w, h, d, m, x, y, z) => { const o = mesh(new THREE.BoxGeometry(w * S, h * S, d * S), m, x * S, y * S, z * S, false); b.add(o); return o; };
+    if (P.k === 'rabbit') {
+      bx(0.2, 0.18, 0.26, mb, 0, 0.13, 0); bx(0.15, 0.15, 0.15, mb, 0, 0.27, 0.13);
+      for (const sx of [-1, 1]) { const e = bx(0.04, 0.2, 0.025, mb, sx * 0.04, 0.44, 0.12); e.rotation.z = sx * 0.12; bx(0.02, 0.14, 0.01, mm, sx * 0.04, 0.44, 0.135).rotation.z = sx * 0.12; }
+      const tl = mesh(new THREE.SphereGeometry(0.05 * S, 6, 5), my, 0, 0.16 * S, -0.15 * S, false); b.add(tl);
+      bx(0.03, 0.02, 0.02, mm, 0, 0.27, 0.21);
+    } else {
+      bx(0.17, 0.15, 0.34, mb, 0, 0.17, 0); bx(0.13, 0.04, 0.26, my, 0, 0.1, 0.01);
+      if (P.k === 'cat' && P.mark !== P.base && !P.point) for (const z of [-0.1, 0, 0.1]) bx(0.175, 0.03, 0.035, mm, 0, 0.23, z);
+      if (P.mark2) { bx(0.176, 0.08, 0.12, mm, 0, 0.2, -0.07); bx(0.176, 0.07, 0.09, M(P.mark2), 0, 0.21, 0.08); }
+      bx(0.17, 0.16, 0.16, pt, 0, 0.3, 0.2); bx(0.09, 0.06, 0.04, P.point ? mm : my, 0, 0.26, 0.285);
+      if (P.mark2) bx(0.09, 0.09, 0.02, M(P.mark2), 0.045, 0.34, 0.281);
+      for (const sx of [-1, 1]) { const e = mesh(new THREE.ConeGeometry(0.04 * S, 0.09 * S, 4), P.k === 'dog' ? mm : pt, sx * 0.055 * S, 0.41 * S, 0.18 * S, false); if (P.k === 'dog') { e.rotation.z = sx * 1.25; e.position.y -= 0.04 * S; } b.add(e); }
+      if (P.k === 'cat') for (const sx of [-1, 1]) for (const dy of [-0.008, 0.012]) { const w = mesh(new THREE.BoxGeometry(0.07, 0.004, 0.004), M(0xf8fafc), sx * 0.075 * S, 0.265 * S + dy, 0.29 * S, false); w.rotation.z = sx * dy * 8; b.add(w); }
+      bx(0.025, 0.018, 0.015, M(P.k === 'dog' ? 0x111111 : 0xf472b6), 0, 0.285, 0.305);
+      const tail = mesh(new THREE.CylinderGeometry(0.017 * S, 0.012 * S, 0.22 * S, 5), P.point || P.mark2 ? mm : mb, 0, 0.27 * S, -0.22 * S, false); tail.rotation.x = P.k === 'dog' ? -1.0 : -0.5; tail.userData.tail = true; b.add(tail);
+    }
+    for (const sx of [-1, 1]) { const ey = mesh(new THREE.SphereGeometry(0.019 * S, 6, 5), M(P.eye), sx * 0.04 * S, (P.k === 'rabbit' ? 0.3 : 0.33) * S, (P.k === 'rabbit' ? 0.205 : 0.282) * S, false); b.add(ey); b.add(mesh(new THREE.SphereGeometry(0.008 * S, 4, 3), M(0x050505), sx * 0.04 * S, (P.k === 'rabbit' ? 0.3 : 0.33) * S, (P.k === 'rabbit' ? 0.222 : 0.298) * S, false)); }
+    for (const [x, z] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) bx(0.045, 0.1, 0.045, P.point ? mm : (z > 0 ? my : mb), x * 0.055, 0.05, z * 0.11);
+    if (name) { const c = document.createElement('canvas'); c.width = 256; c.height = 64; const x = c.getContext('2d'); x.font = '700 30px Poppins,sans-serif'; const w = Math.min(244, x.measureText(name).width + 50);
+      x.fillStyle = 'rgba(255,255,255,.92)'; x.beginPath(); x.roundRect((256 - w) / 2, 8, w, 48, 24); x.fill(); x.fillStyle = '#ea580c'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText('🐾 ' + name, 128, 33);
+      const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(c), depthTest: false, transparent: true })); sp.scale.set(0.6, 0.15, 1); sp.position.y = 0.62 * S; sp.renderOrder = 5; g.add(sp); }
+    b.traverse(o => { if (o.isMesh) o.userData.farmPet = true; });
+    g.scale.setScalar(1.45); return g;
+  }
+  const PET_CHANGE = 300;
+  let petSel = null;
+  function openPetPicker() {
+    const s = ME.s; if (s.level < 5) { W.toast('🔒 Peliharaan kesayangan terbuka di Level 5.'); return; }
+    petSel = s.pet ? (PET_ALIAS[s.pet] || s.pet) : 'kucing_oren';
+    const grid = $('gPetGrid'); grid.innerHTML = '';
+    Object.entries(PETS).forEach(([k, P]) => { const d = document.createElement('div'); d.className = 'gpet' + (k === petSel ? ' on' : ''); d.dataset.k = k;
+      d.innerHTML = `${P.rec ? '<span class="rec">⭐ REKOMENDASI</span>' : ''}<div class="sw" style="background:${P.sw}">${P.k === 'cat' ? '' : P.e}</div>${P.n.replace('Kucing ', '')}`;
+      d.onclick = () => { const old = $('gPetName').value.trim(); if (!old || old === petDef(petSel).def) $('gPetName').value = P.def; petSel = k; grid.querySelectorAll('.gpet').forEach(x => x.classList.toggle('on', x.dataset.k === k)); info(); };
+      grid.appendChild(d); });
+    $('gPetName').value = s.pet ? (s.petName || petDef(s.pet).def) : PETS.kucing_oren.def;
+    const info = () => { const P = PETS[petSel], same = s.pet && (PET_ALIAS[s.pet] || s.pet) === petSel; $('gPetInfo').innerHTML = `${P.e} <b>${P.n}</b>${P.rec ? ' · <b style="color:#ea580c">rekomendasi Bang Tanjung</b>' : ''}<br>${P.d}`;
+      $('gPetOk').textContent = !s.pet ? '🐾 Adopsi (gratis)' : same ? '✏️ Simpan nama' : `🐾 Ganti peliharaan · 🪙 ${PET_CHANGE}`; };
+    info();
+    $('gPetOk').onclick = () => {
+      const nm = ($('gPetName').value.trim() || PETS[petSel].def).replace(/[<>]/g, '').slice(0, 14), same = s.pet && (PET_ALIAS[s.pet] || s.pet) === petSel, msgs = [];
+      if (s.pet && !same) { if (s.coins < PET_CHANGE) { W.toast(`Koin kurang. Ganti peliharaan butuh 🪙 ${PET_CHANGE}.`); return; } s.coins -= PET_CHANGE; s.petH = 0; }
+      const first = !s.pet; s.pet = petSel; s.petName = nm;
+      msgs.push(first ? `${PETS[petSel].e} ${nm} sekarang jadi peliharaan kesayanganmu! Ketuk ${nm} tiap hari untuk mengelus.` : same ? `✏️ Nama peliharaan jadi ${nm}.` : `${PETS[petSel].e} Selamat datang, ${nm}!`);
+      closeP(); after(msgs);
+    };
+    openP('gP_pet');
+  }
+  function tapPet() {
+    const s = ME.s, dk = dayKey(Date.now()), P = petDef(s.pet), nm = s.petName || P.def, wp = ME.v.pet.g.getWorldPosition(V(0, 0, 0)).add(V(0, 0.5, 0)), msgs = [];
+    if (s.petDay === dk) { floatTxt('💕', wp); W.toast(`${P.e} ${nm} sudah dielus hari ini ❤️ ${s.petH || 0}/10. Datang lagi besok!`); return; }
+    if (!useEnergy(ENERGY.pet)) return;
+    s.petDay = dk; s.petH = Math.min(10, (s.petH || 0) + 1); emit(s, 'pet', 1, null, msgs); addXP(s, 3, msgs);
+    const snd = P.k === 'cat' ? 'Meong~ 😺' : P.k === 'dog' ? 'Guk guk! 🐶' : '🥕 *loncat*';
+    floatTxt(`❤️ ${s.petH}/10`, wp);
+    if (s.petH >= 5 && Math.random() < 0.35 + s.petH * 0.04) { const c = 20 + Math.floor(Math.random() * 40) + s.petH * 5; s.coins += c; msgs.push(`${P.e} ${nm} membawakan hadiah: 🪙 ${c} koin!`); }
+    tip(`${nm}: ${snd} Peliharaan ❤️ 5+ kadang membawa hadiah.`);
+    ME.v.pet.jump = 1; work(wp, 0.4); after(msgs);
   }
   // ================= FASHION: lemari, butik, item langka event =================
   const RAR = { biasa: { n: 'Biasa', c: '#6b7280' }, langka: { n: 'Langka', c: '#2563eb' }, epik: { n: 'Epik', c: '#9333ea' }, legend: { n: 'Legendaris', c: '#d97706' } };
@@ -4088,11 +4160,12 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     if (!document.body.classList.contains('game') || !ME || e.target !== renderer.domElement) return;
     if (!pd || Math.hypot(e.clientX - pd[0], e.clientY - pd[1]) > 8) return;
     ray.setFromCamera(V((e.clientX / innerWidth) * 2 - 1, -(e.clientY / innerHeight) * 2 + 1, 0), camera);
-    const objs = [...ME.v.tiles.map(T => T.m).filter(m => m.visible), ...ME.v.tiles.map(T => T.crop).filter(Boolean), ...ME.v.animals.map(a => a.g)];
+    const objs = [...ME.v.tiles.map(T => T.m).filter(m => m.visible), ...ME.v.tiles.map(T => T.crop).filter(Boolean), ...ME.v.animals.map(a => a.g), ...(ME.v.pet ? [ME.v.pet.g] : [])];
     const h = ray.intersectObjects(objs, true)[0]; if (!h) return;
     e.stopPropagation();
     let o = h.object; while (o && !o.userData.farmTile && !o.userData.farmAnimal && o !== ME.v.root) o = o.parent;
-    if (o && o.userData.farmTile) tapTile(o.userData.farmTile.i);
+    if (h.object.userData.farmPet) tapPet();
+    else if (o && o.userData.farmTile) tapTile(o.userData.farmTile.i);
     else if (h.object.userData.farmAnimal) tapAnimal(h.object.userData.farmAnimal.j);
     else { const T = ME.v.tiles.findIndex(T => T.crop && (T.crop === h.object || T.crop.getObjectById(h.object.id))); if (T >= 0) tapTile(T); }
   }, true);
@@ -4110,5 +4183,5 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     }
     if (ME && now - lastSlow > 30000) { lastSlow = now; tickState(ME.s, Date.now()); renderFarm(ME.v, ME.s, Date.now()); updateHUD(); }
   };
-  window.__game = { openCloset, eventItems, OUTFITS, weatherOf, pricesToday, ordersToday, grGoal, grGive, helpFarm, fillOrder, renderAct, eventOf, applyCostume, sendChat, pollChat, CHAT, startFishing, onCast, onPull, FISHING, get me() { return ME; }, CROPS, ANIMALS, refreshList, FARMS, api, tapTile, tapAnimal, openShop, openMis, openBag, openRank, buy: id => buy(SHOP.find(x => x.id === id)), tickState };
+  window.__game = { openPetPicker, tapPet, PETS, petMesh, openCloset, eventItems, OUTFITS, weatherOf, pricesToday, ordersToday, grGoal, grGive, helpFarm, fillOrder, renderAct, eventOf, applyCostume, sendChat, pollChat, CHAT, startFishing, onCast, onPull, FISHING, get me() { return ME; }, CROPS, ANIMALS, refreshList, FARMS, api, tapTile, tapAnimal, openShop, openMis, openBag, openRank, buy: id => buy(SHOP.find(x => x.id === id)), tickState };
 }
