@@ -6,9 +6,9 @@
 //  char  : 'A3:n' / 'A4:n' = karakter seragam yang sudah ada di video; kosong = karakter warga
 // =====================================================================
 window.PULAU = {
-  updated: '6 November 2026, 22.45 WIB',
+  updated: '7 November 2026, 07.44 WIB',
   day: 5,
-  total: 164,
+  total: 165,
   warga: [
     // ---- Pegawai resmi ----
     { u: 'lando_094', job: 'TNI Angkatan Darat', zone: 'pelabuhan', status: 'pegawai', since: 'Day 2', lantik: 'Day 4', rumah: 'Rumah atap oranye, Kampung Penduduk', char: 'U:tniad', skin: 0xc98a5a, note: 'Pindah dari TNI AL ke TNI AD (permintaan sendiri)' },
@@ -50,6 +50,7 @@ window.PULAU = {
     { u: 'mochtyansufy', job: 'Petugas Kebersihan', zone: 'utama', status: 'menunggu', since: 'Day 5' },
     { u: 'fasssahwa.af123', job: 'Dokter (menunggu pelantikan)', zone: 'utama', status: 'menunggu', since: 'Day 5' },
     { u: 'faqih16318', job: 'Satpam / Security (menunggu pelantikan)', zone: 'pelabuhan', status: 'menunggu', since: 'Day 5' },
+    { u: 'ervintamta', job: 'Konten Kreator (menunggu pelantikan)', zone: 'kampung', status: 'menunggu', since: 'Day 5' },
 
     // ---- Warga (sudah disambut) ----
     ...['moose.raaa243', 'delia_wahada', 'givy1010', 'nazeera_maharani', 'zahirajerryanggels', 'anomaliindnggh022', 'mirrr5965', 'tatyanajennaira']
