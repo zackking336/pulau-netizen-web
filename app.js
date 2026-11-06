@@ -2182,6 +2182,196 @@ const desaBlocked = (x, z) => {
   return Math.abs(x - p.x) < DESA.PW / 2 - 0.55 && Math.abs(z - p.z) < DESA.PD / 2 - 0.75;
 };
 
+// ================= RUMAH BANG TANJUNG (ikon pulau, di atas bukit pulau utama) =================
+// Atap berbentuk CAPING raksasa, dinding belang oranye-putih seperti kaosnya, hiasan KUMIS di atas pintu,
+// teras dengan kursi goyang, KOTAK KOMEN NETIZEN, dan bendera merah putih di puncak caping.
+const RBT = new THREE.Group(); scene.add(RBT);
+const RBT_POS = V(-1.55, 0, -3.15);
+const rbtParts = [];
+const RBP = (o, k0, k1, mode = 'pop') => { RBT.add(o); rbtParts.push({ obj: o, k0, k1, mode, s: o.scale.clone() }); return o; };
+let RBT_Y = 2.3;
+{
+  // find the hill top under the footprint
+  scene.updateMatrixWorld(true);
+  const rc = new THREE.Raycaster(); let top = 0;
+  for (const [dx, dz] of [[0, 0], [-1.3, -1.1], [1.3, -1.1], [-1.3, 1.1], [1.3, 1.1]]) {
+    rc.set(V(RBT_POS.x + dx, 20, RBT_POS.z + dz), V(0, -1, 0)); const h = rc.intersectObjects([island.children[1], island.children[2]], false)[0]; if (h) top = Math.max(top, h.point.y);
+  }
+  RBT_Y = Math.min(top, 2.4) + 0.45;
+  RBT.position.set(RBT_POS.x, 0, RBT_POS.z); RBT.rotation.y = 0.18;
+  const Y = RBT_Y, wood = mat(0x7c4a1e), wood2 = mat(0xa0663a);
+  // stilts
+  for (const [x, z] of [[-1.2, -0.95], [1.2, -0.95], [-1.2, 0.95], [1.2, 0.95], [0, -0.95], [0, 0.95]]) RBP(mesh(new THREE.CylinderGeometry(0.09, 0.11, Y + 0.6, 7), wood, x, (Y - 0.6) / 2, z), 0, 0.12, 'grow');
+  // floor + veranda
+  RBP(mesh(new THREE.BoxGeometry(2.9, 0.16, 2.4), wood2, 0, Y, 0), 0.1, 0.2);
+  RBP(mesh(new THREE.BoxGeometry(2.9, 0.12, 1.0), mat(0xb07e4f), 0, Y - 0.02, 1.65), 0.16, 0.24);
+  for (const x of [-1.4, -0.7, 0.7, 1.4]) RBP(mesh(new THREE.BoxGeometry(0.06, 0.5, 0.06), wood, x, Y + 0.3, 2.12), 0.22, 0.28);
+  RBP(mesh(new THREE.BoxGeometry(2.9, 0.06, 0.06), wood, 0, Y + 0.55, 2.12), 0.24, 0.3);
+  // walls with orange-white stripes (his shirt!)
+  const stripes = canvasTex(512, 256, (x, w, h) => { for (let i = 0; i < 8; i++) { x.fillStyle = i % 2 ? '#ffffff' : '#f97316'; x.fillRect(0, i * h / 8, w, h / 8 + 1); } });
+  stripes.wrapS = stripes.wrapT = THREE.RepeatWrapping;
+  const wallM = new THREE.MeshStandardMaterial({ map: stripes, roughness: 0.85 });
+  RBP(mesh(new THREE.BoxGeometry(2.5, 1.45, 2.0), wallM, 0, Y + 0.8, 0), 0.26, 0.48, 'grow');
+  // door + kumis (mustache) carving above it
+  RBP(mesh(new THREE.BoxGeometry(0.62, 1.0, 0.05), mat(0x5b3a1e), 0, Y + 0.58, 1.02, false), 0.5, 0.56);
+  RBP(mesh(new THREE.SphereGeometry(0.04, 6, 5), mat(0xfacc15, { metalness: 0.6 }), 0.2, Y + 0.6, 1.06, false), 0.54, 0.58);
+  const kum = new THREE.Group(); kum.position.set(0, Y + 1.22, 1.03);
+  for (const sx of [-1, 1]) { const k = mesh(new THREE.SphereGeometry(0.2, 10, 8), mat(0x1c1410), sx * 0.2, 0, 0, false); k.scale.set(1.25, 0.36, 0.3); k.rotation.z = sx * -0.28; kum.add(k);
+    kum.add(mesh(new THREE.SphereGeometry(0.06, 8, 6), mat(0x1c1410), sx * 0.44, 0.07, 0, false)); }
+  RBP(kum, 0.56, 0.62);
+  // round porthole windows
+  for (const sx of [-1, 1]) {
+    RBP(mesh(new THREE.CylinderGeometry(0.24, 0.24, 0.05, 16), mat(0x7c4a1e), sx * 0.85, Y + 0.95, 1.02, false), 0.58, 0.64).rotation.x = Math.PI / 2;
+    RBP(mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.06, 16), new THREE.MeshStandardMaterial({ color: 0xbfe3ff, emissive: 0xffd27a, emissiveIntensity: 0.15 }), sx * 0.85, Y + 0.95, 1.04, false), 0.6, 0.66).rotation.x = Math.PI / 2;
+  }
+  // CAPING roof: huge straw cone with weave lines + brim + red band
+  const weave = canvasTex(512, 512, (x, w, h) => { x.fillStyle = '#e3c27a'; x.fillRect(0, 0, w, h); x.strokeStyle = '#c9a25a'; x.lineWidth = 6; for (let i = 0; i < w; i += 32) { x.beginPath(); x.moveTo(i, 0); x.lineTo(i, h); x.stroke(); } x.strokeStyle = '#b8914f'; x.lineWidth = 4; for (let j = 0; j < h; j += 40) { x.beginPath(); x.moveTo(0, j); x.lineTo(w, j); x.stroke(); } });
+  const capM = new THREE.MeshStandardMaterial({ map: weave, roughness: 0.9 });
+  RBP(mesh(new THREE.ConeGeometry(2.35, 1.55, 28, 1), capM, 0, Y + 2.3, 0), 0.66, 0.8);
+  RBP(mesh(new THREE.CylinderGeometry(2.38, 2.38, 0.1, 28), mat(0xc1121f), 0, Y + 1.58, 0), 0.78, 0.84);
+  RBP(mesh(new THREE.SphereGeometry(0.16, 10, 8), mat(0xe3c27a), 0, Y + 3.1, 0), 0.8, 0.86);
+  // flag on the tip
+  RBP(mesh(new THREE.CylinderGeometry(0.025, 0.025, 1.0, 5), mat(0xe5e7eb), 0, Y + 3.6, 0), 0.84, 0.9, 'grow');
+  const flag = new THREE.Group(); flag.position.set(0, Y + 3.95, 0);
+  flag.add(mesh(new THREE.BoxGeometry(0.55, 0.16, 0.02), mat(0xdc2626), 0.29, 0.08, 0, false)); flag.add(mesh(new THREE.BoxGeometry(0.55, 0.16, 0.02), mat(0xffffff), 0.29, -0.08, 0, false));
+  RBP(flag, 0.88, 0.94); RBT.userData.flag = flag;
+  // name board
+  const nb = canvasTex(1024, 256, (x, w, h) => { x.fillStyle = '#7c4a1e'; x.fillRect(0, 0, w, h); x.strokeStyle = '#facc15'; x.lineWidth = 12; x.strokeRect(8, 8, w - 16, h - 16);
+    x.fillStyle = '#fde68a'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.font = '800 76px Poppins'; x.fillText('RUMAH BANG TANJUNG', w / 2, 100); x.font = '700 54px Poppins'; x.fillStyle = '#ffffff'; x.fillText('Kepala Pulau Netizen', w / 2, 190); });
+  const nm = new THREE.MeshStandardMaterial({ map: nb });
+  RBP(mesh(new THREE.BoxGeometry(1.7, 0.42, 0.06), [wood, wood, wood, wood, nm, wood], 0.55, Y + 0.42, 2.17), 0.86, 0.92);
+  // rocking chair + coffee table on the veranda
+  const chair = new THREE.Group(); chair.position.set(-0.95, Y + 0.08, 1.6); chair.rotation.y = 0.5;
+  chair.add(mesh(new THREE.BoxGeometry(0.45, 0.06, 0.42), wood2, 0, 0.35, 0)); chair.add(mesh(new THREE.BoxGeometry(0.45, 0.5, 0.06), wood2, 0, 0.6, -0.2));
+  for (const sx of [-1, 1]) { const r = mesh(new THREE.TorusGeometry(0.35, 0.025, 4, 12, Math.PI * 0.6), wood, sx * 0.2, 0.32, 0, false); r.rotation.set(0, Math.PI / 2, Math.PI * 1.2); chair.add(r); }
+  RBP(chair, 0.9, 0.95); RBT.userData.chair = chair;
+  const tbl = new THREE.Group(); tbl.position.set(-0.35, Y + 0.08, 1.65);
+  tbl.add(mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.05, 10), wood2, 0, 0.32, 0)); tbl.add(mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.3, 5), wood, 0, 0.15, 0));
+  tbl.add(mesh(new THREE.CylinderGeometry(0.05, 0.04, 0.08, 8), mat(0xffffff), 0.05, 0.38, 0, false)); // kopi
+  RBP(tbl, 0.92, 0.96);
+  // stairs down the hill
+  for (let i = 0; i < 6; i++) RBP(mesh(new THREE.BoxGeometry(0.7, 0.08, 0.32), wood2, 1.0, Y - 0.15 - i * 0.32, 2.35 + i * 0.3), 0.2 + i * 0.01, 0.28 + i * 0.01);
+  // KOTAK KOMEN NETIZEN (mailbox)
+  const mb = new THREE.Group(); mb.position.set(1.85, 0, 3.6);
+  { rc.set(V(RBT_POS.x + 1.85, 20, RBT_POS.z + 3.6), V(0, -1, 0)); const h = rc.intersectObjects([island.children[0], island.children[1], island.children[2]], false)[0]; mb.position.y = h ? h.point.y : GRASS; }
+  mb.add(mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.9, 5), wood, 0, 0.45, 0));
+  mb.add(mesh(new THREE.BoxGeometry(0.42, 0.32, 0.3), mat(0xdc2626), 0, 0.98, 0));
+  const mbt = canvasTex(512, 200, (x, w, h) => { x.fillStyle = '#dc2626'; x.fillRect(0, 0, w, h); x.fillStyle = '#fff'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.font = '800 64px Poppins'; x.fillText('KOTAK KOMEN', w / 2, 70); x.font = '700 46px Poppins'; x.fillText('NETIZEN 💬', w / 2, 145); });
+  mb.add(mesh(new THREE.BoxGeometry(0.43, 0.2, 0.31), [mat(0xdc2626), mat(0xdc2626), mat(0xdc2626), mat(0xdc2626), new THREE.MeshStandardMaterial({ map: mbt }), mat(0xdc2626)], 0, 1.25, 0, false));
+  mb.add(mesh(new THREE.BoxGeometry(0.2, 0.025, 0.02), mat(0x111111), 0, 1.04, 0.16, false));
+  RBP(mb, 0.94, 0.99); RBT.userData.mb = mb;
+  // flower bushes around
+  for (const [x, z, c] of [[-1.7, 1.5, 0xf472b6], [1.75, 1.2, 0xfacc15], [-1.75, -0.4, 0xef4444]]) RBP(mesh(new THREE.SphereGeometry(0.28, 8, 6), mat(0x3f9d3a), x, Y - 0.25, z), 0.95, 0.99);
+}
+function buildRBT(k) {
+  for (const p of rbtParts) {
+    const u = clamp((k - p.k0) / (p.k1 - p.k0)); const s = p.mode === 'grow' ? ease(u) : pop(u);
+    p.obj.visible = u > 0.001;
+    if (p.mode === 'grow') p.obj.scale.set(p.s.x, Math.max(0.001, s), p.s.z); else p.obj.scale.setScalar(Math.max(0.001, s));
+  }
+}
+const rbtl = (x, y, z) => { RBT.updateMatrixWorld(true); return RBT.localToWorld(V(x, y, z)); };
+const rbtTick = t => { const f = RBT.userData.flag; if (f) f.children.forEach((c, i) => c.rotation.y = Math.sin(t * 4 + i) * 0.15); const c = RBT.userData.chair; if (c) c.rotation.x = Math.sin(t * 1.8) * 0.06; };
+buildRBT(1);
+// palms right next to the house would hide it: move them aside
+island.children.forEach(c => { if (c.isGroup && Math.hypot(c.position.x - RBT_POS.x, c.position.z - RBT_POS.z) < 3.6) c.visible = false; });
+
+// ================= FASILITAS UMUM (timur laut): KLINIK + SEKOLAH, dan kostum dokter & guru =================
+const FAS = V(12.6, 0, -8.6);
+const fasL = new THREE.Group(); scene.add(fasL);
+fasL.add(mesh(jitter(new THREE.CylinderGeometry(5.0, 5.9, 1.8, 20, 1), 0.35, true), mat(0xf2d79b), 0, SAND - 0.9, 0));
+fasL.add(mesh(jitter(new THREE.CylinderGeometry(3.9, 4.3, 0.5, 16, 1), 0.3, true), mat(0x7cc95a), 0, GRASS - 0.25, -0.4));
+for (const [x, z, h] of [[-3.6, -2.6, 3.0], [3.9, -2.0, 3.2], [0.2, -4.1, 2.8]]) fasL.add(palm(x, GRASS, z, h, 0.2, x));
+fasL.position.copy(FAS);
+const foam5 = foam.clone(); scene.add(foam5);
+// paths
+for (let i = 0; i < 9; i++) fasL.add(mesh(new THREE.BoxGeometry(0.55, 0.05, 0.45), mat(0xd8c7a3), -0.0, GRASS + 0.02, 3.6 - i * 0.55, false));
+const FB = new THREE.Group(); scene.add(FB); FB.position.copy(FAS);
+const fbParts = [];
+const FP = (o, k0, k1, mode = 'pop') => { FB.add(o); fbParts.push({ obj: o, k0, k1, mode, s: o.scale.clone() }); return o; };
+function buildFB(k) { for (const p of fbParts) { const u = clamp((k - p.k0) / (p.k1 - p.k0)), s = p.mode === 'grow' ? ease(u) : pop(u); p.obj.visible = u > 0.001; if (p.mode === 'grow') p.obj.scale.set(p.s.x, Math.max(0.001, s), p.s.z); else p.obj.scale.setScalar(Math.max(0.001, s)); } }
+const signBoard = (txt, sub, bg, fg) => canvasTex(1024, 256, (x, w, h) => { x.fillStyle = bg; x.fillRect(0, 0, w, h); x.strokeStyle = '#ffffff'; x.lineWidth = 12; x.strokeRect(8, 8, w - 16, h - 16);
+  x.fillStyle = fg; x.textAlign = 'center'; x.textBaseline = 'middle'; x.font = '800 88px Poppins'; x.fillText(txt, w / 2, sub ? 100 : h / 2); if (sub) { x.font = '700 50px Poppins'; x.fillText(sub, w / 2, 192); } });
+// ---- KLINIK (kiri) ----
+{
+  const g = new THREE.Group(); g.position.set(-1.9, GRASS, -0.6); FB.add(g);
+  const P = (o, a, b, m) => { g.add(o); fbParts.push({ obj: o, k0: a, k1: b, mode: m || 'pop', s: o.scale.clone() }); return o; };
+  P(mesh(new THREE.BoxGeometry(3.0, 0.16, 2.4), mat(0xcbd5e1), 0, 0.08, 0), 0.0, 0.08);
+  P(mesh(new THREE.BoxGeometry(2.8, 1.6, 2.2), mat(0xf8fafc), 0, 0.96, 0), 0.06, 0.26, 'grow');
+  P(mesh(new THREE.BoxGeometry(3.1, 0.16, 2.5), mat(0x16a34a), 0, 1.84, 0), 0.24, 0.32);
+  P(mesh(new THREE.BoxGeometry(2.86, 0.22, 0.06), mat(0x16a34a), 0, 1.5, 1.12, false), 0.26, 0.32);
+  P(mesh(new THREE.BoxGeometry(0.7, 1.05, 0.05), new THREE.MeshStandardMaterial({ color: 0xbfe3ff, roughness: 0.1, metalness: 0.2, transparent: true, opacity: 0.85 }), 0, 0.68, 1.12, false), 0.3, 0.36);
+  for (const sx of [-1, 1]) P(mesh(new THREE.BoxGeometry(0.55, 0.45, 0.05), mat(0xbfe3ff), sx * 0.95, 0.95, 1.12, false), 0.32, 0.38);
+  // green plus sign on top
+  const cross = new THREE.Group(); cross.position.set(0, 2.45, 0.2);
+  const cm = new THREE.MeshStandardMaterial({ color: 0x22c55e, emissive: 0x16a34a, emissiveIntensity: 0.5 });
+  cross.add(mesh(new THREE.BoxGeometry(0.7, 0.22, 0.12), cm, 0, 0, 0)); cross.add(mesh(new THREE.BoxGeometry(0.22, 0.7, 0.12), cm, 0, 0, 0));
+  P(cross, 0.36, 0.42);
+  const sm = new THREE.MeshStandardMaterial({ map: signBoard('KLINIK PULAU', 'buka 24 jam', '#15803d', '#ffffff') });
+  P(mesh(new THREE.BoxGeometry(2.2, 0.55, 0.06), [mat(0x15803d), mat(0x15803d), mat(0x15803d), mat(0x15803d), sm, mat(0x15803d)], 0, 2.05, 1.25), 0.38, 0.44);
+  // bench + potted plant
+  P(mesh(new THREE.BoxGeometry(0.8, 0.08, 0.3), mat(0x8b5a2b), 1.0, 0.45, 1.6), 0.42, 0.46);
+  P(mesh(new THREE.SphereGeometry(0.22, 8, 6), mat(0x3f9d3a), -1.1, 0.5, 1.5), 0.44, 0.48);
+}
+// ---- SEKOLAH (kanan) ----
+{
+  const g = new THREE.Group(); g.position.set(2.0, GRASS, -0.9); g.rotation.y = -0.12; FB.add(g);
+  const P = (o, a, b, m) => { g.add(o); fbParts.push({ obj: o, k0: a, k1: b, mode: m || 'pop', s: o.scale.clone() }); return o; };
+  P(mesh(new THREE.BoxGeometry(3.4, 0.16, 2.3), mat(0xd6d3d1), 0, 0.08, 0), 0.5, 0.58);
+  P(mesh(new THREE.BoxGeometry(3.2, 1.5, 2.1), mat(0xfef3c7), 0, 0.9, 0), 0.56, 0.74, 'grow');
+  const sh = new THREE.Shape(); sh.moveTo(-1.85, 0); sh.lineTo(1.85, 0); sh.lineTo(0, 0.9); sh.closePath();
+  const rg = new THREE.ExtrudeGeometry(sh, { depth: 2.4, bevelEnabled: false }); rg.translate(0, 0, -1.2);
+  const roof = new THREE.Mesh(rg, mat(0xb91c1c)); roof.castShadow = true; roof.position.y = 1.65; P(roof, 0.72, 0.8);
+  for (let i = 0; i < 3; i++) P(mesh(new THREE.BoxGeometry(0.6, 0.5, 0.05), mat(0xbfe3ff), -1.05 + i * 1.05, 1.0, 1.07, false), 0.78 + i * 0.01, 0.82 + i * 0.01);
+  P(mesh(new THREE.BoxGeometry(0.55, 0.9, 0.05), mat(0x7c4a1e), 1.25, 0.55, 1.07, false), 0.8, 0.84);
+  const sm = new THREE.MeshStandardMaterial({ map: signBoard('SD PULAU NETIZEN', 'Belajar setiap hari', '#1d4ed8', '#ffffff') });
+  P(mesh(new THREE.BoxGeometry(2.4, 0.55, 0.06), [mat(0x1d4ed8), mat(0x1d4ed8), mat(0x1d4ed8), mat(0x1d4ed8), sm, mat(0x1d4ed8)], 0, 2.05, 1.25), 0.84, 0.88);
+  // bell tower + flag pole
+  P(mesh(new THREE.CylinderGeometry(0.03, 0.03, 2.6, 6), mat(0xe5e7eb), -2.2, 1.3, 1.3), 0.86, 0.9, 'grow');
+  const fl = new THREE.Group(); fl.position.set(-2.2, 2.45, 1.3); fl.add(mesh(new THREE.BoxGeometry(0.55, 0.16, 0.02), mat(0xdc2626), 0.29, 0.08, 0, false)); fl.add(mesh(new THREE.BoxGeometry(0.55, 0.16, 0.02), mat(0xffffff), 0.29, -0.08, 0, false));
+  P(fl, 0.88, 0.92); FB.userData.flag = fl;
+  // swing (ayunan)
+  const sw = new THREE.Group(); sw.position.set(2.4, 0, 2.0);
+  for (const sx of [-1, 1]) sw.add(mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.3, 5), mat(0xef4444), sx * 0.45, 0.65, 0));
+  sw.add(mesh(new THREE.CylinderGeometry(0.035, 0.035, 1.0, 5), mat(0xef4444), 0, 1.3, 0)).rotation.z = Math.PI / 2;
+  sw.add(mesh(new THREE.BoxGeometry(0.35, 0.04, 0.18), mat(0xfacc15), 0, 0.45, 0));
+  P(sw, 0.92, 0.97);
+}
+const fbl = (x, y, z) => { FB.updateMatrixWorld(true); return FB.localToWorld(V(x, y, z)); };
+const fbTick = t => { const f = FB.userData.flag; if (f) f.children.forEach((c, i) => c.rotation.y = Math.sin(t * 4 + i) * 0.15); };
+buildFB(1);
+
+// ---- kostum dokter & guru ----
+function stetho(v) {
+  const t = wadd(v.body, new THREE.TorusGeometry(0.2, 0.014, 5, 18, Math.PI * 1.4), WM(0x111827), 0, 1.02, 0.12); t.rotation.set(Math.PI / 2 + 0.5, 0, Math.PI * 0.8);
+  wadd(v.body, new THREE.CylinderGeometry(0.035, 0.035, 0.02, 10), WM(0xc0c6cc, { metalness: 0.7 }), 0.08, 0.83, 0.32).rotation.x = Math.PI / 2;
+}
+WORKERS.dokter = () => {
+  const v = makeVillager({ shirt: 0xffffff, pants: 0x334155, skin: 0xdba57a, hat: 'hijab', hatColor: 0x93c5fd });
+  for (const sx of [-1, 1]) wadd(v.body, new THREE.BoxGeometry(0.05, 0.55, 0.02), WM(0xe2e8f0), sx * 0.07, 0.75, 0.33); // coat edges
+  wadd(v.body, new THREE.BoxGeometry(0.1, 0.06, 0.02), WM(0x93c5fd), -0.15, 0.95, 0.31);
+  stetho(v);
+  const cb = new THREE.Group(); v.arms[1].add(cb); cb.position.set(-0.03, -0.58, 0.14);
+  wadd(cb, new THREE.BoxGeometry(0.2, 0.26, 0.02), WM(0x8b5a2b), 0, 0, 0); wadd(cb, new THREE.BoxGeometry(0.17, 0.2, 0.021), WM(0xffffff), 0, -0.02, 0.002);
+  wadd(cb, new THREE.BoxGeometry(0.06, 0.03, 0.03), WM(0xc0c6cc, { metalness: 0.7 }), 0, 0.13, 0.01);
+  return { v, pose: 'hold' };
+};
+const batikTex = wtex(256, 256, (x, w, h) => { x.fillStyle = '#7c2d12'; x.fillRect(0, 0, w, h); x.strokeStyle = '#fbbf24'; x.lineWidth = 5; for (let y = 0; y < h; y += 48) for (let xx = 0; xx < w; xx += 48) { x.beginPath(); x.arc(xx + 24, y + 24, 15, 0, 7); x.stroke(); x.beginPath(); x.moveTo(xx, y + 24); x.lineTo(xx + 24, y); x.lineTo(xx + 48, y + 24); x.lineTo(xx + 24, y + 48); x.closePath(); x.stroke(); } });
+function book(v, col) { const bk = new THREE.Group(); v.arms[1].add(bk); bk.position.set(-0.03, -0.58, 0.14); wadd(bk, new THREE.BoxGeometry(0.22, 0.28, 0.06), WM(col), 0, 0, 0); wadd(bk, new THREE.BoxGeometry(0.2, 0.26, 0.061), WM(0xffffff), 0.012, 0, 0); }
+function glasses(v) { for (const sx of [-1, 1]) wadd(v.head, new THREE.TorusGeometry(0.06, 0.012, 5, 12), WM(0x111827), sx * 0.1, 0.05, 0.28); wadd(v.head, new THREE.BoxGeometry(0.07, 0.012, 0.012), WM(0x111827), 0, 0.06, 0.29); }
+WORKERS.guru = () => {
+  const v = makeVillager({ shirt: 0x7c2d12, pants: 0x111827, skin: 0xb07446, hat: 'peci' });
+  const t = v.body.children.find(c => c.geometry && c.geometry.type === 'SphereGeometry'); if (t) t.material = new THREE.MeshStandardMaterial({ map: batikTex, roughness: 0.85 });
+  glasses(v); book(v, 0x1d4ed8);
+  return { v, pose: 'hold' };
+};
+WORKERS.guru2 = () => {
+  const v = makeVillager({ shirt: 0xf8fafc, pants: 0x1e3a5f, skin: 0xc98a5a, hat: 'hijab', hatColor: 0x7f1d1d });
+  wadd(v.body, new THREE.BoxGeometry(0.1, 0.06, 0.02), WM(0x1e3a5f), -0.15, 0.95, 0.31);
+  glasses(v); book(v, 0xdc2626);
+  return { v, pose: 'hold' };
+};
+
 // ================= WEB: PETA PENDUDUK (interaktif) =================
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 {
@@ -2206,8 +2396,21 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
   });
   ocean.material.flatShading = false; ocean.material.roughness = 0.25; ocean.material.needsUpdate = true;
 
+  // ---- Klinik & Sekolah island + footbridge to the main island ----
+  const HAS_FAS = typeof FAS !== 'undefined';
+  let fasBridge = null;
+  if (HAS_FAS) {
+    fasL.position.y = 0; fasL.visible = true; buildFB(1); FB.visible = true;
+    const A = V(5.7, 0, -1.4), B = V(9.6, 0, -5.4), d = B.clone().sub(A), L = d.length(), yaw = Math.atan2(d.x, d.z);
+    fasBridge = new THREE.Group(); scene.add(fasBridge);
+    const wood = mat(0xb07a45), dark = mat(0x7a4f2a);
+    for (let i = 0; i <= Math.ceil(L / 0.42); i++) { const k = i * 0.42 / L; if (k > 1) break; const pl = mesh(new THREE.BoxGeometry(1.25, 0.08, 0.46), wood, A.x + d.x * k, SAND + 0.14, A.z + d.z * k); pl.rotation.y = yaw; fasBridge.add(pl); }
+    for (let i = 0; i <= 4; i++) for (const sd of [-1, 1]) { const k = i / 4; const px = A.x + d.x * k + Math.cos(yaw) * 0.62 * sd, pz = A.z + d.z * k - Math.sin(yaw) * 0.62 * sd;
+      fasBridge.add(mesh(new THREE.CylinderGeometry(0.05, 0.05, 1.3, 6), dark, px, SAND - 0.05, pz)); }
+    for (const sd of [-1, 1]) { const r = mesh(new THREE.BoxGeometry(0.05, 0.05, L), dark, A.x + d.x / 2 + Math.cos(yaw) * 0.62 * sd, SAND + 0.55, A.z + d.z / 2 - Math.sin(yaw) * 0.62 * sd); r.rotation.y = yaw; fasBridge.add(r); }
+  }
   // ---- ground height by raycast ----
-  const lands = [island, ext, north, sel, ...(typeof desa !== 'undefined' ? [desa] : [])];
+  const lands = [island, ext, north, sel, ...(typeof desa !== 'undefined' ? [desa] : []), ...(HAS_FAS ? [fasL, fasBridge] : [])];
   const ray = new THREE.Raycaster();
   // height map of all land (one-time raycast), used for walking + placement
   const HM = { x0: -38, z0: -50, s: 0.35, W: 58, D: 64 }; HM.nx = Math.ceil(HM.W / HM.s); HM.nz = Math.ceil(HM.D / HM.s);
@@ -2237,6 +2440,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     pasar: { name: 'Pasar & Kuliner', look: V(PASAR.x, 0.8, PASAR.z + 1.4), dist: 15 },
     pemancingan: { name: 'Tempat Pemancingan', look: V(SEL.x + 1.4, 0.8, SEL.z + 1.4), dist: 11 },
     kampung: { name: 'Kampung Penduduk', look: V(NORTH.x, 0.8, NORTH.z + 1.5), dist: 15 },
+    ...(HAS_FAS ? { fasilitas: { name: 'Klinik & Sekolah', look: V(FAS.x, 0.8, FAS.z + 1.2), dist: 13 } } : {}),
     ...(typeof DESA !== 'undefined' ? { desa: { name: 'Desa Tani', look: V(DESA.cx, 0.5, DESA.z0 - 9), dist: 22 } } : {}),
   };
   // fixed work spots
@@ -2246,6 +2450,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     pemancingan: [['pm', 0.6, 0.9], ['pm', -0.6, 1.5], ['pm', 0.6, 2.1]],
     utama: [],
     kampung: [],
+    fasilitas: HAS_FAS ? [[-1.9, 1.3], [-1.0, 1.6], [2.0, 1.2], [1.0, 1.7], [-2.6, 2.1], [2.8, 2.4]].map(([x, z]) => ['g', FAS.x + x, FAS.z + z]) : [],
   };
   // kampung grid (skip houses, path & palms)
   {
@@ -2266,7 +2471,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
       SPOTS.utama.push(['g', x, z]);
     }
   }
-  const used = { pelabuhan: 0, pasar: 0, pemancingan: 0, kampung: 0, utama: 0 };
+  const used = { pelabuhan: 0, pasar: 0, pemancingan: 0, kampung: 0, utama: 0, fasilitas: 0 };
   const takeSpot = zone => {
     let z = zone;
     if (used[z] >= SPOTS[z].length) z = 'utama';
@@ -2285,7 +2490,16 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
   hideAll();
   const ENT = DATA.warga.map((w, i) => {
     let m, ps;
-    if (w.char && /^A[34]:\d+$/.test(w.char)) {
+    if (w.char && /^W:/.test(w.char) && typeof WORKERS !== 'undefined') {
+      const nm = w.char.slice(2), alt = nm.endsWith('2') && !WORKERS[nm];
+      const u = WORKERS[alt ? nm.slice(0, -1) : nm](); m = u.v; ps = u.pose;
+      if (alt) { recolor(m.root, 0xf59e0b, 0xec4899); recolor(m.root, 0x0ea5e9, 0x8b5cf6); }
+      scene.add(m.root); smooth(m.root);
+    } else if (w.char && /^U:\w+$/.test(w.char) && UNIFORMS[w.char.slice(2)]) {
+      const u = UNIFORMS[w.char.slice(2)](); m = u.v; ps = u.pose;
+      if (w.skin) recolor(m.root, 0xa86b3c, w.skin);
+      scene.add(m.root); smooth(m.root);
+    } else if (w.char && /^A[34]:\d+$/.test(w.char)) {
       const [k, n] = w.char.split(':'); const a = (k === 'A3' ? APPOINT : APPOINT4)[+n];
       m = a.uni; ps = a.ps; smooth(m.root);
     } else {
@@ -2461,7 +2675,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 
   // ---- life simulation: walk, idle, chat ----
-  const OBST = [...HOUSES.map(h => [h.position.x, h.position.z + 0.2, 1.55]), [WG.position.x, WG.position.z, 1.8], [RM.position.x, RM.position.z, 2.1], ...KAVLING.map(k => [k.position.x, k.position.z, 1.9]), [PASAR.x + 10.9, PASAR.z + 0.2, 0.3], [PASAR.x + 10.9, PASAR.z + 2.0, 0.3], ...LAPAK.map(l => [l.g.position.x, l.g.position.z + 0.1, 0.45]), [sign.position.x, sign.position.z, 0.6], [-1.6, -3.2, 2.2]];
+  const OBST = [...HOUSES.map(h => [h.position.x, h.position.z + 0.2, 1.55]), [WG.position.x, WG.position.z, 1.8], [RM.position.x, RM.position.z, 2.1], ...KAVLING.map(k => [k.position.x, k.position.z, 1.9]), [PASAR.x + 10.9, PASAR.z + 0.2, 0.3], [PASAR.x + 10.9, PASAR.z + 2.0, 0.3], ...LAPAK.map(l => [l.g.position.x, l.g.position.z + 0.1, 0.45]), [sign.position.x, sign.position.z, 0.6], [-1.6, -3.2, 2.2], ...(HAS_FAS ? [[FAS.x - 1.9, FAS.z - 0.6, 1.75], [FAS.x + 2.0, FAS.z - 0.9, 2.0]] : [])];
   const walkable = (x, z) => {
     for (const [ox, oz, r] of OBST) if ((x - ox) ** 2 + (z - oz) ** 2 < r * r) return false;
     if (typeof desaBlocked === 'function' && desaBlocked(x, z)) return false;
@@ -2476,6 +2690,13 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     if (ok) NODES.push({ p: V(x, 0, z), n: [] });
   }
   NODES.forEach((A, i) => NODES.forEach((B, j) => { if (j > i && A.p.distanceTo(B.p) < 2.7 && pathOK(A.p, B.p)) { A.n.push(j); B.n.push(i); } }));
+  // desa is huge: pick its nodes less often so residents spread over the whole island
+  let NODE_IN = null, NODE_OUT = null;
+  const pickNode = () => {
+    if (!NODE_IN) { NODE_IN = []; NODE_OUT = []; NODES.forEach((N, i) => (zoneAt(N.p) === 'desa' ? NODE_IN : NODE_OUT).push(i)); }
+    const L = NODE_IN.length && (Math.random() < 0.15 || !NODE_OUT.length) ? NODE_IN : NODE_OUT;
+    return L[Math.floor(Math.random() * L.length)];
+  };
   const nearestNode = p => { let b = -1, bd = 1e9; NODES.forEach((N, i) => { const d = (N.p.x - p.x) ** 2 + (N.p.z - p.z) ** 2; if (d < bd && pathOK(p, N.p)) { bd = d; b = i; } }); return b; };
   const route = (from, to) => { // BFS over nodes
     const prev = new Int32Array(NODES.length).fill(-2); prev[from] = -1; const q = [from];
@@ -2487,6 +2708,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     if (((p.x - PASAR.x) / (PASAR_S.x * 1.1)) ** 2 + ((p.z - PASAR.z) / (PASAR_S.z * 1.1)) ** 2 < 1) return 'pasar';
     if ((p.x - NORTH.x) ** 2 + (p.z - NORTH.z) ** 2 < (NORTH_R + 1.6) ** 2) return 'kampung';
     if ((p.x - SEL.x) ** 2 + (p.z - SEL.z) ** 2 < 4.6 ** 2) return 'pemancingan';
+    if (HAS_FAS && (p.x - FAS.x) ** 2 + (p.z - FAS.z) ** 2 < 6.2 ** 2) return 'fasilitas';
     if (p.x > 4.8 && Math.abs(p.z - 1) < 2.6) return 'pelabuhan';
     return 'utama';
   };
@@ -2505,7 +2727,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     const onPier = e.onPier;
     const vendor = e.zoneKey === 'pasar' && e.status !== 'warga' && e.status !== 'baru';
     const roam = !onPier && !vendor && e.status !== 'pegawai';
-    if (roam && NODES.length) { const N = NODES[Math.floor(Math.random() * NODES.length)]; home.set(N.p.x + (Math.random() - 0.5) * 0.6, 0, N.p.z + (Math.random() - 0.5) * 0.6); home.y = groundY(home.x, home.z); e.m.root.position.copy(home); e.m.root.rotation.y = Math.random() * 6.28; }
+    if (roam && NODES.length) { const N = NODES[pickNode()]; home.set(N.p.x + (Math.random() - 0.5) * 0.6, 0, N.p.z + (Math.random() - 0.5) * 0.6); home.y = groundY(home.x, home.z); e.m.root.position.copy(home); e.m.root.rotation.y = Math.random() * 6.28; }
     e.sim = {
       home, roam, path: [], radius: onPier || vendor ? 0 : (e.status === 'pegawai' ? 1.6 : 2.6),
       st: 'idle', until: 1 + Math.random() * 5, target: null, partner: null, phase: Math.random() * 9, yaw: e.m.root.rotation.y, baseYaw: e.m.root.rotation.y,
@@ -2548,7 +2770,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
           }
         }
         if (S.roam && r >= 0.35 && r < 0.68 && NODES.length) { // trip to another part of the island
-          const a = nearestNode(pos), b = Math.floor(Math.random() * NODES.length);
+          const a = nearestNode(pos), b = pickNode();
           const path = a >= 0 ? route(a, b) : null;
           if (path && path.length > 1) { S.path = path; S.st = 'walk'; S.target = S.path.shift(); S.next = 'idle'; continue; }
         }
@@ -2636,10 +2858,11 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     foam.scale.x = foam.scale.y = fs; foam.position.y = 0.1 + Math.sin(t * 1.6) * 0.03;
     layoutFoam(fs, foam.position.y);
     foam4.scale.set(0.55 * fs, 0.55 * fs, 0.25); foam4.position.set(SEL.x, foam.position.y, SEL.z);
+    if (HAS_FAS) { foam5.visible = true; foam5.scale.set(0.74 * fs, 0.74 * fs, 0.25); foam5.position.set(FAS.x, foam.position.y, FAS.z); fbTick(t); }
     boat.position.set(BOAT_DOCK, waveH(BOAT_DOCK, 1, t) + 0.05, 1.0); boat.rotation.z = Math.sin(t * 1.7) * 0.04;
 
     const dtBT = Math.min(0.1, t - (window.__lt || t)); window.__lt = t;
-    simulate(t); simBT(t, dtBT);
+    simulate(t); simBT(t, dtBT); if (typeof rbtTick === 'function') rbtTick(t);
     if (window.__gameTick) window.__gameTick(t, dtBT, now);
     if (window.__life) window.__life(t);
 
