@@ -6,9 +6,9 @@
 //  char  : 'A3:n' / 'A4:n' = karakter seragam yang sudah ada di video; kosong = karakter warga
 // =====================================================================
 window.PULAU = {
-  updated: '7 November 2026, 07.44 WIB',
+  updated: '7 November 2026, 06.44 WIB',
   day: 5,
-  total: 165,
+  total: 174,
   warga: [
     // ---- Pegawai resmi ----
     { u: 'lando_094', job: 'TNI Angkatan Darat', zone: 'pelabuhan', status: 'pegawai', since: 'Day 2', lantik: 'Day 4', rumah: 'Rumah atap oranye, Kampung Penduduk', char: 'U:tniad', skin: 0xc98a5a, note: 'Pindah dari TNI AL ke TNI AD (permintaan sendiri)' },
@@ -69,7 +69,8 @@ window.PULAU = {
         'ayie_cta', 'broazzam_', 'de_zaki_el52', 'user60325_', 'tya_bitt', 'anakakhih', 'manzzstecuyy', 'fahmzzzzzzzzz', 'munarrzki.r2', 'bellmokmok2', 'bigailxrz',
         'elbryenn', 'putrasatryadwi', 'lrasyarrg', 'queridazalfa.n', 'pernah_di_bilang_balsem',
         'kemas.mhds', 'pnggil.dirasja', 'rizkyardian947', 'oced__', 'anugrahwahyu19', 'fairuz.142', '_mohammadfauzan', 'minniya85', 'ia_donshakila',
-        'andininatasyaaudyaputry', 'ykrisdy', 'ggidx_', 'hariaprilh', 'monichanur_', 'lina393967', 'gimzzzz6', 'faiza_haikal', 'naominoviangel', 'garrennoel2018', 'petrus_budi_riyanto', 'cn_dyyyyy', 'mhhammadd_hasann', 'dewadhiren', 'astyana17', 'hann_ajaaa17']
+        'andininatasyaaudyaputry', 'ykrisdy', 'ggidx_', 'hariaprilh', 'monichanur_', 'lina393967', 'gimzzzz6', 'faiza_haikal', 'naominoviangel', 'garrennoel2018', 'petrus_budi_riyanto', 'cn_dyyyyy', 'mhhammadd_hasann', 'dewadhiren', 'astyana17', 'hann_ajaaa17',
+        'reaksi_kimia888', 'bellvabora', 'paypop4y', 'idsandwich', 'n4n4z01', '_acheelll_12', 'vinzz4047', 'alynq2', 'juicyssa']
       .map(u => ({ u, zone: 'kampung', status: 'warga', since: 'Day 5' })),
   ],
 };
