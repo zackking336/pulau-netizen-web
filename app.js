@@ -3239,7 +3239,15 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
   .gpanel{z-index:9}
   #gExit{border:0;border-radius:12px;background:rgba(255,255,255,.95);width:36px;height:34px;font:800 15px Poppins;box-shadow:0 3px 10px rgba(0,0,0,.15)}
   #bottom{flex-wrap:wrap} #btnPlay{flex:1 1 auto;font-size:15px!important;padding:12px!important} #bottom .brk{flex-basis:100%;height:0}
-  body.game #gBar{display:flex}
+  body.game #gBar{display:grid}
+  /* naik di atas badge Netlify + 2 baris supaya semua tombol kelihatan */
+  #gBar{bottom:calc(78px + env(safe-area-inset-bottom));grid-template-columns:repeat(4,1fr);gap:7px;left:12px;right:12px;padding:0;max-width:440px;margin:0 auto}
+  #gBar button{min-width:0;padding:7px 2px} #gBar #gSeed{grid-column:span 2}
+  #gFishBar{bottom:calc(78px + env(safe-area-inset-bottom))}
+  #gTip{bottom:calc(196px + env(safe-area-inset-bottom))!important}
+  #bottom{bottom:calc(78px + env(safe-area-inset-bottom))!important}
+  #card{bottom:calc(78px + env(safe-area-inset-bottom))!important} #card:not(.on){transform:translate(-50%,calc(100% + 140px))}
+  #upd{bottom:calc(190px + env(safe-area-inset-bottom))!important}
   #gBar button small{display:block;font-size:9.5px;font-weight:700;margin-top:1px} #gBar .dot{position:absolute;top:-4px;right:-4px}
   #gBar button{position:relative;border:0;border-radius:14px;background:#fff;padding:6px 7px;min-width:44px;font:700 15px Poppins,sans-serif;white-space:nowrap;box-shadow:0 4px 12px rgba(0,0,0,.18);color:#14181f}
   #gBar button.pri{background:#16a34a;color:#fff;font-size:14px} #gBar .dot{display:inline-block;min-width:16px;height:16px;border-radius:9px;background:#ef4444;color:#fff;font-size:10px;line-height:16px;margin-left:4px}
@@ -3308,7 +3316,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
   // entry button
   const playBtn = document.createElement('button'); playBtn.id = 'btnPlay'; playBtn.textContent = '🌾 Main Kebunku';
   const GAME_ON = api.online || /[?&]test=1/.test(location.search);
-  if (GAME_ON) $('upd').style.bottom = '128px';
+  
   if (GAME_ON) { const brk = document.createElement('div'); brk.className = 'brk'; $('bottom').insertBefore(brk, $('bottom').firstChild); $('bottom').insertBefore(playBtn, brk); }
   playBtn.onclick = () => { if (ME) enterGame(); else { openP('gLogin'); try { const c = JSON.parse(localStorage.getItem('pn_login') || 'null'); if (c) { $('gU').value = c.u; $('gP').value = c.p; } } catch {} } };
 
