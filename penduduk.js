@@ -6,9 +6,9 @@
 //  char  : 'A3:n' / 'A4:n' = karakter seragam yang sudah ada di video; kosong = karakter warga
 // =====================================================================
 window.PULAU = {
-  updated: '6 November 2026, 10.10 WIB',
+  updated: '6 November 2026, 14.50 WIB',
   day: 5,
-  total: 151,
+  total: 162,
   warga: [
     // ---- Pegawai resmi ----
     { u: 'lando_094', job: 'TNI Angkatan Darat', zone: 'pelabuhan', status: 'pegawai', since: 'Day 2', lantik: 'Day 4', rumah: 'Rumah atap oranye, Kampung Penduduk', char: 'U:tniad', skin: 0xc98a5a, note: 'Pindah dari TNI AL ke TNI AD (permintaan sendiri)' },
@@ -49,6 +49,7 @@ window.PULAU = {
     { u: 'fadilmuhmd_5', job: 'Tukang Kebun', zone: 'kampung', status: 'menunggu', since: 'Day 5' },
     { u: 'mochtyansufy', job: 'Petugas Kebersihan', zone: 'utama', status: 'menunggu', since: 'Day 5' },
     { u: 'fasssahwa.af123', job: 'Dokter (menunggu pelantikan)', zone: 'utama', status: 'menunggu', since: 'Day 5' },
+    { u: 'faqih16318', job: 'Satpam / Security (menunggu pelantikan)', zone: 'pelabuhan', status: 'menunggu', since: 'Day 5' },
 
     // ---- Warga (sudah disambut) ----
     ...['moose.raaa243', 'delia_wahada', 'givy1010', 'nazeera_maharani', 'zahirajerryanggels', 'anomaliindnggh022', 'mirrr5965', 'tatyanajennaira']
@@ -66,7 +67,8 @@ window.PULAU = {
         'febrian_aang', 'ayu.irawan_31', 'mutiaraa_tulip', 'syarif.avdal', 'gilangniha134', 'nathanaelbpw', 'nazla4079', 'cheryll_ajah', 'uyiyaa_',
         'ayie_cta', 'broazzam_', 'de_zaki_el52', 'user60325_', 'tya_bitt', 'anakakhih', 'manzzstecuyy', 'fahmzzzzzzzzz', 'munarrzki.r2', 'bellmokmok2', 'bigailxrz',
         'elbryenn', 'putrasatryadwi', 'lrasyarrg', 'queridazalfa.n', 'pernah_di_bilang_balsem',
-        'kemas.mhds', 'pnggil.dirasja', 'rizkyardian947', 'oced__', 'anugrahwahyu19', 'fairuz.142', '_mohammadfauzan', 'minniya85', 'ia_donshakila']
+        'kemas.mhds', 'pnggil.dirasja', 'rizkyardian947', 'oced__', 'anugrahwahyu19', 'fairuz.142', '_mohammadfauzan', 'minniya85', 'ia_donshakila',
+        'andininatasyaaudyaputry', 'ykrisdy', 'ggidx_', 'hariaprilh', 'monichanur_', 'lina393967', 'gimzzzz6', 'faiza_haikal', 'naominoviangel', 'garrennoel2018', 'petrus_budi_riyanto', 'cn_dyyyyy', 'mhhammadd_hasann']
       .map(u => ({ u, zone: 'kampung', status: 'warga', since: 'Day 5' })),
   ],
 };
