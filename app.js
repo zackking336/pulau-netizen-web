@@ -3254,6 +3254,8 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
   #gExit{border:0;border-radius:12px;background:rgba(255,255,255,.95);width:36px;height:34px;font:800 15px Poppins;box-shadow:0 3px 10px rgba(0,0,0,.15)}
   #bottom{flex-wrap:wrap} #btnPlay{flex:1 1 auto;font-size:15px!important;padding:12px!important} #bottom .brk{flex-basis:100%;height:0}
   body.game #gBar{display:grid}
+  /* semua panel: sisakan ruang di bawah untuk badge Netlify */
+  .panel{padding-bottom:calc(66px + env(safe-area-inset-bottom))}
   .gpetgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px 8px;padding-top:8px}
   .gpet{position:relative;border:2px solid #e5e7eb;border-radius:14px;background:#fff;padding:8px 2px 6px;text-align:center;font:700 11px Poppins,sans-serif;color:#14181f;cursor:pointer}
   .gpet .sw{width:40px;height:40px;border-radius:50%;margin:0 auto 4px;border:2px solid rgba(0,0,0,.12);display:flex;align-items:center;justify-content:center;font-size:20px}
