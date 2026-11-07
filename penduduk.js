@@ -6,8 +6,8 @@
 //  char  : 'A3:n' / 'A4:n' = karakter seragam yang sudah ada di video; kosong = karakter warga
 // =====================================================================
 window.PULAU = {
-  updated: '7 November 2026, 08.45 WIB',
-  day: 5,
+  updated: '7 November 2026, 10.50 WIB',
+  day: 6,
   total: 203,
   warga: [
     // ---- Pegawai resmi ----
@@ -32,25 +32,25 @@ window.PULAU = {
     { u: 'ressaa_ror', job: 'Pemandu Wisata', zone: 'pelabuhan', status: 'pegawai', since: 'Day 5', lantik: 'Day 5', char: 'W:pemandu2' },
 
     // ---- Menunggu pelantikan ----
+    { u: 'aidil_hasibuannn', job: 'Tentara (TNI AD)', zone: 'pelabuhan', status: 'pegawai', since: 'Day 5', lantik: 'Day 6', char: 'U:tniad' },
+    { u: '_mhmdrizky28', job: 'Tentara (TNI AD)', zone: 'pelabuhan', status: 'pegawai', since: 'Day 5', lantik: 'Day 6', char: 'U:tniad', skin: 0xdba57a },
+    { u: 'keisarsdkptr_', job: 'Tentara (TNI AD)', zone: 'pelabuhan', status: 'pegawai', since: 'Day 5', lantik: 'Day 6', char: 'U:tniad', skin: 0x9c6238 },
+    { u: 'faqih16318', job: 'Satpam Pulau', zone: 'pelabuhan', status: 'pegawai', since: 'Day 5', lantik: 'Day 6', char: 'U:satpam', skinFrom: 0xb07446, skin: 0xc98a5a },
+    { u: 'nindriluvita7', job: 'Penjual Es Teh Jumbo', zone: 'pasar', status: 'pegawai', since: 'Day 3', lantik: 'Day 6', char: 'V:esteh', rc: [[0xc98a5a, 0xdba57a]] },
+    { u: 'ullathpride_26', job: 'Penjual Seblak', zone: 'pasar', status: 'pegawai', since: 'Day 5', lantik: 'Day 6', char: 'V:seblak', rc: [[0xdc2626, 0xec4899], [0xdba57a, 0xb07446]] },
+    { u: 'fasssahwa.af123', job: 'Dokter Pulau', zone: 'fasilitas', status: 'pegawai', since: 'Day 5', lantik: 'Day 6', rumah: 'Klinik Pulau', char: 'W:dokter', rc: [[0x93c5fd, 0xa78bfa], [0xdba57a, 0xc98a5a]] },
+    { u: 'roy_marten07', job: 'Nazir Masjid', zone: 'masjid', status: 'pegawai', since: 'Day 5', lantik: 'Day 6', rumah: 'Masjid Pulau', char: 'W:nazir' },
+    { u: 'smyxvw', job: 'Petugas Jetski', zone: 'pelabuhan', status: 'pegawai', since: 'Day 4', lantik: 'Day 6', rumah: 'Sewa Jetski, Pelabuhan', char: 'W:jetski' },
     { u: 'nyong__01__', job: 'Pedagang (jualan apa?)', zone: 'pasar', status: 'menunggu', since: 'Day 3' },
     { u: '_attyyyy1', job: 'Pedagang (jualan apa?)', zone: 'pasar', status: 'menunggu', since: 'Day 3' },
     { u: 'ruryfauziah', job: 'Karyawan Salon (menunggu salon)', zone: 'kampung', status: 'menunggu', since: 'Day 4', note: 'Pengusul RM Padang' },
-    { u: 'nindriluvita7', job: 'Penjual Es Teh Jumbo', zone: 'pasar', status: 'menunggu', since: 'Day 3' },
-    { u: 'smyxvw', job: 'Petugas Jetski (menunggu pelantikan)', zone: 'kampung', status: 'menunggu', since: 'Day 4' },
-    { u: 'ullathpride_26', job: 'Penjual Seblak (menunggu pelantikan)', zone: 'pasar', status: 'menunggu', since: 'Day 5' },
     { u: 'syaw0ou', job: 'Ketua RT (menunggu pelantikan)', zone: 'kampung', status: 'menunggu', since: 'Day 5' },
     { u: 'patria_jalurgaza', job: 'Penjual Mie Pedas', zone: 'pasar', status: 'menunggu', since: 'Day 5' },
     { u: 's.ptraa.r', job: 'Masinis (menunggu kereta)', zone: 'kampung', status: 'menunggu', since: 'Day 5' },
     { u: 'ameng.3nr', job: 'Pembalap (menunggu sirkuit)', zone: 'kampung', status: 'menunggu', since: 'Day 5' },
-    { u: 'aidil_hasibuannn', job: 'Tentara (menunggu pelantikan)', zone: 'pelabuhan', status: 'menunggu', since: 'Day 5' },
-    { u: '_mhmdrizky28', job: 'Tentara (menunggu pelantikan)', zone: 'pelabuhan', status: 'menunggu', since: 'Day 5' },
-    { u: 'keisarsdkptr_', job: 'Tentara (menunggu pelantikan)', zone: 'pelabuhan', status: 'menunggu', since: 'Day 5' },
     { u: 'krtrace', job: 'Tukang Las', zone: 'pelabuhan', status: 'menunggu', since: 'Day 5' },
-    { u: 'roy_marten07', job: 'Nazir Masjid (menunggu masjid)', zone: 'kampung', status: 'menunggu', since: 'Day 5' },
     { u: 'fadilmuhmd_5', job: 'Tukang Kebun', zone: 'kampung', status: 'menunggu', since: 'Day 5' },
     { u: 'mochtyansufy', job: 'Petugas Kebersihan', zone: 'utama', status: 'menunggu', since: 'Day 5' },
-    { u: 'fasssahwa.af123', job: 'Dokter (menunggu pelantikan)', zone: 'utama', status: 'menunggu', since: 'Day 5' },
-    { u: 'faqih16318', job: 'Satpam / Security (menunggu pelantikan)', zone: 'pelabuhan', status: 'menunggu', since: 'Day 5' },
     { u: 'ervintamta', job: 'Konten Kreator (menunggu pelantikan)', zone: 'kampung', status: 'menunggu', since: 'Day 5' },
     { u: '_pr1v4t3r76', job: 'Tentara AL (menunggu pelantikan)', zone: 'pelabuhan', status: 'menunggu', since: 'Day 6' },
     { u: 'pan.jpg1', job: 'Tentara AL (menunggu pelantikan)', zone: 'pelabuhan', status: 'menunggu', since: 'Day 6' },
