@@ -2499,6 +2499,8 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
       const u = UNIFORMS[w.char.slice(2)](); m = u.v; ps = u.pose;
       if (w.skin) recolor(m.root, 0xa86b3c, w.skin);
       scene.add(m.root); smooth(m.root);
+    } else if (w.char === 'BT') { // Bang Tanjung sendiri sudah ada di pulau (ch); entitas ini hanya untuk daftar & login
+      m = makeVillager(lookOf(w.u)); m.root.scale.setScalar(0.0001); scene.add(m.root);
     } else if (w.char && /^A[34]:\d+$/.test(w.char)) {
       const [k, n] = w.char.split(':'); const a = (k === 'A3' ? APPOINT : APPOINT4)[+n];
       m = a.uni; ps = a.ps; smooth(m.root);
@@ -3298,6 +3300,10 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
   .gmsg p{margin:2px 0 0;background:#f3f4f6;border-radius:12px 12px 12px 4px;padding:7px 10px;font-size:14px;line-height:1.35;word-wrap:break-word}
   .gmsg.me{margin-left:auto;text-align:right} .gmsg.me p{background:#dcfce7;border-radius:12px 12px 4px 12px;text-align:left}
   .gmsg.sys p{background:#fff7e6;color:#7a4b00;font-weight:600}
+  .gmsg.bt b{color:#92400e} .gmsg.bt b:after{content:'👑 Kepala Pulau';margin-left:6px;font-size:10px;font-weight:800;color:#fff;background:#d97706;padding:1px 7px;border-radius:8px;vertical-align:1px}
+  .gmsg.bt p{background:linear-gradient(135deg,#fef3c7,#fde68a);border:1.5px solid #f59e0b;color:#3b2500}
+  .gmsg.pin{max-width:100%} .gmsg.pin p{background:linear-gradient(135deg,#fef3c7,#fff7e6);border:1.5px dashed #f59e0b;color:#3b2500;font-weight:600}
+  .gmsg.pin b{color:#92400e}
   #gP_chat{height:72vh}
   #gHelp{position:fixed;left:50%;top:58px;transform:translateX(-50%);display:none;gap:6px;align-items:center;background:rgba(255,255,255,.96);border-radius:14px;padding:6px 8px;box-shadow:0 4px 14px rgba(0,0,0,.2);z-index:5;font:800 12.5px Poppins,sans-serif;white-space:nowrap}
   #gHelp button{border:0;border-radius:10px;background:#0ea5e9;color:#fff;font:800 12px Poppins,sans-serif;padding:6px 9px} #gHelp #gHelpF{background:#16a34a} #gHelp #gHelpBack{background:#f3f4f6;color:#111}
@@ -3576,7 +3582,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     up.forEach(k => out[k] = 1.5 + Math.round(r() * 5) / 10); down.forEach(k => out[k] = 0.7);
     return PRICE_CACHE[dk] = out;
   }
-  const priceToday = k => Math.round((ITEMS[k]?.price || 0) * (pricesToday(dayKey(Date.now()))[k] || 1));
+  const priceToday = k => Math.round((ITEMS[k]?.price || 0) * (pricesToday(dayKey(Date.now()))[k] || 1) * (panenRaya() ? 2 : 1));
   // ---- kalender login 7 hari ----
   const CAL = [
     { txt: '+80 koin', f: s => s.coins += 80 }, { txt: '+5 pakan 🌾', f: s => s.inv.pakan = (s.inv.pakan || 0) + 5 },
@@ -4106,10 +4112,17 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
   const clean = t => { let r = t.replace(/(https?:\/\/\S+|www\.\S+|\S+\.(com|net|id|co|xyz|ly|me|io|org)(\/\S*)?)/gi, '[link dihapus]'); BAD.forEach(w => r = r.replace(new RegExp('\\b' + w + '\\b', 'gi'), '*'.repeat(w.length))); return r; };
   const esc = t => t.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const hhmm = iso => { const d = new Date(Date.parse(iso) + WIB); return d.toISOString().slice(11, 16); };
+  const DAILY_Q = ['Besok pulau kita bangun apa ya? 🏗️', 'Tanaman favoritmu di Kebunku apa? 🌽', 'Mau event apa minggu depan? 🎉', 'Kalau punya peliharaan, mau dikasih nama apa? 🐱',
+    'Baju apa yang harus ada di butik? 👗', 'Ikan apa yang paling susah kamu dapat? 🎣', 'Profesi apa yang belum ada di pulau? 👷', 'Hewan ternak apa lagi yang perlu ditambah? 🐄',
+    'Fitur apa yang bikin Kebunku makin seru? 💡', 'Tempat wisata apa yang cocok di Pulau Netizen? 🏖️'];
+  function dailyQ() { const d = Math.floor((Date.now() + WIB) / 864e5); return DAILY_Q[d % DAILY_Q.length]; }
+  function panenRaya(ts = Date.now()) { const wd = new Date(ts + WIB).getUTCDay(); return wd === 6 || wd === 0; }
   function renderChat() {
     const el = $('gChatList'), atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 60;
+    const pr = panenRaya() ? `<br>🎉 <b style="display:inline;color:#b45309">EVENT PANEN RAYA</b> hari ini: harga jual semua hasil panen <b style="display:inline">2x lipat</b>! Jual di 🎒 Tas.` : '';
     el.innerHTML = `<div class="gmsg sys"><p>👋 Obrolan untuk semua pemain Kebunku. Jaga sopan santun ya. Pesan kasar & link otomatis disaring.</p></div>` +
-      CHAT.msgs.map(m => `<div class="gmsg ${ME && m.username === ME.u ? 'me' : ''}"><b>@${esc(m.username)}</b><i>${hhmm(m.created_at)}</i><p>${esc(m.msg)}</p></div>`).join('');
+      `<div class="gmsg pin"><b>📌 @bang.tanjung</b><p>Halo${ME ? ' @' + esc(ME.u) : ''}! Pertanyaan Bang Tanjung hari ini:<br><b style="display:inline">${esc(dailyQ())}</b><br>Jawab di chat ya, jawaban terbanyak bisa masuk video Pulau Netizen 🎬${pr}</p></div>` +
+      CHAT.msgs.map(m => `<div class="gmsg ${ME && m.username === ME.u ? 'me' : ''} ${m.username === 'bang.tanjung' ? 'bt' : ''}"><b>@${esc(m.username)}</b><i>${hhmm(m.created_at)}</i><p>${esc(m.msg)}</p></div>`).join('');
     if (atBottom || CHAT.forceScroll) { el.scrollTop = el.scrollHeight; CHAT.forceScroll = false; }
     $('gOnline').textContent = `🟢 ${CHAT.online.length} online`;
   }
@@ -4185,5 +4198,5 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     }
     if (ME && now - lastSlow > 30000) { lastSlow = now; tickState(ME.s, Date.now()); renderFarm(ME.v, ME.s, Date.now()); updateHUD(); }
   };
-  window.__game = { openPetPicker, tapPet, PETS, petMesh, openCloset, eventItems, OUTFITS, weatherOf, pricesToday, ordersToday, grGoal, grGive, helpFarm, fillOrder, renderAct, eventOf, applyCostume, sendChat, pollChat, CHAT, startFishing, onCast, onPull, FISHING, get me() { return ME; }, CROPS, ANIMALS, refreshList, FARMS, api, tapTile, tapAnimal, openShop, openMis, openBag, openRank, buy: id => buy(SHOP.find(x => x.id === id)), tickState };
+  window.__game = { panenRaya, dailyQ, openPetPicker, tapPet, PETS, petMesh, openCloset, eventItems, OUTFITS, weatherOf, pricesToday, ordersToday, grGoal, grGive, helpFarm, fillOrder, renderAct, eventOf, applyCostume, sendChat, pollChat, CHAT, startFishing, onCast, onPull, FISHING, get me() { return ME; }, CROPS, ANIMALS, refreshList, FARMS, api, tapTile, tapAnimal, openShop, openMis, openBag, openRank, buy: id => buy(SHOP.find(x => x.id === id)), tickState };
 }

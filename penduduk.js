@@ -11,6 +11,7 @@ window.PULAU = {
   total: 203,
   warga: [
     // ---- Pegawai resmi ----
+    { u: 'bang.tanjung', job: 'Kepala Pulau', zone: 'utama', status: 'pegawai', since: 'Day 1', lantik: 'Day 1', rumah: 'Rumah Bang Tanjung (bukit)', char: 'BT', note: 'Akun resmi Bang Tanjung' },
     { u: 'lando_094', job: 'TNI Angkatan Darat', zone: 'pelabuhan', status: 'pegawai', since: 'Day 2', lantik: 'Day 4', rumah: 'Rumah atap oranye, Kampung Penduduk', char: 'U:tniad', skin: 0xc98a5a, note: 'Pindah dari TNI AL ke TNI AD (permintaan sendiri)' },
     { u: 'zyx_naww', job: 'Penjual Seblak', zone: 'pasar', status: 'pegawai', since: 'Day 3', lantik: 'Day 3', char: 'A3:0' },
     { u: 'vlhl_vbs_0801', job: 'Nelayan', zone: 'pelabuhan', status: 'pegawai', since: 'Day 3', lantik: 'Day 3', char: 'A3:1', note: 'Kapal nelayan menyusul' },
