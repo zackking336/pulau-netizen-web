@@ -4117,12 +4117,45 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     'Fitur apa yang bikin Kebunku makin seru? 💡', 'Tempat wisata apa yang cocok di Pulau Netizen? 🏖️'];
   function dailyQ() { const d = Math.floor((Date.now() + WIB) / 864e5); return DAILY_Q[d % DAILY_Q.length]; }
   function panenRaya(ts = Date.now()) { const wd = new Date(ts + WIB).getUTCDay(); return wd === 6 || wd === 0; }
+  // ---- Bang Tanjung: balasan otomatis (dihitung sama di semua HP, tidak disimpan ke server) ----
+  const BT_RULES = [
+    [/\b(bug|error|eror|gak bisa|ga bisa|gk bisa|tidak bisa|ngga bisa|nggak bisa|macet|ngelag|lag|hilang|ilang)\b/i, [
+      u => `Waduh, maaf ya @${u} 🙏 Bang Tanjung catat masalahnya. Coba tutup lalu buka lagi halamannya dulu ya.`,
+      u => `Siap @${u}, laporannya Bang Tanjung terima 📝 Nanti dibenerin. Sementara coba muat ulang halamannya ya.`]],
+    [/(jadi warga|jd warga|ijin warga|izin warga|ikut gabung|mau gabung|join)/i, [
+      u => `Selamat datang @${u}! 🏝️ Kamu sudah resmi jadi warga Pulau Netizen. Semoga kebunnya subur ya 🌱`,
+      u => `Wah, warga baru! Halo @${u} 👋 Selamat bergabung di Pulau Netizen, jangan lupa tanam benih pertamamu 🌱`]],
+    [/(terima ?kasih|makasih|makasi|thanks|thank you|tengkyu|trims)/i, [
+      u => `Sama-sama @${u}! 🙏 Bang Tanjung senang kamu main di sini.`,
+      u => `Sama-sama ya @${u} 😄 Semangat berkebunnya!`]],
+    [/(sehat|semangat|sukses|mantap|keren|bagus|seru)/i, [
+      u => `Aamiin, makasih @${u}! 💪 Kamu juga sehat & semangat selalu ya.`,
+      u => `Hehe makasih @${u} 😄 Bang Tanjung jadi tambah semangat bangun pulau!`]],
+    [/(saran|usul|ide|tambah|tambahin|bikin|bikinin|buatin|buat|bangun|request|minta)/i, [
+      u => `Ide bagus @${u}! 📝 Bang Tanjung catat ya. Usulan paling rame bisa dibangun di video Pulau Netizen berikutnya 🎬`,
+      u => `Siap, dicatat @${u}! ✍️ Ajak warga lain dukung idemu biar cepat dibangun 😄`]],
+    [/(info|update|kabar|ada apa|event|hadiah)/i, [
+      u => `Info dari Bang Tanjung buat @${u}: ${panenRaya() ? 'akhir pekan ini ada EVENT PANEN RAYA, harga jual hasil panen 2x lipat! 🎉 ' : ''}Sampai Level 5 dapat hadiah peliharaan, kucing oren rekomendasi saya 🐱`,
+      u => `Halo @${u}! Kabar terbaru: ${panenRaya() ? 'Panen Raya lagi jalan, jual hasil panen dapat 2x koin 🎉 ' : 'tiap Sabtu–Minggu ada Panen Raya, harga jual 2x 🎉 '}Cek juga misi mingguan, hadiahnya lumayan 🎯`]],
+    [/\b(halo|hallo|hai|hay|hi|hello|pagi|siang|sore|malam|malem|assalam|permisi|p+)\b|tanjung/i, [
+      u => `Halo @${u}! 👋 Bang Tanjung di sini. Selamat ${partOfDay()}, selamat berkebun ya 🌱`,
+      u => `Hai @${u}! 😄 Selamat ${partOfDay()} dari Bang Tanjung. Sudah siram tanaman hari ini? 💧`]],
+  ];
+  function partOfDay(ts = Date.now()) { const h = new Date(ts + WIB).getUTCHours(); return h < 11 ? 'pagi' : h < 15 ? 'siang' : h < 18 ? 'sore' : 'malam'; }
+  function btReply(m, last) {
+    if (!m || m.username === 'bang.tanjung' || m.username === 'barunaadi') return null;
+    const t = Date.parse(m.created_at) || 0; if (last[m.username] && t - last[m.username] < 30 * 60e3) return null; // maks 1 balasan / 30 menit / warga
+    for (const [re, outs] of BT_RULES) if (re.test(m.msg || '')) { last[m.username] = t; return outs[(m.id || 0) % outs.length](esc(m.username)); }
+    return null;
+  }
   function renderChat() {
     const el = $('gChatList'), atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 60;
     const pr = panenRaya() ? `<br>🎉 <b style="display:inline;color:#b45309">EVENT PANEN RAYA</b> hari ini: harga jual semua hasil panen <b style="display:inline">2x lipat</b>! Jual di 🎒 Tas.` : '';
     el.innerHTML = `<div class="gmsg sys"><p>👋 Obrolan untuk semua pemain Kebunku. Jaga sopan santun ya. Pesan kasar & link otomatis disaring.</p></div>` +
       `<div class="gmsg pin"><b>📌 @bang.tanjung</b><p>Halo${ME ? ' @' + esc(ME.u) : ''}! Pertanyaan Bang Tanjung hari ini:<br><b style="display:inline">${esc(dailyQ())}</b><br>Jawab di chat ya, jawaban terbanyak bisa masuk video Pulau Netizen 🎬${pr}</p></div>` +
-      CHAT.msgs.map(m => `<div class="gmsg ${ME && m.username === ME.u ? 'me' : ''} ${m.username === 'bang.tanjung' ? 'bt' : ''}"><b>@${esc(m.username)}</b><i>${hhmm(m.created_at)}</i><p>${esc(m.msg)}</p></div>`).join('');
+      (() => { const last = {}; return CHAT.msgs.map(m => { const r = btReply(m, last);
+        return `<div class="gmsg ${ME && m.username === ME.u ? 'me' : ''} ${m.username === 'bang.tanjung' ? 'bt' : ''}"><b>@${esc(m.username)}</b><i>${hhmm(m.created_at)}</i><p>${esc(m.msg)}</p></div>` +
+          (r ? `<div class="gmsg bt"><b>@bang.tanjung</b><i>balasan otomatis</i><p>${r}</p></div>` : ''); }).join(''); })();
     if (atBottom || CHAT.forceScroll) { el.scrollTop = el.scrollHeight; CHAT.forceScroll = false; }
     $('gOnline').textContent = `🟢 ${CHAT.online.length} online`;
   }
@@ -4198,5 +4231,5 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     }
     if (ME && now - lastSlow > 30000) { lastSlow = now; tickState(ME.s, Date.now()); renderFarm(ME.v, ME.s, Date.now()); updateHUD(); }
   };
-  window.__game = { panenRaya, dailyQ, openPetPicker, tapPet, PETS, petMesh, openCloset, eventItems, OUTFITS, weatherOf, pricesToday, ordersToday, grGoal, grGive, helpFarm, fillOrder, renderAct, eventOf, applyCostume, sendChat, pollChat, CHAT, startFishing, onCast, onPull, FISHING, get me() { return ME; }, CROPS, ANIMALS, refreshList, FARMS, api, tapTile, tapAnimal, openShop, openMis, openBag, openRank, buy: id => buy(SHOP.find(x => x.id === id)), tickState };
+  window.__game = { btReply, panenRaya, dailyQ, openPetPicker, tapPet, PETS, petMesh, openCloset, eventItems, OUTFITS, weatherOf, pricesToday, ordersToday, grGoal, grGive, helpFarm, fillOrder, renderAct, eventOf, applyCostume, sendChat, pollChat, CHAT, startFishing, onCast, onPull, FISHING, get me() { return ME; }, CROPS, ANIMALS, refreshList, FARMS, api, tapTile, tapAnimal, openShop, openMis, openBag, openRank, buy: id => buy(SHOP.find(x => x.id === id)), tickState };
 }
