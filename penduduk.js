@@ -6,9 +6,9 @@
 //  char  : 'A3:n' / 'A4:n' = karakter seragam yang sudah ada di video; kosong = karakter warga
 // =====================================================================
 window.PULAU = {
-  updated: '7 November 2026, 10.50 WIB',
+  updated: '7 November 2026, 12.03 WIB',
   day: 6,
-  total: 203,
+  total: 205,
   warga: [
     // ---- Pegawai resmi ----
     { u: 'bang.tanjung', job: 'Kepala Pulau', zone: 'utama', status: 'pegawai', since: 'Day 1', lantik: 'Day 1', rumah: 'Rumah Bang Tanjung (bukit)', char: 'BT', note: 'Akun resmi Bang Tanjung' },
@@ -76,7 +76,8 @@ window.PULAU = {
         'kemas.mhds', 'pnggil.dirasja', 'rizkyardian947', 'oced__', 'anugrahwahyu19', 'fairuz.142', '_mohammadfauzan', 'minniya85', 'ia_donshakila',
         'andininatasyaaudyaputry', 'ykrisdy', 'ggidx_', 'hariaprilh', 'monichanur_', 'lina393967', 'gimzzzz6', 'faiza_haikal', 'naominoviangel', 'garrennoel2018', 'petrus_budi_riyanto', 'cn_dyyyyy', 'mhhammadd_hasann', 'dewadhiren', 'astyana17', 'hann_ajaaa17',
         'reaksi_kimia888', 'bellvabora', 'paypop4y', 'idsandwich', 'n4n4z01', '_acheelll_12', 'vinzz4047', 'alynq2', 'juicyssa',
-        'r1chh.agzk', 'alf4reziii', 'rasha_1253', '805_yadz', 'vierraavi', 'azsipaa._', '_nanayy_01', 'hnky__aww', 'zhu.anz', 'randa_boy_0918', 'gege_anlimited', 'raihan._.034', 'ezrydj', 'jenenge_lino211', 'luxz7k', 'poraukinchuu_', 'arcvival_2', 'boo_part_2', 'lalendr4_4', 'zidanealfarhozie', 'kiii_feb', 'fatimah73019', '_fznadtya', 'dino0saurush', 'rrr.renooo', 'orang_piaman_']
+        'r1chh.agzk', 'alf4reziii', 'rasha_1253', '805_yadz', 'vierraavi', 'azsipaa._', '_nanayy_01', 'hnky__aww', 'zhu.anz', 'randa_boy_0918', 'gege_anlimited', 'raihan._.034', 'ezrydj', 'jenenge_lino211', 'luxz7k', 'poraukinchuu_', 'arcvival_2', 'boo_part_2', 'lalendr4_4', 'zidanealfarhozie', 'kiii_feb', 'fatimah73019', '_fznadtya', 'dino0saurush', 'rrr.renooo', 'orang_piaman_',
+        '_f1naaa25', 'rendi43230', 'rachel.panama24', 'akaaphp']
       .map(u => ({ u, zone: 'kampung', status: 'warga', since: 'Day 5' })),
   ],
 };
