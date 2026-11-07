@@ -6,9 +6,9 @@
 //  char  : 'A3:n' / 'A4:n' = karakter seragam yang sudah ada di video; kosong = karakter warga
 // =====================================================================
 window.PULAU = {
-  updated: '7 November 2026, 06.44 WIB',
+  updated: '7 November 2026, 08.45 WIB',
   day: 5,
-  total: 174,
+  total: 203,
   warga: [
     // ---- Pegawai resmi ----
     { u: 'lando_094', job: 'TNI Angkatan Darat', zone: 'pelabuhan', status: 'pegawai', since: 'Day 2', lantik: 'Day 4', rumah: 'Rumah atap oranye, Kampung Penduduk', char: 'U:tniad', skin: 0xc98a5a, note: 'Pindah dari TNI AL ke TNI AD (permintaan sendiri)' },
@@ -51,6 +51,10 @@ window.PULAU = {
     { u: 'fasssahwa.af123', job: 'Dokter (menunggu pelantikan)', zone: 'utama', status: 'menunggu', since: 'Day 5' },
     { u: 'faqih16318', job: 'Satpam / Security (menunggu pelantikan)', zone: 'pelabuhan', status: 'menunggu', since: 'Day 5' },
     { u: 'ervintamta', job: 'Konten Kreator (menunggu pelantikan)', zone: 'kampung', status: 'menunggu', since: 'Day 5' },
+    { u: '_pr1v4t3r76', job: 'Tentara AL (menunggu pelantikan)', zone: 'pelabuhan', status: 'menunggu', since: 'Day 6' },
+    { u: 'pan.jpg1', job: 'Tentara AL (menunggu pelantikan)', zone: 'pelabuhan', status: 'menunggu', since: 'Day 6' },
+    { u: 'mharzz1', job: 'Tentara AL (menunggu pelantikan)', zone: 'pelabuhan', status: 'menunggu', since: 'Day 6' },
+    { u: 'theal.iyaa', job: 'Penjual Seblak (menunggu pelantikan)', zone: 'pasar', status: 'menunggu', since: 'Day 6' },
 
     // ---- Warga (sudah disambut) ----
     ...['moose.raaa243', 'delia_wahada', 'givy1010', 'nazeera_maharani', 'zahirajerryanggels', 'anomaliindnggh022', 'mirrr5965', 'tatyanajennaira']
@@ -70,7 +74,8 @@ window.PULAU = {
         'elbryenn', 'putrasatryadwi', 'lrasyarrg', 'queridazalfa.n', 'pernah_di_bilang_balsem',
         'kemas.mhds', 'pnggil.dirasja', 'rizkyardian947', 'oced__', 'anugrahwahyu19', 'fairuz.142', '_mohammadfauzan', 'minniya85', 'ia_donshakila',
         'andininatasyaaudyaputry', 'ykrisdy', 'ggidx_', 'hariaprilh', 'monichanur_', 'lina393967', 'gimzzzz6', 'faiza_haikal', 'naominoviangel', 'garrennoel2018', 'petrus_budi_riyanto', 'cn_dyyyyy', 'mhhammadd_hasann', 'dewadhiren', 'astyana17', 'hann_ajaaa17',
-        'reaksi_kimia888', 'bellvabora', 'paypop4y', 'idsandwich', 'n4n4z01', '_acheelll_12', 'vinzz4047', 'alynq2', 'juicyssa']
+        'reaksi_kimia888', 'bellvabora', 'paypop4y', 'idsandwich', 'n4n4z01', '_acheelll_12', 'vinzz4047', 'alynq2', 'juicyssa',
+        'r1chh.agzk', 'alf4reziii', 'rasha_1253', '805_yadz', 'vierraavi', 'azsipaa._', '_nanayy_01', 'hnky__aww', 'zhu.anz', 'randa_boy_0918', 'gege_anlimited', 'raihan._.034', 'ezrydj', 'jenenge_lino211', 'luxz7k', 'poraukinchuu_', 'arcvival_2', 'boo_part_2', 'lalendr4_4', 'zidanealfarhozie', 'kiii_feb', 'fatimah73019', '_fznadtya', 'dino0saurush', 'rrr.renooo', 'orang_piaman_']
       .map(u => ({ u, zone: 'kampung', status: 'warga', since: 'Day 5' })),
   ],
 };
