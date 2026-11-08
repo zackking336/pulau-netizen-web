@@ -3106,6 +3106,12 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     peti:    { n: 'Peti Harta',  e: '💰', w: 1,  lv: 1, price: 0,   kg: 5,    d: 0.12, coins: 350 },
   };
   Object.entries(FISH).forEach(([k, f]) => { if (!f.coins) ITEMS['ikan_' + k] = { n: f.n, e: f.e, price: f.price }; });
+  const HOUSE_LV = [
+    { n: 'Rumah Mungil', e: '🏠' },
+    { n: 'Rumah Kayu', e: '🛖', price: 1500, lv: 3 },
+    { n: 'Rumah Bata', e: '🏠', price: 4000, lv: 5 },
+    { n: 'Rumah Tingkat', e: '🏡', price: 9000, lv: 8 },
+  ];
   const ROOFS = [0xc2410c, 0x1d4ed8, 0x15803d, 0x7c3aed, 0xdb2777, 0x0f766e, 0xca8a04, 0x111827];
   const SHOP = [
     ...Object.entries(CROPS).map(([k, c]) => ({ id: 'seed_' + k, n: 'Benih ' + c.n, e: c.e, price: c.seed, lv: c.lv, d: `Panen ${c.hours < 24 ? c.hours + ' jam' : c.hours / 24 + ' hari'} · hasil ${c.yield}×` })),
@@ -3119,6 +3125,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     { id: 'roof', n: 'Cat Atap Rumah', e: '🎨', price: 250, lv: 1, d: 'Ganti warna atap' },
     { id: 'fence', n: 'Pagar Kayu', e: '🪵', price: 450, lv: 2, d: 'Pagar keliling kebun' },
     { id: 'garden', n: 'Taman Bunga', e: '🌷', price: 600, lv: 3, d: 'Bunga di depan rumah' },
+    { id: 'house_up', n: 'Upgrade Rumah', e: '🏡', price: 0, lv: 3, d: 'Rumah lebih besar' },
     { id: 'pet_pick', n: 'Peliharaan Kesayangan', e: '🐾', price: 0, lv: 5, d: 'Kucing oren, hitam, putih, telon & lainnya' },
   ];
   const PETS = {
@@ -3129,6 +3136,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     kucing_abu:   { n: 'Kucing Abu',   e: '🐈', def: 'Kelabu', k: 'cat', base: 0x9ca3af, mark: 0x4b5563, belly: 0xe5e7eb, eye: 0xf59e0b, sw: 'repeating-linear-gradient(110deg,#9ca3af 0 7px,#4b5563 7px 10px)', d: 'Abu-abu loreng, suka tidur siang.' },
     kucing_siam:  { n: 'Kucing Siam',  e: '🐈', def: 'Moka',   k: 'cat', base: 0xf3e7d3, mark: 0x5b3a29, belly: 0xfaf3e8, eye: 0x38bdf8, point: true, sw: 'radial-gradient(circle at 50% 50%,#f3e7d3 0 45%,#5b3a29 46%)', d: 'Krem dengan wajah, telinga & ekor coklat.' },
     anjing:       { n: 'Anjing',       e: '🐕', def: 'Bruno',  k: 'dog', base: 0x92400e, mark: 0x78350f, belly: 0xfcd9a8, eye: 0x111111, sw: '#92400e', d: 'Setia menjaga kebunmu.' },
+    beo:          { n: 'Burung Beo',   e: '🐦‍⬛', def: 'Kiko',   k: 'bird', base: 0x111827, mark: 0xfacc15, belly: 0x1f2937, eye: 0x111111, lv: 10, sw: 'radial-gradient(circle at 62% 38%,#facc15 0 13%,transparent 14%),radial-gradient(circle at 80% 48%,#f97316 0 9%,transparent 10%),#111827', d: 'Burung beo yang bisa ngomong! Suka menirukan obrolan warga. Khusus Level 10.' },
     kelinci:      { n: 'Kelinci',      e: '🐇', def: 'Kapas',  k: 'rabbit', base: 0xf5f5f4, mark: 0xfda4af, belly: 0xffffff, eye: 0x111111, sw: '#f5f5f4', d: 'Imut, suka loncat-loncat.' },
   };
   const PET_ALIAS = { kucing: 'kucing_oren' };
@@ -3198,7 +3206,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     daily: null, weekly: null, badges: [], stats: { harvest: 0, collect: 0, sold: 0, fish: 0 }, best: null, seed: 'lobak',
   });
   const xpNeed = lv => 60 + lv * 45;
-  const maxEnergy = s => 100 + (s.level - 1) * 5;
+  const maxEnergy = s => 100 + (s.level - 1) * 5 + ((s.house && s.house.lv) || 0) * 10;
   const tilesIdx = s => { const out = []; for (let r = 0; r < s.field; r++) for (let c = 0; c < s.field; c++) out.push(r * 4 + c); return out; };
 
   function ensureMissions(s, now) {
@@ -3223,7 +3231,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
         s.animals.forEach(a => { const miss = a.fed ? Math.max(0, daysBetween(a.fed, dk) - 1) : gap; if (miss > 0) a.h = Math.max(0, a.h - miss); });
       } else s.streak = 1;
       s.lastDay = dk;
-      const cal = calReward(s); if (msgs) msgs.push(`📅 Hadiah login hari ke-${cal.day}: ${cal.txt}`);
+      const cal = calReward(s); s._calNew = 1; if (msgs) msgs.push(`📅 Hadiah login hari ke-${cal.day}: ${cal.txt}`);
       const wx = weatherOf(dk); if (msgs) msgs.push(`${wx.e} Cuaca hari ini: ${wx.n} (${wx.season}). ${wx.tip}`);
       const wk = weekKey(now); s.days = (s.days || []).filter(d => weekKey(Date.parse(d + 'T12:00:00+07:00')) === wk); if (!s.days.includes(dk)) s.days.push(dk);
     }
@@ -3266,7 +3274,8 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
   }
   function addXP(s, n, msgs) {
     s.xp += n;
-    while (s.xp >= xpNeed(s.level)) { s.xp -= xpNeed(s.level); s.level++; if (msgs) msgs.push(`⭐ Naik ke Level ${s.level}! Barang baru terbuka di toko.`); if (s.level === 5 && !s.pet) { s._petOffer = 1; if (msgs) msgs.push('🐾 Level 5! Sekarang kamu bisa memilih peliharaan kesayangan. Kucing oren direkomendasikan 😺'); } }
+    while (s.xp >= xpNeed(s.level)) { s.xp -= xpNeed(s.level); s.level++; if (msgs) msgs.push(`⭐ Naik ke Level ${s.level}! Barang baru terbuka di toko.`); if (s.level === 5 && !s.pet) { s._petOffer = 1; if (msgs) msgs.push('🐾 Level 5! Sekarang kamu bisa memilih peliharaan kesayangan. Kucing oren direkomendasikan 😺'); }
+      if (s.level === 10) { s._petOffer = 1; if (msgs) msgs.push('🐦‍⬛ LEVEL 10! Burung Beo yang bisa ngomong sekarang terbuka. Adopsi GRATIS sekali di 🏪 Toko → Peliharaan.'); } }
   }
   const heartsTotal = s => s.animals.reduce((a, b) => a + b.h, 0);
 
@@ -3332,6 +3341,44 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
       x.fillStyle = '#3a2300'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText('@' + u, w / 2, title ? 46 : h / 2 + 2);
       if (title) { x.font = '700 30px Poppins'; x.fillStyle = '#b45309'; x.fillText(title, w / 2, 96); } });
   }
+  // 4 tingkat rumah (dibuat semua, yang tampil sesuai s.house.lv)
+  function gable(w, d, h, m, y) { const sh = new THREE.Shape(); sh.moveTo(-w / 2, 0); sh.lineTo(w / 2, 0); sh.lineTo(0, h); sh.closePath();
+    const g = new THREE.ExtrudeGeometry(sh, { depth: d, bevelEnabled: false }); g.translate(0, 0, -d / 2); const r = new THREE.Mesh(g, m); r.castShadow = true; r.position.y = y; return r; }
+  function houseTiers(hs, roofM) {
+    const T = [0, 1, 2, 3].map(() => { const g = new THREE.Group(); hs.add(g); return g; });
+    const win = (g, x, y, z, w = 0.26, h = 0.22, fr) => { if (fr) g.add(box(w + 0.06, h + 0.06, 0.02, fr, x, y, z - 0.005, false)); g.add(box(w, h, 0.03, 0xbfe3ff, x, y, z, false)); };
+    // 0: rumah mungil (lama)
+    let g = T[0]; g.add(box(1.25, 0.85, 1.0, 0xe7cfa6, 0, 0.45, 0)); g.add(gable(1.56, 1.15, 0.6, roofM, 0.88));
+    g.add(box(0.28, 0.5, 0.03, 0x5b3a1e, -0.25, 0.3, 0.51, false)); win(g, 0.3, 0.55, 0.51);
+    // 1: rumah kayu panggung + teras
+    g = T[1]; const wd = 0x8b5a2b;
+    for (const [x, z] of [[-0.68, -0.48], [0.68, -0.48], [-0.68, 0.48], [0.68, 0.48], [-0.68, 0.82], [0.68, 0.82]]) g.add(box(0.08, 0.3, 0.08, 0x5b3a1e, x, 0.15, z));
+    g.add(box(1.45, 0.8, 1.0, 0xb7792f, 0, 0.7, 0));
+    for (const y of [0.45, 0.62, 0.79, 0.96]) g.add(box(1.46, 0.015, 1.01, 0x7a4a1c, 0, y, 0, false));
+    g.add(box(1.5, 0.05, 0.38, wd, 0, 0.32, 0.69)); g.add(box(0.36, 0.05, 0.2, wd, 0, 0.12, 0.98)); g.add(box(0.36, 0.05, 0.16, wd, 0, 0.22, 0.9));
+    for (const x of [-0.7, -0.3, 0.3, 0.7]) g.add(box(0.03, 0.22, 0.03, wd, x, 0.45, 0.86, false)); g.add(box(1.46, 0.03, 0.03, wd, 0, 0.56, 0.86, false));
+    g.add(box(0.3, 0.52, 0.03, 0x5b3a1e, -0.3, 0.6, 0.51, false)); win(g, 0.35, 0.78, 0.51, 0.3, 0.24, 0x5b3a1e);
+    g.add(gable(1.85, 1.55, 0.62, roofM, 1.1)); g.children.at(-1).position.z = 0.17;
+    // 2: rumah bata
+    g = T[2]; g.add(box(1.62, 0.95, 1.1, 0xb4532a, 0, 0.5, 0));
+    for (let i = 0; i < 6; i++) g.add(box(1.63, 0.012, 1.11, 0x8a3b1c, 0, 0.16 + i * 0.15, 0, false));
+    g.add(box(1.66, 0.1, 1.14, 0xe5e7eb, 0, 0.05, 0, false)); g.add(box(1.66, 0.06, 1.14, 0xffffff, 0, 0.97, 0, false));
+    g.add(box(0.32, 0.6, 0.03, 0x14532d, 0, 0.32, 0.56, false)); g.add(box(0.4, 0.66, 0.02, 0xffffff, 0, 0.34, 0.55, false));
+    win(g, -0.5, 0.58, 0.56, 0.3, 0.26, 0xffffff); win(g, 0.5, 0.58, 0.56, 0.3, 0.26, 0xffffff);
+    g.add(box(0.6, 0.04, 0.3, roofM.color.getHex(), 0, 0.7, 0.68)); g.children.at(-1).material = roofM;
+    g.add(box(0.18, 0.45, 0.18, 0x7c2d12, 0.45, 1.3, -0.25)); g.add(gable(1.95, 1.3, 0.7, roofM, 1.0));
+    g.add(mesh(new THREE.SphereGeometry(0.04, 6, 5), new THREE.MeshStandardMaterial({ color: 0xfff3c4, emissive: 0xffd27a, emissiveIntensity: 0.8 }), 0.26, 0.62, 0.58, false));
+    // 3: rumah tingkat + balkon
+    g = T[3]; g.add(box(1.68, 0.8, 1.15, 0xf5efe3, 0, 0.42, 0)); g.add(box(1.5, 0.66, 1.0, 0xfde68a, 0, 1.15, -0.05));
+    g.add(box(1.72, 0.06, 1.2, 0xffffff, 0, 0.83, 0.03, false));
+    g.add(box(1.5, 0.05, 0.3, 0xffffff, 0, 0.84, 0.72)); for (let i = 0; i < 9; i++) g.add(box(0.025, 0.2, 0.025, 0xffffff, -0.7 + i * 0.175, 0.97, 0.85, false)); g.add(box(1.5, 0.03, 0.03, 0xffffff, 0, 1.08, 0.85, false));
+    g.add(box(0.42, 0.6, 0.03, 0x5b3a1e, 0, 0.32, 0.585, false)); g.add(box(0.01, 0.6, 0.035, 0x3b2410, 0, 0.32, 0.6, false));
+    win(g, -0.55, 0.5, 0.585, 0.3, 0.26, 0xffffff); win(g, 0.55, 0.5, 0.585, 0.3, 0.26, 0xffffff);
+    g.add(box(0.36, 0.42, 0.03, 0xbfe3ff, 0, 1.12, 0.46, false)); win(g, -0.5, 1.18, 0.46, 0.26, 0.24, 0xffffff); win(g, 0.5, 1.18, 0.46, 0.26, 0.24, 0xffffff);
+    g.add(gable(1.8, 1.2, 0.6, roofM, 1.48)); g.children.at(-1).position.z = -0.05;
+    for (const x of [-0.75, 0.75]) g.add(box(0.06, 0.8, 0.06, 0xffffff, x, 0.42, 0.85));
+    T.forEach((g, i) => g.visible = i === 0); return T;
+  }
   function buildFarm(u, idx) {
     const root = new THREE.Group(); scene.add(root); root.position.copy(desaPlot(idx));
     DESA_TAKEN.add(idx);
@@ -3339,12 +3386,8 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     root.add(box(DESA.PW - 0.5, 0.06, DESA.PD - 0.8, 0x7ccf5a, 0, 0.0, -0.1, false));
     // house
     const hs = new THREE.Group(); hs.position.copy(L.house); root.add(hs);
-    hs.add(box(1.25, 0.85, 1.0, 0xe7cfa6, 0, 0.45, 0));
-    const sh = new THREE.Shape(); sh.moveTo(-0.78, 0); sh.lineTo(0.78, 0); sh.lineTo(0, 0.6); sh.closePath();
-    const rg = new THREE.ExtrudeGeometry(sh, { depth: 1.15, bevelEnabled: false }); rg.translate(0, 0, -0.575);
-    const roofM = M(ROOFS[0]); const roof = new THREE.Mesh(rg, roofM); roof.castShadow = true; roof.position.y = 0.88; hs.add(roof);
-    hs.add(box(0.28, 0.5, 0.03, 0x5b3a1e, -0.25, 0.3, 0.51, false)); hs.add(box(0.26, 0.22, 0.03, 0xbfe3ff, 0.3, 0.55, 0.51, false));
-    const garden = new THREE.Group(); hs.add(garden); garden.position.set(0, 0, 0.75);
+    const roofM = M(ROOFS[0]); const houses = houseTiers(hs, roofM);
+    const garden = new THREE.Group(); hs.add(garden); garden.position.set(0, 0, 0.85);
     [0xf472b6, 0xfacc15, 0xef4444, 0xa855f7, 0xffffff].forEach((c, k) => { garden.add(mesh(new THREE.SphereGeometry(0.06, 6, 5), M(c), -0.5 + k * 0.25, 0.12, 0, false)); garden.add(mesh(new THREE.CylinderGeometry(0.01, 0.01, 0.12, 4), M(0x3f9d3a), -0.5 + k * 0.25, 0.06, 0, false)); });
     // field tiles
     const tiles = [];
@@ -3366,11 +3409,12 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     sg.add(mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.8, 5), wd, 0, 0.4, 0));
     const sm = new THREE.MeshStandardMaterial({ map: signTex(u) }); sg.add(mesh(new THREE.BoxGeometry(1.2, 0.3, 0.04), [wd, wd, wd, wd, sm, wd], 0, 0.75, 0));
     const badge = mesh(new THREE.SphereGeometry(0.09, 10, 8), new THREE.MeshStandardMaterial({ color: 0xfacc15, metalness: 0.6, roughness: 0.3, emissive: 0x7a5a00, emissiveIntensity: 0.3 }), 0.7, 0.75, 0.03, false); sg.add(badge);
-    const v = { u, idx, root, tiles, roofM, garden, fence, barn, badge, animals: [], aKey: '', signM: sm, title: '', pet: null, petKey: '' };
+    const v = { u, idx, root, tiles, roofM, houses, garden, fence, barn, badge, animals: [], aKey: '', signM: sm, title: '', pet: null, petKey: '' };
     FARMS.set(u, v); return v;
   }
   function renderFarm(v, s, now) {
     v.roofM.color.setHex(ROOFS[s.house?.roof || 0]); v.garden.visible = !!s.house?.garden; v.fence.visible = !!s.house?.fence;
+    const hl = Math.min(3, s.house?.lv || 0); v.houses.forEach((g, i) => g.visible = i === hl); v.garden.position.z = [0.85, 1.12, 0.9, 1.05][hl];
     v.badge.visible = (s.badges || []).length > 0;
     const ttl = s.title && TITLES[s.title] ? TITLES[s.title].n : '';
     if (ttl !== v.title) { v.signM.map.dispose(); v.signM.map = signTex(v.u, ttl); v.signM.needsUpdate = true; v.title = ttl; }
@@ -3403,7 +3447,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
       if (own) { const ap = v.root.worldToLocal(ME.ent.m.root.position.clone()); if (Math.abs(ap.x) < 4.5 && Math.abs(ap.z) < 4.5) { fol = true; const off = V(0.45, 0, 0.35); if (p.distanceTo(ap.clone().add(off)) > 0.7) P.tgt.set(ap.x + off.x, 0.05, ap.z + off.z); } }
       if (p.distanceTo(P.tgt) < 0.05) { if (!fol && Math.random() < dt * 0.5) P.tgt.set((Math.random() - 0.5) * 3.6, 0.05, -1.6 + Math.random() * 3.4); }
       else { const d = P.tgt.clone().sub(p); d.y = 0; p.addScaledVector(d.normalize(), Math.min(d.length(), dt * (fol ? 1.3 : 0.6))); P.g.rotation.y = Math.atan2(d.x, d.z); P.g.children[0].position.y = Math.abs(Math.sin(t * 9 + P.ph)) * 0.03; }
-      P.g.children[0].children.forEach(c => { if (c.userData.tail) c.rotation.z = Math.sin(t * 8 + P.ph) * 0.6; }); }
+      P.g.children[0].children.forEach(c => { if (c.userData.tail) c.rotation.z = Math.sin(t * 8 + P.ph) * 0.6; if (c.userData.wing) c.rotation.z = c.userData.wing * (P.jump > 0 ? 0.9 + Math.sin(t * 30) * 0.6 : 0.05); }); }
     for (const v of FARMS.values()) v.animals.forEach((A, j) => {
       const g = A.g, p = g.position;
       if (p.distanceTo(A.tgt) < 0.03) { if (Math.random() < dt * 0.4) A.tgt.set(clamp(A.home.x + (Math.random() - 0.5) * 0.5, -0.8, 0.85), 0, clamp(A.home.z + (Math.random() - 0.5) * 0.5, -0.45, 0.5)); }
@@ -3500,7 +3544,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
   <div id="gHud"><div class="gchip" id="gWx" style="cursor:pointer">☀️</div><div class="gchip" id="gCloB" style="cursor:pointer">👗</div><div class="gchip" id="gLv">Lv 1</div><div class="gchip">🪙 <span id="gCoin">0</span></div><div class="gchip" id="gEn">⚡<div id="gEnBar"><i></i></div><span id="gEnT">100</span></div><button id="gExit">✕</button></div>
   <div id="gTip">Ketuk tanah untuk mencangkul · ketuk lagi untuk menanam</div>
   <div id="gBar"><button id="gSeed" class="pri">🌱 Benih</button><button id="gShop">🏪<small>Toko</small></button><button id="gBag">🎒<small>Tas</small></button><button id="gMis">🎯<small>Misi</small><span class="dot" id="gMisDot" style="display:none">!</span></button><button id="gFishB">🎣<small>Mancing</small></button><button id="gChatB">💬<small>Chat</small><span class="dot" id="gChatDot" style="display:none"></span></button><button id="gRank">🏆<small>Juara</small></button></div>
-  <div id="gFishBar"><button id="gCast" class="pri">🎣 Lempar Kail</button><button id="gFishBag">🎒</button><button id="gFishBack">🏡 Pulang</button></div>
+  <div id="gFishBar"><button id="gCast" class="pri">🎣 Lempar Kail</button><button id="gFishTop">🏆</button><button id="gFishBag">🎒</button><button id="gFishBack">🏡 Pulang</button></div>
   <div id="gReel"><div class="t" id="gReelT">Tarik saat penanda di zona hijau!</div><div class="trk"><div class="zone" id="gZone"></div><div class="mk" id="gMk"></div></div><button id="gPull">TARIK!</button></div>
   <div id="gFloat"></div>
   <div id="gHelp"><span id="gHelpT">Kebun</span><button id="gHelpW">💧 Siram</button><button id="gHelpF">🌾 Beri makan</button><button id="gHelpBack">🏡</button></div>
@@ -3514,10 +3558,10 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
   <div class="panel gpanel" id="gP_pet" style="max-height:78vh"><div class="ph"><h3>🐾 Pilih Peliharaan Kesayangan</h3><button data-close>✕</button></div><div class="pb"><div id="gPetGrid" class="gpetgrid"></div><div id="gPetInfo" style="font-size:13px;color:#4b5563;margin:10px 2px"></div><label style="font-size:12px;font-weight:700;color:#5b6472">NAMA PELIHARAAN</label><input id="gPetName" maxlength="14" style="width:100%;height:44px;border:2px solid #e5e7eb;border-radius:12px;padding:0 12px;font:700 16px Poppins,sans-serif;margin:6px 0 10px;box-sizing:border-box"><button class="gbig" id="gPetOk" style="background:#ea580c">🐾 Adopsi</button></div></div>
   <div class="panel gpanel" id="gP_shop"><div class="ph"><h3>🏪 Toko Pasar Pulau</h3><button data-close>✕</button></div><div class="pb" id="gShopList"></div></div>
   <div class="panel gpanel" id="gP_bag"><div class="ph"><h3>🎒 Tas & Jual</h3><button data-close>✕</button></div><div class="pb" id="gBagList"></div></div>
-  <div class="panel gpanel" id="gP_mis"><div class="ph"><h3>🎯 Kegiatan Desa</h3><button data-close>✕</button></div><div class="pb"><div class="gtabs" id="gActTabs" style="flex-wrap:wrap"><button data-k="mis" class="on">🎯 Misi</button><button data-k="order">📋 Pesanan</button><button data-k="gr">🤝 Gotong Royong</button><button data-k="event">🎪 Event</button><button data-k="cal">📅 Kalender</button></div><div id="gMisList"></div></div></div>
+  <div class="panel gpanel" id="gP_mis"><div class="ph"><h3>🎯 Kegiatan Desa</h3><button data-close>✕</button></div><div class="pb"><div class="gtabs" id="gActTabs" style="flex-wrap:wrap"><button data-k="mis" class="on">🎯 Misi</button><button data-k="order">📋 Pesanan</button><button data-k="gr">🤝 Gotong Royong</button><button data-k="event">🎪 Event</button><button data-k="cal">📅 Kalender</button><button data-k="crab">🦀 Kepiting</button></div><div id="gMisList"></div></div></div>
   <div class="panel gpanel" id="gP_chat"><div class="ph"><h3>💬 Obrolan Desa <span id="gOnline" style="font-size:12px;color:#16a34a;font-weight:700;margin-left:6px"></span></h3><button data-close>✕</button></div><div class="pb" id="gChatList" style="flex:1;min-height:200px"></div><div id="gChatIn"><input id="gMsg" maxlength="140" placeholder="Tulis pesan… (sopan ya 🙏)" autocomplete="off"><button id="gSend">Kirim</button></div></div>
   <div class="panel gpanel" id="gP_closet" style="max-height:56vh"><div class="ph"><h3>👗 Lemari & Butik</h3><button data-close>✕</button></div><div class="pb"><div class="gtabs" id="gClosetTabs" style="flex-wrap:wrap"><button data-k="look">💇 Rambut</button><button data-k="hat" class="on">🎩 Topi</button><button data-k="top">👕 Baju</button><button data-k="bottom">👖 Celana</button><button data-k="acc">🕶️ Aksesoris</button><button data-k="shop">✨ Butik</button></div><div id="gClosetList"></div></div></div>
-  <div class="panel gpanel" id="gP_rank"><div class="ph"><h3>🏆 Papan Peringkat</h3><button data-close>✕</button></div><div class="pb"><div class="gtabs" id="gRankTabs"><button data-k="coins" class="on">🪙 Terkaya</button><button data-k="hearts">❤️ Peternak</button><button data-k="missions_done">🎯 Misi</button><button data-k="harvests">🧺 Panen</button><button data-k="fish">🎣 Ikan</button></div><div id="gRankList"></div></div></div>`;
+  <div class="panel gpanel" id="gP_rank"><div class="ph"><h3>🏆 Papan Peringkat</h3><button data-close>✕</button></div><div class="pb"><div class="gtabs" id="gRankTabs" style="flex-wrap:wrap"><button data-k="coins" class="on">🪙 Terkaya</button><button data-k="hearts">❤️ Peternak</button><button data-k="missions_done">🎯 Misi</button><button data-k="harvests">🧺 Panen</button><button data-k="fish">🎣 Ikan</button><button data-k="fishkg">🐟 Terberat</button></div><div id="gRankList"></div></div></div>`;
   document.body.appendChild(ui);
   const panels = ['gLogin', 'gP_seed', 'gP_shop', 'gP_bag', 'gP_mis', 'gP_rank', 'gP_chat', 'gP_closet', 'gP_pet'];
   const openP = id => { panels.forEach(p => $(p).classList.toggle('on', p === id)); document.body.classList.add('gp'); };
@@ -3557,7 +3601,11 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     // kompensasi sekali pakai: bug beli Kandang Sedang dua kali (8 Nov 2026)
     const COMP = { febrian_aang: { id: 'kandang_nov8', c: 900, txt: '🎁 Kompensasi dari Bang Tanjung: +900 koin karena bug Kandang Sedang terbeli dua kali. Maaf ya, bugnya sudah dibenerin! 🙏' } };
     const cp = COMP[u]; ME.s.comp = ME.s.comp || []; if (cp && !ME.s.comp.includes(cp.id)) { ME.s.coins += cp.c; ME.s.comp.push(cp.id); msgs.unshift(cp.txt); }
-    markDirty(); closeP(); enterGame(); api.rpc('farm_ping', { p_user: u, p_pin: p }).catch(() => {}); pollChat(); msgs.forEach((m, i) => setTimeout(() => W.toast(m), i * 2600)); if (ME.s.level >= 5 && !ME.s.pet) setTimeout(openPetPicker, 1500 + msgs.length * 2600);
+    crabPlace(); if (ME.s.crab?.day !== dayKey(Date.now())) msgs.push('🦀 Kepiting hari ini ngumpet di Desa Tani! Petunjuknya ada di 🎯 Kegiatan → Kepiting.');
+    const calNew = ME.s._calNew; delete ME.s._calNew;
+    markDirty(); closeP(); enterGame(); api.rpc('farm_ping', { p_user: u, p_pin: p }).catch(() => {}); pollChat(); msgs.forEach((m, i) => setTimeout(() => W.toast(m), i * 2600));
+    if (ME.s.level >= 5 && !ME.s.pet || ME.s.level >= 10 && !ME.s.beoClaim && ME.s.pet !== 'beo') setTimeout(openPetPicker, 1500 + msgs.length * 2600);
+    else if (calNew) setTimeout(() => { if (!document.querySelector('.gpanel.on')) { openMis(); renderAct('cal'); } }, 1200);
   }
   function chooseLook(u, s) {
     return new Promise(res => {
@@ -3660,7 +3708,9 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     openP('gP_seed');
   }
   // barang sekali beli yang sudah dimiliki (kandang sedang dianggap punya kalau sudah punya kandang besar)
-  const shopOwned = (s, id) => id === 'barn2' && s.barn >= 4 || id === 'barn3' && s.barn >= 6 || id === 'field4' && s.field >= 4 || id === 'fence' && s.house.fence || id === 'garden' && s.house.garden;
+  const shopItem = (s, it) => { if (it.id !== 'house_up') return it; const nx = HOUSE_LV[(s.house.lv || 0) + 1];
+    return nx ? { ...it, n: `Upgrade ke ${nx.n}`, e: nx.e, price: nx.price, lv: nx.lv, d: `Sekarang: ${HOUSE_LV[s.house.lv || 0].n}. Rumahmu tampil lebih keren di Desa Tani · ⚡ energi maks +10` } : { ...it, n: 'Rumah Tingkat', e: '🏡', price: 0, lv: 1, d: 'Rumahmu sudah paling mewah di Desa Tani!' }; };
+  const shopOwned = (s, id) => id === 'house_up' && (s.house.lv || 0) >= 3 || id === 'barn2' && s.barn >= 4 || id === 'barn3' && s.barn >= 6 || id === 'field4' && s.field >= 4 || id === 'fence' && s.house.fence || id === 'garden' && s.house.garden;
   const shopStock = (s, id) => {
     if (id.startsWith('seed_')) return `📦 Punya ${s.inv[id] || 0} benih`;
     if (id === 'pakan') return `📦 Punya ${s.inv.pakan || 0} pakan`;
@@ -3671,7 +3721,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
   };
   function openShop() {
     const s = ME.s, el = $('gShopList'), st = el.scrollTop; el.innerHTML = `<div style="font-size:13px;color:#5b6472;margin:4px 0 6px">Koin kamu: <b>🪙 ${fmt(s.coins)}</b></div>`;
-    SHOP.forEach(it => {
+    SHOP.forEach(it0 => { const it = shopItem(s, it0);
       let locked = it.lv > s.level, note = it.d; const owned = shopOwned(s, it.id);
       if (it.id.startsWith('animal_') && s.animals.length >= s.barn) note = `Kandang penuh (${s.barn}). Beli kandang lebih besar.`;
       if (it.id === 'pet_pick') note = s.pet ? `${petDef(s.pet)?.e || '🐾'} ${s.petName || petDef(s.pet)?.def} menemanimu · ganti 🪙 ${PET_CHANGE}` : '🎁 Gratis! ' + it.d;
@@ -3686,7 +3736,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
   }
   function buy(it) {
     if (it.id === 'pet_pick') { openPetPicker(); return; }
-    const s = ME.s; if (s.coins < it.price) return; const msgs = [];
+    const s = ME.s; it = shopItem(s, it); if (it.lv > s.level) return; if (s.coins < it.price) return; const msgs = [];
     if (shopOwned(s, it.id)) { W.toast('✅ Kamu sudah punya ini, tidak perlu beli lagi.'); openShop(); return; }
     if (it.id.startsWith('animal_') && s.animals.length >= s.barn) { W.toast(`Kandang penuh (${s.barn}). Beli kandang lebih besar dulu.`); return; }
     if (it.id.startsWith('seed_')) s.inv[it.id] = (s.inv[it.id] || 0) + 1;
@@ -3698,10 +3748,11 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     else if (it.id === 'field4') s.field = 4;
     else if (it.id === 'roof') s.house.roof = ((s.house.roof || 0) + 1) % ROOFS.length;
     else if (it.id === 'fence') s.house.fence = true; else if (it.id === 'garden') s.house.garden = true;
+    else if (it.id === 'house_up') { s.house.lv = (s.house.lv || 0) + 1; s.energy += 10; msgs.push(`${it.e} Selamat! Rumahmu sekarang ${HOUSE_LV[s.house.lv].n}. Energi maksimal +10 ⚡`); }
 
     s.coins -= it.price;
     if (it.id === 'barn2' || it.id === 'barn3') msgs.push(`${it.e} Kandangmu sekarang muat ${s.barn} hewan!`);
-    else { const stk = shopStock(s, it.id); if (stk && !it.id.startsWith('animal_')) msgs.push(`✅ ${it.n} dibeli · ${stk.replace('📦 ', '')}`); }
+    else if (it.id !== 'house_up') { const stk = shopStock(s, it.id); if (stk && !it.id.startsWith('animal_')) msgs.push(`✅ ${it.n} dibeli · ${stk.replace('📦 ', '')}`); }
     after(msgs); openShop();
   }
   function openBag() {
@@ -3745,13 +3796,16 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
   let rankKey = 'coins';
   async function openRank() {
     openP('gP_rank'); await refreshList(); const el = $('gRankList'); const wk = weekKey(Date.now());
-    const val = r => rankKey === 'missions_done' ? (r.week_key === wk ? r.missions_done : 0) : rankKey === 'fish' ? (r.state?.stats?.fish || 0) : r[rankKey] || 0;
+    const fw = r => r.state?.fishWk?.week === wk ? r.state.fishWk : null;
+    const val = r => rankKey === 'fishkg' ? (fw(r)?.kg || 0) : rankKey === 'missions_done' ? (r.week_key === wk ? r.missions_done : 0) : rankKey === 'fish' ? (r.state?.stats?.fish || 0) : r[rankKey] || 0;
     const rows = LIST.map(r => ME && r.username === ME.u ? { ...r, coins: ME.s.coins, hearts: heartsTotal(ME.s), harvests: ME.s.stats.harvest, missions_done: ME.s.weekly.list.filter(m => m.done).length, week_key: ME.s.weekly.week, state: ME.s } : r)
-      .sort((a, b) => val(b) - val(a)).slice(0, 30);
+      .filter(r => rankKey !== 'fishkg' || val(r) > 0).sort((a, b) => val(b) - val(a)).slice(0, 30);
     const unit = { coins: '🪙', hearts: '❤️', missions_done: '🎯', harvests: '🧺', fish: '🎣' }[rankKey];
-    el.innerHTML = rows.map((r, i) => `<div class="gitem" data-u="${r.username}" style="cursor:pointer"><div class="ic" style="font-size:18px;font-weight:800">${['🥇', '🥈', '🥉'][i] || i + 1}</div><div class="tx"><b>@${r.username}</b><span>Lv ${r.level || 1}${r.state?.title && TITLES[r.state.title] ? ' · ' + TITLES[r.state.title].n : ''} · kunjungi kebun ›</span></div><b>${unit} ${fmt(val(r))}</b></div>`).join('') || '<p style="color:#6b7280">Belum ada pemain. Jadilah yang pertama!</p>';
+    el.innerHTML = rows.map((r, i) => `<div class="gitem" data-u="${r.username}" style="cursor:pointer"><div class="ic" style="font-size:18px;font-weight:800">${['🥇', '🥈', '🥉'][i] || i + 1}</div><div class="tx"><b>@${r.username}</b><span>Lv ${r.level || 1}${r.state?.title && TITLES[r.state.title] ? ' · ' + TITLES[r.state.title].n : ''} · kunjungi kebun ›</span></div><b>${rankKey === 'fishkg' ? `${FISH[fw(r).k].e} ${String(fw(r).kg).replace('.', ',')} kg` : unit + ' ' + fmt(val(r))}</b></div>`).join('') || `<p style="color:#6b7280">${rankKey === 'fishkg' ? 'Belum ada yang mancing minggu ini. Jadilah yang pertama!' : 'Belum ada pemain. Jadilah yang pertama!'}</p>`;
+    if (rankKey === 'fishkg') el.insertAdjacentHTML('afterbegin', `<div style="background:#e0f2fe;border-radius:12px;padding:10px 12px;font-size:12.5px;font-weight:600;margin:4px 0 8px">🎣 TURNAMEN MANCING MINGGUAN · ikan terberat menang. Juara diumumkan Bang Tanjung di video hari Minggu & dapat gelar 🎣 Raja Pancing! Reset tiap Senin.</div>`);
     el.querySelectorAll('[data-u]').forEach(d => d.onclick = () => { const v = FARMS.get(d.dataset.u); if (v) { closeP(); const p = v.root.position; W.flyTo(V(p.x, 0.3, p.z), 9, V(0.1, 1.1, 1)); } });
   }
+  const setRank = k => { rankKey = k; $('gRankTabs').querySelectorAll('button').forEach(x => x.classList.toggle('on', x.dataset.k === k)); };
   $('gRankTabs').querySelectorAll('button').forEach(b => b.onclick = () => { rankKey = b.dataset.k; $('gRankTabs').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); openRank(); });
   $('gSeed').onclick = openSeeds; $('gShop').onclick = openShop; $('gBag').onclick = openBag; $('gMis').onclick = openMis; $('gActTabs').querySelectorAll('button').forEach(b => b.onclick = () => { if (b.dataset.k === 'gr') grLoad().then(() => renderAct('gr')); renderAct(b.dataset.k); }); $('gRank').onclick = openRank;
   // leaderboard also reachable outside the game
@@ -3789,7 +3843,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     { txt: '+80 koin', f: s => s.coins += 80 }, { txt: '+5 pakan 🌾', f: s => s.inv.pakan = (s.inv.pakan || 0) + 5 },
     { txt: '+3 benih jagung 🌽', f: s => s.inv.seed_jagung = (s.inv.seed_jagung || 0) + 3 }, { txt: '+150 koin', f: s => s.coins += 150 },
     { txt: '+10 umpan 🪱', f: s => s.inv.umpan = (s.inv.umpan || 0) + 10 }, { txt: '+300 koin', f: s => s.coins += 300 },
-    { txt: '🐄 Sapi gratis! (atau +1.500 koin kalau kandang penuh)', f: s => { if (s.animals.length < s.barn) s.animals.push({ t: 'sapi', n: NAMES[Math.floor(Math.random() * NAMES.length)], h: 2, fed: null, pet: null, col: null }); else s.coins += 1500; } },
+    { txt: '🐄 Sapi gratis! (atau +1.500 koin kalau kandang penuh) + 🔥 Topi Rajin', f: s => { s.closet = s.closet || []; if (!s.closet.includes('hat_rajin')) s.closet.push('hat_rajin'); s.rajin = (s.rajin || 0) + 1; if (s.animals.length < s.barn) s.animals.push({ t: 'sapi', n: NAMES[Math.floor(Math.random() * NAMES.length)], h: 2, fed: null, pet: null, col: null }); else s.coins += 1500; } },
   ];
   function calReward(s) { const day = ((s.streak - 1) % 7) + 1; CAL[day - 1].f(s); s.calDay = day; return { day, txt: CAL[day - 1].txt }; }
   // ---- album & gelar ----
@@ -3875,12 +3929,53 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     if (best && best.u === ME.u) best = null;
     nearFarm = best; $('gHelp').style.display = best ? 'flex' : 'none'; if (best) $('gHelpT').textContent = `Kebun @${best.u}`;
   }
+  // ---- cari kepiting harian ----
+  const CRAB_SPOTS = [[-2.15, 2.2], [2.1, 2.3], [2.15, -2.15], [-0.35, 2.4], [-2.2, -0.3], [0.2, -2.2], [2.2, 0.9]];
+  const CRAB = (() => { const g = new THREE.Group(), red = M(0xe8452c), b = new THREE.Group(); g.add(b);
+    const bd = mesh(new THREE.SphereGeometry(0.16, 8, 6), red, 0, 0.1, 0); bd.scale.set(1.25, 0.55, 0.9); b.add(bd);
+    for (const sx of [-1, 1]) { b.add(mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.1, 4), red, sx * 0.06, 0.18, 0.08, false)); b.add(mesh(new THREE.SphereGeometry(0.032, 6, 5), M(0x111111), sx * 0.06, 0.24, 0.08, false));
+      const cl = mesh(new THREE.SphereGeometry(0.065, 6, 5), red, sx * 0.22, 0.12, 0.14, false); cl.scale.set(1, 0.7, 1.3); cl.userData.claw = sx; b.add(cl);
+      for (let k = 0; k < 3; k++) { const l = mesh(new THREE.BoxGeometry(0.16, 0.02, 0.02), red, sx * 0.2, 0.05, -0.06 + k * 0.06, false); l.rotation.z = sx * 0.6; b.add(l); } }
+    b.traverse(o => { if (o.isMesh) o.userData.crabHunt = true; }); g.scale.setScalar(1.2); g.visible = false; return { g, u: null, dk: null, v: null }; })();
+  function crabToday() {
+    const dk = dayKey(Date.now()), farms = [...FARMS.values()].filter(v => v.idx < 24); if (!farms.length) return null;
+    const r = seeded('kepiting' + dk), idx = Math.floor(r() * Math.min(24, farms.length)), v = farms.find(f => f.idx === idx) || farms[0], sp = CRAB_SPOTS[Math.floor(r() * CRAB_SPOTS.length)];
+    return { dk, v, sp };
+  }
+  function crabPlace() {
+    const c = crabToday(); if (!c || !ME) { CRAB.g.visible = false; return; }
+    if (CRAB.v !== c.v || CRAB.dk !== c.dk) { if (CRAB.g.parent) CRAB.g.parent.remove(CRAB.g); c.v.root.add(CRAB.g); CRAB.g.position.set(c.sp[0], 0.04, c.sp[1]); CRAB.home = CRAB.g.position.clone(); CRAB.v = c.v; CRAB.dk = c.dk; }
+    CRAB.g.visible = ME.s.crab?.day !== c.dk;
+  }
+  const crabHint = () => { const c = crabToday(); return c ? `Kepiting hari ini ngumpet di pinggir kebun warga yang namanya berawalan huruf <b>"${c.v.u[0].toUpperCase()}"</b>, di baris ke-<b>${Math.floor(c.v.idx / DESA.cols) + 1}</b> Desa Tani (hitung dari gerbang).` : 'Kepitingnya belum datang…'; };
+  const crabFinders = dk => LIST.map(r => ME && r.username === ME.u ? { u: r.username, c: ME.s.crab } : { u: r.username, c: r.state?.crab }).filter(x => x.c && x.c.day === dk).sort((a, b) => a.c.t - b.c.t);
+  async function tapCrab() {
+    const s = ME.s, dk = dayKey(Date.now()); if (s.crab?.day === dk) return;
+    const wp = CRAB.g.getWorldPosition(V(0, 0, 0)).add(V(0, 0.5, 0)); CRAB.g.visible = false; work(wp, 0.4);
+    await refreshList(); const rank = crabFinders(dk).filter(x => x.u !== ME.u).length + 1, msgs = [];
+    const c = 100 + (rank <= 5 ? 200 : 0); s.crab = { day: dk, t: Date.now(), rank }; s.coins += c; s.stats.crab = (s.stats.crab || 0) + 1; addXP(s, 15, msgs);
+    floatTxt(`🦀 +${c} koin!`, wp);
+    msgs.unshift(rank <= 5 ? `🦀 KETEMU! Kamu penemu ke-${rank} hari ini: +${c} koin. 5 penemu pertama disebut Bang Tanjung di video!` : `🦀 Ketemu! +${c} koin. Besok kepitingnya pindah tempat lagi.`);
+    after(msgs);
+  }
+  function crabTick(t) { if (!CRAB.g.visible || !CRAB.home) return; const k = Math.sin(t * 1.3); CRAB.g.position.x = CRAB.home.x + k * 0.12; CRAB.g.rotation.y = Math.sin(t * 0.4) * 0.5;
+    CRAB.g.children[0].children.forEach(o => { if (o.userData.claw) o.position.y = 0.12 + Math.max(0, Math.sin(t * 6 + o.userData.claw)) * 0.05; }); CRAB.g.children[0].position.y = Math.abs(Math.sin(t * 8)) * 0.015; }
   // ---- peliharaan ----
   function petMesh(t, name) {
     const P = petDef(t) || PETS.kucing_oren, g = new THREE.Group(), b = new THREE.Group(); g.add(b);
     const S = P.k === 'dog' ? 1 : P.k === 'rabbit' ? 0.75 : 0.8, mb = M(P.base), mm = M(P.mark), my = M(P.belly), pt = P.point ? mm : mb;
     const bx = (w, h, d, m, x, y, z) => { const o = mesh(new THREE.BoxGeometry(w * S, h * S, d * S), m, x * S, y * S, z * S, false); b.add(o); return o; };
-    if (P.k === 'rabbit') {
+    if (P.k === 'bird') {
+      const bd = mesh(new THREE.SphereGeometry(0.11, 10, 8), mb, 0, 0.2, 0, false); bd.scale.set(0.85, 1, 1.25); b.add(bd);
+      b.add(mesh(new THREE.SphereGeometry(0.075, 10, 8), mb, 0, 0.33, 0.08, false));
+      for (const sx of [-1, 1]) { const wt = mesh(new THREE.SphereGeometry(0.034, 6, 5), mm, sx * 0.062, 0.31, 0.05, false); wt.scale.set(0.5, 1, 1.4); b.add(wt);
+        const wg = mesh(new THREE.BoxGeometry(0.025, 0.1, 0.2), mb, sx * 0.09, 0.21, -0.02, false); wg.rotation.x = 0.35; wg.userData.wing = sx; b.add(wg);
+        b.add(mesh(new THREE.BoxGeometry(0.026, 0.035, 0.08), M(0xf8fafc), sx * 0.092, 0.17, -0.05, false)); }
+      const bk = mesh(new THREE.ConeGeometry(0.03, 0.08, 6), M(0xf97316), 0, 0.32, 0.17, false); bk.rotation.x = Math.PI / 2; b.add(bk);
+      const tail = mesh(new THREE.BoxGeometry(0.08, 0.02, 0.16), mb, 0, 0.17, -0.18, false); tail.rotation.x = 0.4; tail.userData.tail = true; b.add(tail);
+      for (const sx of [-1, 1]) { b.add(mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.1, 4), M(0xf59e0b), sx * 0.04, 0.05, 0, false)); b.add(mesh(new THREE.BoxGeometry(0.03, 0.01, 0.05), M(0xf59e0b), sx * 0.04, 0.005, 0.02, false)); }
+      for (const sx of [-1, 1]) { b.add(mesh(new THREE.SphereGeometry(0.016, 6, 5), M(0xffffff), sx * 0.05, 0.35, 0.13, false)); b.add(mesh(new THREE.SphereGeometry(0.009, 4, 3), M(0x050505), sx * 0.056, 0.352, 0.143, false)); }
+    } else if (P.k === 'rabbit') {
       bx(0.2, 0.18, 0.26, mb, 0, 0.13, 0); bx(0.15, 0.15, 0.15, mb, 0, 0.27, 0.13);
       for (const sx of [-1, 1]) { const e = bx(0.04, 0.2, 0.025, mb, sx * 0.04, 0.44, 0.12); e.rotation.z = sx * 0.12; bx(0.02, 0.14, 0.01, mm, sx * 0.04, 0.44, 0.135).rotation.z = sx * 0.12; }
       const tl = mesh(new THREE.SphereGeometry(0.05 * S, 6, 5), my, 0, 0.16 * S, -0.15 * S, false); b.add(tl);
@@ -3896,11 +3991,11 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
       bx(0.025, 0.018, 0.015, M(P.k === 'dog' ? 0x111111 : 0xf472b6), 0, 0.285, 0.305);
       const tail = mesh(new THREE.CylinderGeometry(0.017 * S, 0.012 * S, 0.22 * S, 5), P.point || P.mark2 ? mm : mb, 0, 0.27 * S, -0.22 * S, false); tail.rotation.x = P.k === 'dog' ? -1.0 : -0.5; tail.userData.tail = true; b.add(tail);
     }
-    for (const sx of [-1, 1]) { const ey = mesh(new THREE.SphereGeometry(0.019 * S, 6, 5), M(P.eye), sx * 0.04 * S, (P.k === 'rabbit' ? 0.3 : 0.33) * S, (P.k === 'rabbit' ? 0.205 : 0.282) * S, false); b.add(ey); b.add(mesh(new THREE.SphereGeometry(0.008 * S, 4, 3), M(0x050505), sx * 0.04 * S, (P.k === 'rabbit' ? 0.3 : 0.33) * S, (P.k === 'rabbit' ? 0.222 : 0.298) * S, false)); }
-    for (const [x, z] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) bx(0.045, 0.1, 0.045, P.point ? mm : (z > 0 ? my : mb), x * 0.055, 0.05, z * 0.11);
+    if (P.k !== 'bird') for (const sx of [-1, 1]) { const ey = mesh(new THREE.SphereGeometry(0.019 * S, 6, 5), M(P.eye), sx * 0.04 * S, (P.k === 'rabbit' ? 0.3 : 0.33) * S, (P.k === 'rabbit' ? 0.205 : 0.282) * S, false); b.add(ey); b.add(mesh(new THREE.SphereGeometry(0.008 * S, 4, 3), M(0x050505), sx * 0.04 * S, (P.k === 'rabbit' ? 0.3 : 0.33) * S, (P.k === 'rabbit' ? 0.222 : 0.298) * S, false)); }
+    if (P.k !== 'bird') for (const [x, z] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) bx(0.045, 0.1, 0.045, P.point ? mm : (z > 0 ? my : mb), x * 0.055, 0.05, z * 0.11);
     if (name) { const c = document.createElement('canvas'); c.width = 256; c.height = 64; const x = c.getContext('2d'); x.font = '700 30px Poppins,sans-serif'; const w = Math.min(244, x.measureText(name).width + 50);
       x.fillStyle = 'rgba(255,255,255,.92)'; x.beginPath(); x.roundRect((256 - w) / 2, 8, w, 48, 24); x.fill(); x.fillStyle = '#ea580c'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText('🐾 ' + name, 128, 33);
-      const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(c), depthTest: false, transparent: true })); sp.scale.set(0.6, 0.15, 1); sp.position.y = 0.62 * S; sp.renderOrder = 5; g.add(sp); }
+      const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(c), depthTest: false, transparent: true })); sp.scale.set(0.6, 0.15, 1); sp.position.y = P.k === 'bird' ? 0.55 : 0.62 * S; sp.renderOrder = 5; g.add(sp); }
     b.traverse(o => { if (o.isMesh) o.userData.farmPet = true; });
     g.scale.setScalar(1.45); return g;
   }
@@ -3910,17 +4005,21 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     const s = ME.s; if (s.level < 5) { W.toast('🔒 Peliharaan kesayangan terbuka di Level 5.'); return; }
     petSel = s.pet ? (PET_ALIAS[s.pet] || s.pet) : 'kucing_oren';
     const grid = $('gPetGrid'); grid.innerHTML = '';
-    Object.entries(PETS).forEach(([k, P]) => { const d = document.createElement('div'); d.className = 'gpet' + (k === petSel ? ' on' : ''); d.dataset.k = k;
-      d.innerHTML = `${P.rec ? '<span class="rec">⭐ REKOMENDASI</span>' : ''}<div class="sw" style="background:${P.sw}">${P.k === 'cat' ? '' : P.e}</div>${P.n.replace('Kucing ', '')}`;
-      d.onclick = () => { const old = $('gPetName').value.trim(); if (!old || old === petDef(petSel).def) $('gPetName').value = P.def; petSel = k; grid.querySelectorAll('.gpet').forEach(x => x.classList.toggle('on', x.dataset.k === k)); info(); };
+    if (s.level >= 10 && !s.beoClaim && !s.pet?.startsWith?.('beo')) petSel = 'beo';
+    Object.entries(PETS).forEach(([k, P]) => { const d = document.createElement('div'); d.className = 'gpet' + (k === petSel ? ' on' : ''); d.dataset.k = k; const lk = P.lv && P.lv > s.level;
+      d.innerHTML = `${P.rec ? '<span class="rec">⭐ REKOMENDASI</span>' : P.lv ? `<span class="rec" style="background:#7c3aed">${lk ? '🔒' : '✨'} LV ${P.lv}</span>` : ''}<div class="sw" style="background:${P.sw};${lk ? 'opacity:.45' : ''}">${P.k === 'cat' || P.k === 'bird' ? '' : P.e}</div>${P.n.replace('Kucing ', '').replace('Burung ', '')}`;
+      d.onclick = () => { if (lk) { W.toast(`🔒 ${P.n} terbuka di Level ${P.lv}. Terus main ya!`); return; } const old = $('gPetName').value.trim(); if (!old || old === petDef(petSel).def) $('gPetName').value = P.def; petSel = k; grid.querySelectorAll('.gpet').forEach(x => x.classList.toggle('on', x.dataset.k === k)); info(); };
       grid.appendChild(d); });
-    $('gPetName').value = s.pet ? (s.petName || petDef(s.pet).def) : PETS.kucing_oren.def;
+    $('gPetName').value = s.pet && (PET_ALIAS[s.pet] || s.pet) === petSel ? (s.petName || petDef(s.pet).def) : PETS[petSel].def;
     const info = () => { const P = PETS[petSel], same = s.pet && (PET_ALIAS[s.pet] || s.pet) === petSel; $('gPetInfo').innerHTML = `${P.e} <b>${P.n}</b>${P.rec ? ' · <b style="color:#ea580c">rekomendasi Bang Tanjung</b>' : ''}<br>${P.d}`;
-      $('gPetOk').textContent = !s.pet ? '🐾 Adopsi (gratis)' : same ? '✏️ Simpan nama' : `🐾 Ganti peliharaan · 🪙 ${PET_CHANGE}`; };
+      const free = petSel === 'beo' && !s.beoClaim;
+      $('gPetOk').textContent = !s.pet || (free && !same) ? '🐾 Adopsi (gratis)' : same ? '✏️ Simpan nama' : `🐾 Ganti peliharaan · 🪙 ${PET_CHANGE}`; };
     info();
     $('gPetOk').onclick = () => {
       const nm = ($('gPetName').value.trim() || PETS[petSel].def).replace(/[<>]/g, '').slice(0, 14), same = s.pet && (PET_ALIAS[s.pet] || s.pet) === petSel, msgs = [];
-      if (s.pet && !same) { if (s.coins < PET_CHANGE) { W.toast(`Koin kurang. Ganti peliharaan butuh 🪙 ${PET_CHANGE}.`); return; } s.coins -= PET_CHANGE; s.petH = 0; }
+      if (PETS[petSel].lv && PETS[petSel].lv > s.level) { W.toast(`🔒 Terbuka di Level ${PETS[petSel].lv}.`); return; }
+      if (petSel === 'beo' && !s.beoClaim && !same) { s.beoClaim = 1; s.petH = 0; }
+      else if (s.pet && !same) { if (s.coins < PET_CHANGE) { W.toast(`Koin kurang. Ganti peliharaan butuh 🪙 ${PET_CHANGE}.`); return; } s.coins -= PET_CHANGE; s.petH = 0; }
       const first = !s.pet; s.pet = petSel; s.petName = nm;
       msgs.push(first ? `${PETS[petSel].e} ${nm} sekarang jadi peliharaan kesayanganmu! Ketuk ${nm} tiap hari untuk mengelus.` : same ? `✏️ Nama peliharaan jadi ${nm}.` : `${PETS[petSel].e} Selamat datang, ${nm}!`);
       closeP(); after(msgs);
@@ -3932,7 +4031,9 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     if (s.petDay === dk) { floatTxt('💕', wp); W.toast(`${P.e} ${nm} sudah dielus hari ini ❤️ ${s.petH || 0}/10. Datang lagi besok!`); return; }
     if (!useEnergy(ENERGY.pet)) return;
     s.petDay = dk; s.petH = Math.min(10, (s.petH || 0) + 1); emit(s, 'pet', 1, null, msgs); addXP(s, 3, msgs);
-    const snd = P.k === 'cat' ? 'Meong~ 😺' : P.k === 'dog' ? 'Guk guk! 🐶' : '🥕 *loncat*';
+    const heard = CHAT.msgs.filter(m => m.username !== ME.u && m.username !== 'bang.tanjung' && m.msg.length < 60), BEO = ['Halo @' + ME.u + '! 👋', 'Follow dulu dong!', 'Komen, mau dibangun apa?', 'Bang Tanjung ganteng!', 'Siram tanamannya! 💧', 'Kepiting! Kepiting! 🦀', 'Selamat pagi, warga!', 'Panen! Panen! 🌾'];
+    const snd = P.k === 'cat' ? 'Meong~ 😺' : P.k === 'dog' ? 'Guk guk! 🐶' : P.k === 'bird' ? (heard.length && Math.random() < 0.45 ? ((h) => `menirukan @${h.username}: "${h.msg}" 🦜`)(heard.at(-1 - Math.floor(Math.random() * Math.min(5, heard.length)))) : `"${BEO[Math.floor(Math.random() * BEO.length)]}" 🦜`) : '🥕 *loncat*';
+    if (P.k === 'bird') chatBubble(ME.u, `${nm}: ${snd.replace(/ 🦜$/, '')}`);
     floatTxt(`❤️ ${s.petH}/10`, wp);
     if (s.petH >= 5 && Math.random() < 0.35 + s.petH * 0.04) { const c = 20 + Math.floor(Math.random() * 40) + s.petH * 5; s.coins += c; msgs.push(`${P.e} ${nm} membawakan hadiah: 🪙 ${c} koin!`); }
     tip(`${nm}: ${snd} Peliharaan ❤️ 5+ kadang membawa hadiah.`);
@@ -3949,6 +4050,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     hat_koboi: { g: 'p', slot: 'hat', n: 'Topi Koboi', e: '🤠', price: 450, rar: 'langka', k: 'koboi' },
     hat_bunga: { g: 'w', slot: 'hat', n: 'Mahkota Bunga', e: '🌸', price: 400, rar: 'langka', k: 'bunga' },
     hat_chef: { slot: 'hat', n: 'Topi Koki', e: '👨‍🍳', price: 600, rar: 'langka', k: 'chef' },
+    hat_rajin: { slot: 'hat', n: 'Topi Rajin 7 Hari', e: '🔥', price: 0, rar: 'epik', k: 'caping_emas', cal: true },
     hat_mahkota: { slot: 'hat', n: 'Mahkota Emas', e: '👑', price: 6000, rar: 'legend', k: 'mahkota', lv: 6 },
     // baju
     top_merah: { slot: 'top', n: 'Kaos Merah', e: '👕', price: 120, rar: 'biasa', pat: 'polos', c: [0xdc2626] },
@@ -4163,7 +4265,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
       el.innerHTML = `<div style="background:linear-gradient(135deg,#fdf2f8,#fef3c7);border-radius:14px;padding:10px 12px;margin:4px 0 6px"><b>✨ Koleksi Terbatas ${ev.n}</b><div style="font-size:12px;color:#7a4b00">Hanya dijual minggu ini · sisa ${left} hari · setelah itu tidak akan dijual lagi!</div></div>` +
         `<div class="gtabs" style="margin:6px 0">${[['w', '👩 Wanita'], ['p', '👨 Pria'], ['all', '🌈 Semua']].map(([k, t]) => `<button data-gf="${k}" class="${genderFilter === k ? 'on' : ''}">${t}</button>`).join('')}</div>` +
         evs.filter(gOk).map(d => card(d.id, d, s.closet.includes(d.id))).join('') +
-        Object.entries(SLOTS).map(([sl, t]) => `<h4 style="margin:12px 0 2px;font-size:11px;letter-spacing:.8px;color:#5b6472">${t.toUpperCase()}</h4>` + Object.entries(OUTFITS).filter(([id, d]) => d.slot === sl && gOk(d)).sort((a, b) => (a[1].g === s.look?.g ? -1 : 0) - (b[1].g === s.look?.g ? -1 : 0)).map(([id, d]) => card(id, d, s.closet.includes(id))).join('')).join('');
+        Object.entries(SLOTS).map(([sl, t]) => `<h4 style="margin:12px 0 2px;font-size:11px;letter-spacing:.8px;color:#5b6472">${t.toUpperCase()}</h4>` + Object.entries(OUTFITS).filter(([id, d]) => d.slot === sl && gOk(d) && !d.cal).sort((a, b) => (a[1].g === s.look?.g ? -1 : 0) - (b[1].g === s.look?.g ? -1 : 0)).map(([id, d]) => card(id, d, s.closet.includes(id))).join('')).join('');
     } else {
       const own = s.closet.filter(id => outfitDef(id)?.slot === closetTab);
       el.innerHTML = `<div class="gitem"><div class="ic">🚫</div><div class="tx"><b>Tanpa ${SLOTS[closetTab].slice(3).toLowerCase()}</b><span>Pakai gaya bawaan</span></div><button data-w="" data-slot="${closetTab}" style="${!s.wear[closetTab] ? 'background:#14181f' : ''}">${!s.wear[closetTab] ? 'Dipakai' : 'Pakai'}</button></div>` +
@@ -4222,10 +4324,17 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
         H('KLASEMEN') + (rows.map((r, i) => `<div class="gitem"><div class="ic" style="font-size:18px;font-weight:800">${['🥇', '🥈', '🥉'][i] || i + 1}</div><div class="tx"><b>@${esc(r.u)}</b></div><b>${r.sc} ${ev.u}</b></div>`).join('') || '<p style="color:#6b7280;font-size:13px">Belum ada peserta. Jadilah yang pertama!</p>');
       return;
     }
+    if (actTab === 'crab') {
+      const dk = dayKey(Date.now()), fs = crabFinders(dk), mine = s.crab?.day === dk;
+      el.innerHTML = H('CARI KEPITING · ganti tempat tiap tengah malam') + `<div style="background:#fff1f2;border-radius:12px;padding:12px;font-size:13.5px">🦀 ${crabHint()}<br><br>Ketuk kepitingnya kalau ketemu! Hadiah <b>+100 koin</b>, dan <b>5 penemu pertama +200 koin lagi</b> & disebut Bang Tanjung di video.<br><br>${mine ? `✅ Kamu sudah menemukannya hari ini (penemu ke-${s.crab.rank}).` : '🔎 Kamu belum menemukannya hari ini. Geser peta & lihat kebun tetangga!'}</div>` +
+        H(`PENEMU HARI INI (${fs.length})`) + (fs.slice(0, 15).map((x, i) => `<div style="font-size:13px;padding:3px 0">${['🥇', '🥈', '🥉', '4️⃣', '5️⃣'][i] || '·'} @${esc(x.u)} <span style="color:#6b7280">${hhmm(new Date(x.c.t).toISOString())}</span></div>`).join('') || '<p style="color:#6b7280;font-size:13px">Belum ada yang menemukan. Jadilah yang pertama!</p>') +
+        `<p style="font-size:12.5px;color:#5b6472;margin-top:8px">Total kepiting yang pernah kamu temukan: <b>${s.stats.crab || 0}</b></p>`;
+      return;
+    }
     if (actTab === 'cal') {
       const day = ((Math.max(1, s.streak) - 1) % 7) + 1;
-      el.innerHTML = H('KALENDER LOGIN · datang tiap hari, jangan putus!') + `<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">${CAL.map((c, i) => `<div style="border-radius:12px;padding:8px 6px;text-align:center;font-size:11.5px;font-weight:700;background:${i + 1 < day ? '#dcfce7' : i + 1 === day ? '#fde68a' : '#f3f4f6'};${i === 6 ? 'grid-column:span 2' : ''}">Hari ${i + 1}<br><span style="font-size:${i === 6 ? 22 : 18}px">${['🪙', '🌾', '🌽', '🪙', '🪱', '💰', '🐄'][i]}</span><br>${c.txt.replace(/\(.+\)/, '')}${i + 1 < day ? '<br>✅' : i + 1 === day ? '<br>⭐ hari ini' : ''}</div>`).join('')}</div>
-        <p style="font-size:12.5px;color:#5b6472;margin-top:10px">🔥 Login beruntun: ${s.streak} hari. Kalau bolos sehari, kalender mulai lagi dari Hari 1.</p>`;
+      el.innerHTML = H('KALENDER LOGIN · datang tiap hari, jangan putus!') + `<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">${CAL.map((c, i) => `<div style="border-radius:12px;padding:8px 6px;text-align:center;font-size:11.5px;font-weight:700;background:${i + 1 < day ? '#dcfce7' : i + 1 === day ? '#fde68a' : '#f3f4f6'};${i === 6 ? 'grid-column:span 2' : ''}">Hari ${i + 1}<br><span style="font-size:${i === 6 ? 22 : 18}px">${['🪙', '🌾', '🌽', '🪙', '🪱', '💰', '🐄'][i]}</span><br>${c.txt.replace(/\(.+\)/, '').replace('+ 🔥', '<br>+ 🔥')}${i + 1 < day ? '<br>✅' : i + 1 === day ? '<br>⭐ hari ini' : ''}</div>`).join('')}</div>
+        <p style="font-size:12.5px;color:#5b6472;margin-top:10px">🔥 Login beruntun: ${s.streak} hari. Kalau bolos sehari, kalender mulai lagi dari Hari 1.<br>🎁 Hari ke-7: Sapi gratis + <b>Topi Rajin 7 Hari</b> (eksklusif, tidak dijual di butik). Sudah tamat kalender: ${s.rajin || 0}×</p>`;
       return;
     }
   }
@@ -4283,7 +4392,8 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
       if (f.coins) { s.coins += f.coins; floatTxt(`💰 +${f.coins} koin!`, wp); W.toast(`💰 WOW! Kamu menarik Peti Harta berisi ${f.coins} koin!`); }
       else {
         const kg = +(f.kg * (0.6 + Math.random() * 0.9)).toFixed(f.kg < 1 ? 2 : 1); s.inv['ikan_' + k] = (s.inv['ikan_' + k] || 0) + 1;
-        if (!f.junk) { s.stats.fish = (s.stats.fish || 0) + 1; emit(s, 'fish', 1, k, msgs); albumAdd(s, 'fish', k, msgs); eventScore(s, 'mancing', 1, msgs); if (!s.best || kg > s.best.kg) { s.best = { k, kg }; msgs.push(`🏆 Rekor baru! ${f.n} ${kg} kg`); } }
+        if (!f.junk) { s.stats.fish = (s.stats.fish || 0) + 1; emit(s, 'fish', 1, k, msgs); albumAdd(s, 'fish', k, msgs); eventScore(s, 'mancing', 1, msgs); if (!s.best || kg > s.best.kg) { s.best = { k, kg }; msgs.push(`🏆 Rekor baru! ${f.n} ${kg} kg`); }
+          const wk = weekKey(Date.now()); if (!s.fishWk || s.fishWk.week !== wk || kg > s.fishWk.kg) { s.fishWk = { week: wk, k, kg }; msgs.push(`📋 Masuk papan skor mancing minggu ini: ${f.e} ${f.n} ${kg} kg`); } }
         floatTxt(`+1 ${f.e} ${f.n}`, wp); W.toast(f.junk ? `👢 Yah… cuma ${f.n}. Coba lagi!` : `${f.e} Dapat ${f.n} (${kg} kg)!`);
       }
       addXP(s, f.junk ? 1 : 3 + Math.round(f.price / 40), msgs);
@@ -4305,7 +4415,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
   $('gHelpW').onclick = () => nearFarm && helpFarm(nearFarm.u, 'water'); $('gHelpF').onclick = () => nearFarm && helpFarm(nearFarm.u, 'feed'); $('gHelpBack').onclick = () => enterGame();
   $('gWx').onclick = () => { const dk = dayKey(Date.now()), w = weatherOf(dk), pr = pricesToday(dk); const up = Object.entries(pr).filter(([k, m]) => m > 1).map(([k]) => ITEMS[k].e + ' ' + ITEMS[k].n).join(', '); W.toast(`${w.e} ${w.n} · ${w.season}. ${w.tip} Harga naik hari ini: ${up}.`); };
   $('gCloB').onclick = () => openCloset(); $('gClosetTabs').querySelectorAll('button').forEach(b => b.onclick = () => openCloset(b.dataset.k));
-  $('gFishB').onclick = startFishing; $('gFishBack').onclick = stopFishing; $('gCast').onclick = onCast; $('gPull').onclick = onPull; $('gFishBag').onclick = () => openBag();
+  $('gFishB').onclick = startFishing; $('gFishBack').onclick = stopFishing; $('gCast').onclick = onCast; $('gPull').onclick = onPull; $('gFishBag').onclick = () => openBag(); $('gFishTop').onclick = () => { setRank('fishkg'); openRank(); };
 
   // ---------------- chat ----------------
   const CHAT = { last: 0, msgs: [], unread: 0, online: [], bubbles: new Map() };
@@ -4410,11 +4520,12 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     if (!document.body.classList.contains('game') || !ME || e.target !== renderer.domElement) return;
     if (!pd || Math.hypot(e.clientX - pd[0], e.clientY - pd[1]) > 8) return;
     ray.setFromCamera(V((e.clientX / innerWidth) * 2 - 1, -(e.clientY / innerHeight) * 2 + 1, 0), camera);
-    const objs = [...ME.v.tiles.map(T => T.m).filter(m => m.visible), ...ME.v.tiles.map(T => T.crop).filter(Boolean), ...ME.v.animals.map(a => a.g), ...(ME.v.pet ? [ME.v.pet.g] : [])];
+    const objs = [...ME.v.tiles.map(T => T.m).filter(m => m.visible), ...ME.v.tiles.map(T => T.crop).filter(Boolean), ...ME.v.animals.map(a => a.g), ...(ME.v.pet ? [ME.v.pet.g] : []), ...(CRAB.g.visible ? [CRAB.g] : [])];
     const h = ray.intersectObjects(objs, true)[0]; if (!h) return;
     e.stopPropagation();
     let o = h.object; while (o && !o.userData.farmTile && !o.userData.farmAnimal && o !== ME.v.root) o = o.parent;
-    if (h.object.userData.farmPet) tapPet();
+    if (h.object.userData.crabHunt) tapCrab();
+    else if (h.object.userData.farmPet) tapPet();
     else if (o && o.userData.farmTile) tapTile(o.userData.farmTile.i);
     else if (h.object.userData.farmAnimal) tapAnimal(h.object.userData.farmAnimal.j);
     else { const T = ME.v.tiles.findIndex(T => T.crop && (T.crop === h.object || T.crop.getObjectById(h.object.id))); if (T >= 0) tapTile(T); }
@@ -4424,14 +4535,14 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
   let lastSlow = 0;
   window.__gameTick = (t, dt, now) => {
     animateFarms(t, dt || 0.016);
-    fishTick(t, dt || 0.016, now); bubbleTick(now); rainTick(t); wingTick(t); if (!window.__nearT || now - window.__nearT > 400) { window.__nearT = now; updateNear(); }
+    fishTick(t, dt || 0.016, now); bubbleTick(now); rainTick(t); wingTick(t); crabTick(t); if (!window.__nearT || now - window.__nearT > 400) { window.__nearT = now; updateNear(); }
     if (ME && ME.ent.sim.manual && FISHING.st === 'off') {
       const m = ME.ent.m, w = ME.walk;
       if (w) { const k = Math.min(1, (now - w.t0) / w.d); m.root.position.lerpVectors(w.from, w.to, k); m.root.rotation.y = Math.atan2(w.to.x - w.from.x, w.to.z - w.from.z) || m.root.rotation.y;
         if (k < 1) vPose(m, { t, walk: k * 12 }); else { m.root.rotation.y = Math.atan2(w.look.x - m.root.position.x, w.look.z - m.root.position.z); vPose(m, { t: t * 1.6, hammer: 1 }); if ((now - w.t0) > w.d + w.work * 1000) ME.walk = null; } }
       else vPose(m, { t });
     }
-    if (ME && now - lastSlow > 30000) { lastSlow = now; tickState(ME.s, Date.now()); renderFarm(ME.v, ME.s, Date.now()); updateHUD(); }
+    if (ME && now - lastSlow > 30000) { lastSlow = now; crabPlace(); tickState(ME.s, Date.now()); renderFarm(ME.v, ME.s, Date.now()); updateHUD(); }
   };
-  window.__game = { btReply, panenRaya, dailyQ, openPetPicker, tapPet, PETS, petMesh, openCloset, eventItems, OUTFITS, weatherOf, pricesToday, ordersToday, grGoal, grGive, helpFarm, fillOrder, renderAct, eventOf, applyCostume, sendChat, pollChat, CHAT, startFishing, onCast, onPull, FISHING, get me() { return ME; }, CROPS, ANIMALS, refreshList, FARMS, api, tapTile, tapAnimal, openShop, openMis, openBag, openRank, buy: id => buy(SHOP.find(x => x.id === id)), tickState };
+  window.__game = { tapCrab, crabToday, crabPlace, CRAB, HOUSE_LV, btReply, panenRaya, dailyQ, openPetPicker, tapPet, PETS, petMesh, openCloset, eventItems, OUTFITS, weatherOf, pricesToday, ordersToday, grGoal, grGive, helpFarm, fillOrder, renderAct, eventOf, applyCostume, sendChat, pollChat, CHAT, startFishing, onCast, onPull, FISHING, get me() { return ME; }, CROPS, ANIMALS, refreshList, FARMS, api, tapTile, tapAnimal, openShop, openMis, openBag, openRank, buy: id => buy(SHOP.find(x => x.id === id)), tickState };
 }
