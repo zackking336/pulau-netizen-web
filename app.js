@@ -3656,23 +3656,36 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     const b = document.createElement('div'); b.style.marginTop = '10px'; b.innerHTML = '<button style="width:100%;height:42px;border:0;border-radius:12px;background:#f59e0b;color:#fff;font:800 14px Poppins">🏪 Beli benih di Toko</button>'; b.firstChild.onclick = openShop; el.appendChild(b);
     openP('gP_seed');
   }
+  // barang sekali beli yang sudah dimiliki (kandang sedang dianggap punya kalau sudah punya kandang besar)
+  const shopOwned = (s, id) => id === 'barn2' && s.barn >= 4 || id === 'barn3' && s.barn >= 6 || id === 'field4' && s.field >= 4 || id === 'fence' && s.house.fence || id === 'garden' && s.house.garden;
+  const shopStock = (s, id) => {
+    if (id.startsWith('seed_')) return `📦 Punya ${s.inv[id] || 0} benih`;
+    if (id === 'pakan') return `📦 Punya ${s.inv.pakan || 0} pakan`;
+    if (id === 'umpan') return `📦 Punya ${s.inv.umpan || 0} umpan`;
+    if (id === 'esteh') return `⚡ Energi ${s.energy}/${maxEnergy(s)}`;
+    if (id.startsWith('animal_')) { const t = id.slice(7); return `📦 Punya ${s.animals.filter(a => a.t === t).length} · kandang ${s.animals.length}/${s.barn}`; }
+    return '';
+  };
   function openShop() {
-    const s = ME.s, el = $('gShopList'); el.innerHTML = `<div style="font-size:13px;color:#5b6472;margin:4px 0 6px">Koin kamu: <b>🪙 ${fmt(s.coins)}</b></div>`;
+    const s = ME.s, el = $('gShopList'), st = el.scrollTop; el.innerHTML = `<div style="font-size:13px;color:#5b6472;margin:4px 0 6px">Koin kamu: <b>🪙 ${fmt(s.coins)}</b></div>`;
     SHOP.forEach(it => {
-      let locked = it.lv > s.level, note = it.d;
+      let locked = it.lv > s.level, note = it.d; const owned = shopOwned(s, it.id);
       if (it.id.startsWith('animal_') && s.animals.length >= s.barn) note = `Kandang penuh (${s.barn}). Beli kandang lebih besar.`;
       if (it.id === 'pet_pick') note = s.pet ? `${petDef(s.pet)?.e || '🐾'} ${s.petName || petDef(s.pet)?.def} menemanimu · ganti 🪙 ${PET_CHANGE}` : '🎁 Gratis! ' + it.d;
-      if (it.id === 'barn3' && s.barn >= 6 || it.id === 'field4' && s.field >= 4 || it.id === 'fence' && s.house.fence || it.id === 'garden' && s.house.garden) note = 'Sudah punya ✅';
+      if (owned) note = it.id === 'barn2' && s.barn >= 6 ? 'Sudah punya Kandang Besar ✅' : 'Sudah punya ✅';
+      const stock = shopStock(s, it.id);
       const d = document.createElement('div'); d.className = 'gitem';
-      d.innerHTML = `<div class="ic">${it.e}</div><div class="tx"><b>${it.n}</b><span>${locked ? '🔒 Buka di Level ' + it.lv : note}</span></div><button>${it.id === 'pet_pick' ? (s.pet ? 'Ganti' : 'Pilih') : '🪙 ' + fmt(it.price)}</button>`;
-      const btn = d.querySelector('button'); btn.disabled = it.id === 'pet_pick' ? locked : locked || s.coins < it.price || note.startsWith('Kandang penuh') || note === 'Sudah punya ✅';
+      d.innerHTML = `<div class="ic">${it.e}</div><div class="tx"><b>${it.n}</b><span>${locked ? '🔒 Buka di Level ' + it.lv : note}</span>${stock ? `<span style="display:block;color:#16a34a;font-weight:700">${stock}</span>` : ''}</div><button>${it.id === 'pet_pick' ? (s.pet ? 'Ganti' : 'Pilih') : owned ? '✅ Dimiliki' : '🪙 ' + fmt(it.price)}</button>`;
+      const btn = d.querySelector('button'); btn.disabled = it.id === 'pet_pick' ? locked : locked || owned || s.coins < it.price || note.startsWith('Kandang penuh');
       btn.onclick = () => buy(it); el.appendChild(d);
     });
-    openP('gP_shop');
+    openP('gP_shop'); el.scrollTop = st;
   }
   function buy(it) {
     if (it.id === 'pet_pick') { openPetPicker(); return; }
     const s = ME.s; if (s.coins < it.price) return; const msgs = [];
+    if (shopOwned(s, it.id)) { W.toast('✅ Kamu sudah punya ini, tidak perlu beli lagi.'); openShop(); return; }
+    if (it.id.startsWith('animal_') && s.animals.length >= s.barn) { W.toast(`Kandang penuh (${s.barn}). Beli kandang lebih besar dulu.`); return; }
     if (it.id.startsWith('seed_')) s.inv[it.id] = (s.inv[it.id] || 0) + 1;
     else if (it.id === 'pakan') s.inv.pakan = (s.inv.pakan || 0) + 5;
     else if (it.id === 'umpan') s.inv.umpan = (s.inv.umpan || 0) + 10;
@@ -3683,7 +3696,10 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     else if (it.id === 'roof') s.house.roof = ((s.house.roof || 0) + 1) % ROOFS.length;
     else if (it.id === 'fence') s.house.fence = true; else if (it.id === 'garden') s.house.garden = true;
 
-    s.coins -= it.price; after(msgs); openShop();
+    s.coins -= it.price;
+    if (it.id === 'barn2' || it.id === 'barn3') msgs.push(`${it.e} Kandangmu sekarang muat ${s.barn} hewan!`);
+    else { const stk = shopStock(s, it.id); if (stk && !it.id.startsWith('animal_')) msgs.push(`✅ ${it.n} dibeli · ${stk.replace('📦 ', '')}`); }
+    after(msgs); openShop();
   }
   function openBag() {
     const s = ME.s, el = $('gBagList'); el.innerHTML = '';
