@@ -3554,6 +3554,9 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     let v = FARMS.get(u); if (!v) { const idx = Math.max(LIST.length, ...[...FARMS.values()].map(f => f.idx + 1), 0); v = buildFarm(u, idx); }
     ME.v = v; renderFarm(v, ME.s, Date.now());
     migrateWardrobe(ME.s); applyCostume(u, ME.s); pollHelps(); grLoad();
+    // kompensasi sekali pakai: bug beli Kandang Sedang dua kali (8 Nov 2026)
+    const COMP = { febrian_aang: { id: 'kandang_nov8', c: 900, txt: '🎁 Kompensasi dari Bang Tanjung: +900 koin karena bug Kandang Sedang terbeli dua kali. Maaf ya, bugnya sudah dibenerin! 🙏' } };
+    const cp = COMP[u]; ME.s.comp = ME.s.comp || []; if (cp && !ME.s.comp.includes(cp.id)) { ME.s.coins += cp.c; ME.s.comp.push(cp.id); msgs.unshift(cp.txt); }
     markDirty(); closeP(); enterGame(); api.rpc('farm_ping', { p_user: u, p_pin: p }).catch(() => {}); pollChat(); msgs.forEach((m, i) => setTimeout(() => W.toast(m), i * 2600)); if (ME.s.level >= 5 && !ME.s.pet) setTimeout(openPetPicker, 1500 + msgs.length * 2600);
   }
   function chooseLook(u, s) {
@@ -4350,6 +4353,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     const el = $('gChatList'), atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 60;
     const pr = panenRaya() ? `<br>🎉 <b style="display:inline;color:#b45309">EVENT PANEN RAYA</b> hari ini: harga jual semua hasil panen <b style="display:inline">2x lipat</b>! Jual di 🎒 Tas.` : '';
     el.innerHTML = `<div class="gmsg sys"><p>👋 Obrolan untuk semua pemain Kebunku. Jaga sopan santun ya. Pesan kasar & link otomatis disaring.</p></div>` +
+      (Date.now() < Date.parse('2026-11-12T00:00:00+07:00') ? `<div class="gmsg bt"><b>@bang.tanjung</b><i>pengumuman</i><p>📢 Terima kasih laporannya @febrian_aang! 🙏 Bug Kandang Sedang yang bisa terbeli dua kali sudah dibenerin. Kandang yang sudah dimiliki sekarang tidak bisa dibeli lagi, dan di 🏪 Toko sekarang kelihatan stok benih, pakan & umpan yang kamu punya. Koin 900 sudah Bang Tanjung kembalikan, masuk otomatis saat login berikutnya 🪙</p></div>` : '') +
       `<div class="gmsg pin"><b>📌 @bang.tanjung</b><p>Halo${ME ? ' @' + esc(ME.u) : ''}! Pertanyaan Bang Tanjung hari ini:<br><b style="display:inline">${esc(dailyQ())}</b><br>Jawab di chat ya, jawaban terbanyak bisa masuk video Pulau Netizen 🎬${pr}</p></div>` +
       (() => { const last = {}; return CHAT.msgs.map(m => { const r = btReply(m, last);
         return `<div class="gmsg ${ME && m.username === ME.u ? 'me' : ''} ${m.username === 'bang.tanjung' ? 'bt' : ''}"><b>@${esc(m.username)}</b><i>${hhmm(m.created_at)}</i><p>${esc(m.msg)}</p></div>` +
