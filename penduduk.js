@@ -6,9 +6,9 @@
 //  char  : 'A3:n' / 'A4:n' = karakter seragam yang sudah ada di video; kosong = karakter warga
 // =====================================================================
 window.PULAU = {
-  updated: '8 November 2026, 18.30 WIB',
+  updated: '9 November 2026, 12.03 WIB',
   day: 6,
-  total: 256,
+  total: 266,
   warga: [
     // ---- Pegawai resmi ----
     { u: 'bang.tanjung', job: 'Kepala Pulau', zone: 'utama', status: 'pegawai', since: 'Day 1', lantik: 'Day 1', rumah: 'Rumah Bang Tanjung (bukit)', char: 'BT', note: 'Akun resmi Bang Tanjung' },
@@ -92,7 +92,8 @@ window.PULAU = {
         'r1chh.agzk', 'alf4reziii', 'rasha_1253', '805_yadz', 'vierraavi', 'azsipaa._', '_nanayy_01', 'hnky__aww', 'zhu.anz', 'randa_boy_0918', 'gege_anlimited', 'raihan._.034', 'ezrydj', 'jenenge_lino211', 'luxz7k', 'poraukinchuu_', 'arcvival_2', 'boo_part_2', 'lalendr4_4', 'zidanealfarhozie', 'kiii_feb', 'fatimah73019', '_fznadtya', 'dino0saurush', 'rrr.renooo', 'orang_piaman_',
         '_f1naaa25', 'rendi43230', 'rachel.panama24', 'akaaphp',
         'asyahhhhhtriiput', 'this_valezyy', 'fiacurut', 'abang_s0nt0l', 'fairuz.397', 'fiez_r', 'pauzeeeee', 'vaniaaarrrr', 'firuzzblablabla', 'kmj072024', 'ilyaspace24', 'naznaf_156', 'hihuuu2014317', 'jo_gendu', 'igi_jeprinikol', 'zamlas_2', 'zhrcv4', 'a.waw4n_', 'qunzaaaaaaaa', 'nanay20149', 'itsfikri.6', 'rdonvr_', 'maiiiiiraaaa6', 'fahimaalzena', 'pakcder', 'drinzzzzz_l0ves._sylussss', 'dwikarhutlasok', 'blueyubgkai', 'juliana6678720', '___ankmma', 'hannyapryn', 'swan.4911903', '_arnsalshra14', 'pqrayhan',
-        'rawrr_prettyy', 'nayla_08489', 'fort26875', 'ichasamsy', 'militopedia', 'saaaaaa__aj11', 'likaaalim_', 'aqilahputri_h', 'adib4_srg', 'syakira_kieana']
+        'rawrr_prettyy', 'nayla_08489', 'fort26875', 'ichasamsy', 'militopedia', 'saaaaaa__aj11', 'likaaalim_', 'aqilahputri_h', 'adib4_srg', 'syakira_kieana',
+        'garneesa_241', 'seaman_store.id', 'akun.no.saluran.yes', 'brazil_era', 'adnan_sumkid_adnan21', 'wiah062', 'uknow_131313', 'selina.crafts', 'wah_kepo_1', '16dariindonesia', 'swancien']
       .map(u => ({ u, zone: 'kampung', status: 'warga', since: 'Day 5' })),
   ],
 };
