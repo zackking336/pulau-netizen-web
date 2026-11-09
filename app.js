@@ -4924,6 +4924,10 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
   function panenRaya(ts = Date.now()) { const wd = new Date(ts + WIB).getUTCDay(); return wd === 6 || wd === 0; }
   // ---- Bang Tanjung: balasan otomatis (dihitung sama di semua HP, tidak disimpan ke server) ----
   const BT_RULES = [
+    [/(kandang|koin|uang|rugi).*(muncul|hilang|ilang|rugi|balik|kembali|bayar)|(gak|ga|gk|tidak|nggak|ngga|belum) muncul|\brugi\b/i, [
+      u => u === 'febrian_aang' ? `Maaf banget ya @${u} 🙏 Bug Kandang Sedang sudah Bang Tanjung benerin. Koin 900 kamu sudah Bang Tanjung kembalikan, sudah masuk ke kebunmu 🪙` : `Maaf ya @${u} 🙏 Bang Tanjung cek dulu. Bug kandang dobel sudah dibenerin; kalau koinmu hilang gara-gara bug, tulis di sini ya, nanti dicek 📝`]],
+    [/(cara main|cara maen|gimana main|gmn main|gimana cara|gmn cara|pertama kali|baru main|beru|bingung|tutorial)/i, [
+      u => `Selamat datang @${u}! 🌱 Caranya: klik 🌱 Benih lalu tanam di ladang, siram tiap hari 💧, panen kalau sudah matang, terus jual di 🎒 Tas biar dapat koin. Cek 🎯 Misi buat hadiah tambahan ya!`]],
     [/\b(bug|error|eror|gak bisa|ga bisa|gk bisa|tidak bisa|ngga bisa|nggak bisa|macet|ngelag|lag|hilang|ilang)\b/i, [
       u => `Waduh, maaf ya @${u} 🙏 Bang Tanjung catat masalahnya. Coba tutup lalu buka lagi halamannya dulu ya.`,
       u => `Siap @${u}, laporannya Bang Tanjung terima 📝 Nanti dibenerin. Sementara coba muat ulang halamannya ya.`]],
@@ -4957,11 +4961,11 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     const el = $('gChatList'), atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 60;
     const pr = panenRaya() ? `<br>🎉 <b style="display:inline;color:#b45309">EVENT PANEN RAYA</b> hari ini: harga jual semua hasil panen <b style="display:inline">2x lipat</b>! Jual di 🎒 Tas.` : '';
     el.innerHTML = `<div class="gmsg sys"><p>👋 Obrolan untuk semua pemain Kebunku. Jaga sopan santun ya. Pesan kasar & link otomatis disaring.</p></div>` +
-      (Date.now() < Date.parse('2026-11-12T00:00:00+07:00') ? `<div class="gmsg bt"><b>@bang.tanjung</b><i>pengumuman</i><p>📢 Terima kasih laporannya @febrian_aang! 🙏 Bug Kandang Sedang yang bisa terbeli dua kali sudah dibenerin. Kandang yang sudah dimiliki sekarang tidak bisa dibeli lagi, dan di 🏪 Toko sekarang kelihatan stok benih, pakan & umpan yang kamu punya. Koin 900 sudah Bang Tanjung kembalikan, masuk otomatis saat login berikutnya 🪙</p></div>` : '') +
       `<div class="gmsg pin"><b>📌 @bang.tanjung</b><p>Halo${ME ? ' @' + esc(ME.u) : ''}! Pertanyaan Bang Tanjung hari ini:<br><b style="display:inline">${esc(dailyQ())}</b><br>Jawab di chat ya, jawaban terbanyak bisa masuk video Pulau Netizen 🎬${pr}</p></div>` +
       (() => { const last = {}; return CHAT.msgs.map(m => { const r = btReply(m, last);
         return `<div class="gmsg ${ME && m.username === ME.u ? 'me' : ''} ${m.username === 'bang.tanjung' ? 'bt' : ''}"><b>@${esc(m.username)}</b><i>${hhmm(m.created_at)}</i><p>${esc(m.msg)}</p></div>` +
-          (r ? `<div class="gmsg bt"><b>@bang.tanjung</b><i>balasan otomatis</i><p>${r}</p></div>` : ''); }).join(''); })();
+          (r ? `<div class="gmsg bt"><b>@bang.tanjung</b><i>balasan otomatis</i><p>${r}</p></div>` : ''); }).join(''); })() +
+      (Date.now() < Date.parse('2026-11-16T00:00:00+07:00') ? `<div class="gmsg bt"><b>@bang.tanjung</b><i>pengumuman</i><p>📢 Terima kasih laporannya @febrian_aang! 🙏 Bug Kandang Sedang yang bisa terbeli dua kali sudah dibenerin. Kandang yang sudah dimiliki sekarang tidak bisa dibeli lagi, dan di 🏪 Toko sekarang kelihatan stok benih, pakan & umpan yang kamu punya. Koin 900 kamu sudah Bang Tanjung kembalikan dan sudah masuk ke kebunmu 🪙 Cek saldo di pojok atas ya!</p></div>` : '');
     if (atBottom || CHAT.forceScroll) { el.scrollTop = el.scrollHeight; CHAT.forceScroll = false; }
     $('gOnline').textContent = `🟢 ${CHAT.online.length} online`;
   }
