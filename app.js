@@ -2171,14 +2171,17 @@ const desaPlot = i => {
   const c = i % DESA.cols, r = Math.floor(i / DESA.cols);
   return V(DESA.x0 + 0.7 + DESA.PW * (c + 0.5), SAND + 0.05, DESA.z0 - 0.8 - DESA.PD * (r + 0.5));
 };
+const plotPos = i => i < 48 ? desaPlot(i) : (() => { const j = i - 48, c = j % DESA2.cols, r = Math.floor(j / DESA2.cols); return V(DESA2.x0 + 0.7 + DESA2.PW * (c + 0.5), SAND + 0.05, DESA2.z0 - 0.8 - DESA2.PD * (r + 0.5)); })();
 // walkers keep to the paths between plots (only the inner farm area of a CLAIMED plot is blocked)
 const DESA_TAKEN = new Set();
+let DESA2 = null;                 // Desa Tani 2 (dibuka otomatis kalau Desa Tani 1 hampir penuh)
 const desaBlocked = (x, z) => {
-  if (x < DESA.x0 || x > DESA.x0 + DESA.W || z > DESA.z0 || z < DESA.z0 - DESA.D) return false;
-  const c = Math.floor((x - DESA.x0 - 0.7) / DESA.PW), r = Math.floor((DESA.z0 - 0.8 - z) / DESA.PD);
-  if (c < 0 || r < 0 || c >= DESA.cols || r >= DESA.rows) return false;
-  if (!DESA_TAKEN.has(r * DESA.cols + c)) return false;
-  const p = desaPlot(r * DESA.cols + c);
+  const D = (DESA2 && x < DESA.x0) ? DESA2 : DESA, off = D === DESA ? 0 : 48;
+  if (x < D.x0 || x > D.x0 + D.W || z > D.z0 || z < D.z0 - D.D) return false;
+  const c = Math.floor((x - D.x0 - 0.7) / D.PW), r = Math.floor((D.z0 - 0.8 - z) / D.PD);
+  if (c < 0 || r < 0 || c >= D.cols || r >= D.rows) return false;
+  if (!DESA_TAKEN.has(off + r * D.cols + c)) return false;
+  const p = plotPos(off + r * D.cols + c);
   return Math.abs(x - p.x) < DESA.PW / 2 - 0.55 && Math.abs(z - p.z) < DESA.PD / 2 - 0.75;
 };
 
@@ -3029,6 +3032,356 @@ LHB.build(1); KB.build(1); BB.build(1); RSB.build(1); KLN_TOP.forEach(o => o.vis
 lampM.emissiveIntensity = 3.0; lhLight.intensity = 6; beamM.opacity = 0.1;
 function day8Tick(rt) { BEAM.rotation.y = rt * 1.25; }
 
+
+// =====================================================================
+// LUMBUNG PANGAN (Day 9) di Desa Tani: Sawah (petak 42-45), Kolam Ikan (46-47), papan Harga Adil
+// =====================================================================
+const DY = SAND + 0.05;
+const dp = i => desaPlot(i);
+const midX = (a, b) => (dp(a).x + dp(b).x) / 2;
+[42, 43, 44, 45, 46, 47].forEach(i => DESA_TAKEN.add(i));
+// ---------------------------------------------------------------------
+// SAWAH (plot 42-45, baris paling utara)
+// ---------------------------------------------------------------------
+const SW = V(midX(42, 45), DY, dp(42).z);
+const SWB = builder(scene); SWB.g.position.copy(SW);
+const PETAK = [];
+const riceM = new THREE.MeshStandardMaterial({ color: 0x4ade80, roughness: 0.8, flatShading: true });
+let RICE;
+{
+  const dirt = mat(0x9c7a4c), dirt2 = mat(0x8a6a40);
+  SWB.add(mesh(new THREE.BoxGeometry(19.4, 0.14, 4.9), dirt, 0, 0.05, 0), 0, 0.12, 'grow');
+  SWB.add(mesh(new THREE.BoxGeometry(19.4, 0.28, 2.35), dirt2, 0, 0.14, -1.25), 0.02, 0.14, 'grow');     // teras atas (belakang)
+  const waterM = new THREE.MeshStandardMaterial({ color: 0x7fa8b8, roughness: 0.12, metalness: 0.15, transparent: true, opacity: 0.92 });
+  const tuftPos = [];
+  for (let r = 0; r < 2; r++) for (let c = 0; c < 4; c++) {
+    const x = -7.2 + c * 4.8, z = r === 0 ? -1.25 : 1.15, y = r === 0 ? 0.3 : 0.14;
+    const k0 = 0.12 + (r * 4 + c) * 0.06;
+    const w = mesh(new THREE.BoxGeometry(4.4, 0.04, 2.0), waterM, x, y, z, false); w.receiveShadow = true;
+    SWB.add(w, k0, k0 + 0.12, 'grow');
+    PETAK.push({ x, y, z, k0 });
+    for (let i = 0; i < 10; i++) for (let j = 0; j < 4; j++) tuftPos.push([x - 1.95 + i * 0.433, y, z - 0.72 + j * 0.48, k0]);
+  }
+  // rice tufts (instanced)
+  const g = new THREE.ConeGeometry(0.09, 0.42, 5); g.translate(0, 0.21, 0);
+  RICE = new THREE.InstancedMesh(g, riceM, tuftPos.length); RICE.castShadow = true; RICE.frustumCulled = false; SWB.g.add(RICE);
+  RICE.userData.pos = tuftPos;
+  // saluran bambu di belakang
+  const bam = mat(0xc8a35a);
+  const pipe = mesh(new THREE.CylinderGeometry(0.09, 0.09, 19.0, 8), bam, 0, 0.55, -2.35); pipe.rotation.z = Math.PI / 2; SWB.add(pipe, 0.75, 0.85);
+  for (let i = 0; i < 7; i++) SWB.add(mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.55, 5), bam, -9 + i * 3, 0.28, -2.35), 0.75, 0.85);
+  // orang-orangan sawah x2
+  for (const [x, z, col] of [[-4.8, 1.15, 0xdc2626], [4.8, -1.25, 0x2563eb]]) {
+    const s = new THREE.Group(); s.position.set(x, z < 0 ? 0.3 : 0.14, z);
+    s.add(mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.5, 5), mat(0x7a4a24), 0, 0.75, 0));
+    const arm = mesh(new THREE.CylinderGeometry(0.03, 0.03, 1.1, 5), mat(0x7a4a24), 0, 1.15, 0); arm.rotation.z = Math.PI / 2; s.add(arm);
+    s.add(mesh(new THREE.BoxGeometry(0.5, 0.45, 0.22), mat(col), 0, 1.05, 0));
+    s.add(mesh(new THREE.SphereGeometry(0.17, 8, 6), mat(0xe9d8a6), 0, 1.45, 0));
+    s.add(mesh(new THREE.ConeGeometry(0.34, 0.16, 12), mat(0xd6b46a), 0, 1.62, 0));
+    SWB.add(s, 0.8, 0.9);
+  }
+  const ss = signPost7('SAWAH PULAU', 'Lumbung Pangan', 1.8); ss.position.set(-8.4, 0.05, 2.75); SWB.add(ss, 0.85, 0.95);
+}
+function riceTick(grow, gold, rt) {
+  const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), s = V(1, 1, 1), p = V();
+  RICE.userData.pos.forEach(([x, y, z, k0], i) => {
+    const k = clamp(grow * 1.25 - (k0 - 0.12) * 0.6);
+    const sc = k < 0.02 ? 0.0001 : 0.15 + 0.85 * k;
+    e.set(Math.sin(rt * 1.7 + x * 0.6 + z) * 0.08 * k, i * 1.3, 0); q.setFromEuler(e);
+    s.set(sc * (1 + 0.15 * gold), sc * (1 + 0.15 * gold), sc * (1 + 0.15 * gold)); p.set(x, y, z);
+    m4.compose(p, q, s); RICE.setMatrixAt(i, m4);
+  });
+  RICE.instanceMatrix.needsUpdate = true;
+  riceM.color.setHex(0x4ade80).lerp(new THREE.Color(0xeab308), gold);
+}
+// kerbau
+const KERBAU = new THREE.Group(); scene.add(KERBAU); KERBAU.visible = false;
+const kerbauLegs = [];
+{
+  const c = mat(0x4b5563), d = mat(0x374151);
+  const b = mesh(new THREE.BoxGeometry(0.62, 0.5, 1.15), c, 0, 0.72, 0); KERBAU.add(b);
+  KERBAU.add(mesh(new THREE.BoxGeometry(0.4, 0.38, 0.45), c, 0, 0.82, 0.72));
+  KERBAU.add(mesh(new THREE.BoxGeometry(0.3, 0.2, 0.15), mat(0x6b7280), 0, 0.72, 0.98));
+  for (const sx of [-1, 1]) { const h = mesh(new THREE.TorusGeometry(0.22, 0.04, 5, 10, Math.PI * 0.8), mat(0xe5e7eb), sx * 0.2, 1.05, 0.68); h.rotation.set(0, 0, sx > 0 ? 0.2 : Math.PI - 1.0 + 0.6); KERBAU.add(h); }
+  for (const [x, z] of [[-0.2, 0.4], [0.2, 0.4], [-0.2, -0.4], [0.2, -0.4]]) { const l = new THREE.Group(); l.position.set(x, 0.5, z); l.add(mesh(new THREE.BoxGeometry(0.14, 0.5, 0.14), d, 0, -0.25, 0)); KERBAU.add(l); kerbauLegs.push(l); }
+  const tl = mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.5, 4), d, 0, 0.6, -0.62); tl.rotation.x = 0.4; KERBAU.add(tl);
+}
+
+// ---------------------------------------------------------------------
+// KOLAM IKAN (plot 46-47)
+// ---------------------------------------------------------------------
+const KL = V(midX(46, 47), DY, dp(46).z);
+const KLB = builder(scene); KLB.g.position.copy(KL);
+const PONDS = [
+  { n: 'LELE', x: -3.0, col: 0x5f7d4f, fish: 0x3f3f46 },
+  { n: 'NILA', x: 0.0, col: 0x4f8fa8, fish: 0xb6bcc6 },
+  { n: 'GURAME', x: 3.0, col: 0x3f8a7a, fish: 0xd9a066 },
+];
+const FISH9 = [];
+let KINCIR;
+{
+  const wood = mat(0x8b5a2b);
+  PONDS.forEach((p, i) => {
+    const k0 = i * 0.12;
+    KLB.add(mesh(new THREE.BoxGeometry(2.7, 0.35, 3.8), wood, p.x, 0.17, -0.2), k0, k0 + 0.18, 'grow');
+    const w = mesh(new THREE.BoxGeometry(2.4, 0.06, 3.5), new THREE.MeshStandardMaterial({ color: p.col, roughness: 0.1, metalness: 0.15 }), p.x, 0.33, -0.2, false);
+    KLB.add(w, k0 + 0.15, k0 + 0.3, 'grow');
+    for (let f = 0; f < 3; f++) {
+      const g = new THREE.Group(); KLB.g.add(g);
+      const b = mesh(new THREE.SphereGeometry(0.12, 8, 6), mat(p.fish, { roughness: 0.35, metalness: 0.2 }), 0, 0, 0); b.scale.set(0.55, 0.7, p.n === 'LELE' ? 2.0 : 1.5); g.add(b);
+      const tf = mesh(new THREE.ConeGeometry(0.09, 0.16, 4), mat(p.fish), 0, 0, -0.26); tf.rotation.x = -Math.PI / 2; g.add(tf);
+      if (p.n === 'LELE') for (const sx of [-1, 1]) { const wh = mesh(new THREE.CylinderGeometry(0.006, 0.006, 0.2, 3), mat(0x111111), sx * 0.06, -0.02, 0.27, false); wh.rotation.set(1.2, 0, sx * 0.5); g.add(wh); }
+      g.visible = false;
+      FISH9.push({ g, x: p.x + (f - 1) * 0.6, z: -0.2 + (f - 1) * 0.9, ph: f * 1.9 + i * 0.7, pond: i });
+    }
+  });
+  // kincir air di kolam tengah
+  KINCIR = new THREE.Group(); KINCIR.position.set(0.0, 0.55, 1.2);
+  for (let i = 0; i < 6; i++) { const pd = mesh(new THREE.BoxGeometry(0.06, 0.5, 0.18), mat(0xf59e0b), 0, 0, 0); const a = i / 6 * Math.PI * 2; pd.position.set(0, Math.cos(a) * 0.3, Math.sin(a) * 0.3); pd.rotation.x = a; KINCIR.add(pd); }
+  const ax = mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.5, 6), mat(0x374151), 0, 0, 0); ax.rotation.z = Math.PI / 2; KINCIR.add(ax);
+  KLB.add(KINCIR, 0.55, 0.7);
+  // pagar bambu depan + papan
+  for (let i = 0; i < 12; i++) KLB.add(mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.6, 5), mat(0xc8a35a), -4.6 + i * 0.84, 0.3, 2.15), 0.6, 0.75);
+  const rail = mesh(new THREE.CylinderGeometry(0.03, 0.03, 9.4, 5), mat(0xc8a35a), 0, 0.5, 2.15); rail.rotation.z = Math.PI / 2; KLB.add(rail, 0.62, 0.76);
+  const ks = signPost7('KOLAM IKAN', 'Lele · Nila · Gurame', 1.8); ks.position.set(-3.6, 0.05, 2.45); KLB.add(ks, 0.75, 0.88);
+}
+const PONDTAG = PONDS.map(p => { const s = tagSprite(p.n, '#ffffff', '#0f4c8a', 512); s.visible = false; return s; });
+// pakan
+const PELLET = []; { for (let i = 0; i < 12; i++) { const m = mesh(new THREE.SphereGeometry(0.035, 5, 4), mat(0x92400e), 0, 0, 0, false); scene.add(m); m.visible = false; PELLET.push(m); } }
+
+// ---------------------------------------------------------------------
+// PAPAN HARGA ADIL (gerbang Desa Tani)
+// ---------------------------------------------------------------------
+const HA = V(-14.4, DY, -7.2);
+const HAB = builder(scene); HAB.g.position.copy(HA);
+{
+  const tex = canvasTex(1024, 720, (x, w, h) => {
+    x.fillStyle = '#14532d'; x.fillRect(0, 0, w, h); x.strokeStyle = '#fde68a'; x.lineWidth = 16; x.strokeRect(10, 10, w - 20, h - 20);
+    x.textAlign = 'center'; x.textBaseline = 'middle';
+    x.fillStyle = '#fde68a'; x.font = '800 74px Poppins'; x.fillText('HARGA ADIL', w / 2, 82);
+    x.fillStyle = '#ffffff'; x.font = '700 40px Poppins'; x.fillText('DESA TANI PULAU NETIZEN', w / 2, 146);
+    const rows = [['🌾 Beras', 'Rp12.000/kg'], ['🥚 Telur', 'Rp2.000/btr'], ['🐟 Ikan', 'Rp25.000/kg'], ['🥬 Sayur', 'Rp5.000/ikat']];
+    rows.forEach(([a, b], i) => { const y = 232 + i * 84; x.fillStyle = i % 2 ? 'rgba(255,255,255,.06)' : 'rgba(255,255,255,.13)'; x.fillRect(60, y - 36, w - 120, 72);
+      x.textAlign = 'left'; x.fillStyle = '#ffffff'; x.font = '700 46px Poppins'; x.fillText(a, 90, y + 2); x.textAlign = 'right'; x.fillStyle = '#fde68a'; x.fillText(b, w - 90, y + 2); });
+    x.textAlign = 'center'; x.fillStyle = '#ffffff'; x.font = '800 40px Poppins'; x.fillText('Sama untuk semua · TANPA TENGKULAK', w / 2, 655);
+  });
+  const wd = mat(0x6b4423);
+  for (const sx of [-1.15, 1.15]) HAB.add(mesh(new THREE.CylinderGeometry(0.07, 0.08, 3.2, 6), wd, sx, 1.6, 0), 0, 0.4, 'grow');
+  HAB.add(mesh(new THREE.BoxGeometry(2.6, 1.83, 0.08), [wd, wd, wd, wd, new THREE.MeshStandardMaterial({ map: tex, roughness: 0.7 }), wd], 0, 2.3, 0.05), 0.3, 0.75);
+  const rf = gable(2.9, 0.45, 0.4, mat(0x9a3412)); rf.position.set(0, 3.23, -0.15); HAB.add(rf, 0.5, 0.85);
+}
+
+
+// statis untuk web: semua sudah jadi
+SWB.build(1); KLB.build(1); HAB.build(1);
+function lumbungTick(rt) {
+  riceTick(1, 0.35 + 0.25 * Math.sin(rt * 0.05), rt);
+  KINCIR.rotation.x = rt * 2.2;
+  FISH9.forEach(f => {
+    f.g.visible = true;
+    const cyc = (rt * 0.55 + f.ph) % 2.2, j = cyc < 0.7 ? Math.sin(cyc / 0.7 * Math.PI) : 0;
+    f.g.position.set(f.x + Math.sin(rt + f.ph) * 0.2, 0.3 + j * 0.65, f.z + Math.cos(rt * 0.8 + f.ph) * 0.3);
+    f.g.rotation.set(-Math.cos(cyc / 0.7 * Math.PI) * 0.9 * (cyc < 0.7 ? 1 : 0), f.ph, 0);
+  });
+  KERBAU.visible = true; const k = (rt * 0.03) % 2, u = k < 1 ? k : 2 - k;
+  KERBAU.position.set(SW.x - 8.5 + u * 17, DY + 0.18, SW.z + 0.0); KERBAU.rotation.y = k < 1 ? Math.PI / 2 : -Math.PI / 2;
+  kerbauLegs.forEach((l, i) => l.rotation.x = Math.sin(rt * 7 + (i % 2 ? Math.PI : 0) + (i > 1 ? Math.PI : 0)) * 0.4);
+}
+
+
+// =====================================================================
+// PULAU TAMAN — Taman Bunga, Taman Burung, Taman Bermain, Taman Wisata & Rekreasi
+// Pulau baru di utara, antara Desa Tani dan Kawasan Kerukunan. Dipakai di web & video.
+// Butuh: THREE, V, mesh, mat, jitter, palm, canvasTex, lapakSign, signPost7, GRASS, SAND, lerp, clamp
+// =====================================================================
+const PT = V(7.5, 0, -44.5), PT_RX = 11.0, PT_RZ = 7.0;
+const ptL = new THREE.Group(); scene.add(ptL); ptL.position.copy(PT);
+{
+  const sand = mesh(jitter(new THREE.CylinderGeometry(PT_RZ, PT_RZ + 0.7, 1.8, 36, 1), 0.3, true), mat(0xf2d79b), 0, SAND - 0.9, 0); sand.scale.set(PT_RX / PT_RZ, 1, 1); ptL.add(sand);
+  const grass = mesh(jitter(new THREE.CylinderGeometry(PT_RZ - 1.1, PT_RZ - 0.8, 0.5, 30, 1), 0.25, true), mat(0x7cc95a), 0, GRASS - 0.25, 0); grass.scale.set((PT_RX - 1.1) / (PT_RZ - 1.1), 1, 1); ptL.add(grass);
+  for (const [x, z, h] of [[-9.6, -3.2, 3.0], [-8.6, 4.0, 2.8], [-3.6, -6.0, 2.9], [3.8, -6.1, 3.1], [9.8, -2.6, 2.7], [9.2, 3.8, 3.0], [2.6, 6.0, 2.8], [-4.4, 5.9, 2.6]]) ptL.add(palm(x, GRASS, z, h, 0.22, x * 1.9 + z));
+}
+const PTD = new THREE.Group(); scene.add(PTD); PTD.position.copy(PT);
+const PT_Y = GRASS + 0.01;
+const ptBirds = [], ptSwing = [], ptAnim = { wheel: null, gondola: [], seesaw: null, carousel: null, fountain: null, bulbs: null };
+{
+  const pave = mat(0xe7d9b8), wood = mat(0x8b5a2b), steel = mat(0x1f7a3a, { metalness: 0.3, roughness: 0.5 });
+  // jalan utama barat-timur + cabang
+  PTD.add(mesh(new THREE.BoxGeometry(19.0, 0.05, 1.3), pave, 0, PT_Y + 0.02, 0.0, false));
+  PTD.add(mesh(new THREE.BoxGeometry(1.2, 0.05, 10.0), pave, -0.5, PT_Y + 0.02, 0.0, false));
+  // gapura PULAU TAMAN (barat, ke arah Desa Tani)
+  const gt = canvasTex(1024, 220, (c, w, h) => { c.fillStyle = '#be185d'; c.fillRect(0, 0, w, h); c.strokeStyle = '#fde68a'; c.lineWidth = 12; c.strokeRect(6, 6, w - 12, h - 12); c.fillStyle = '#fff'; c.font = '800 112px Poppins'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('🌸 PULAU TAMAN 🌸', w / 2, h / 2 + 6); });
+  const gm = new THREE.MeshStandardMaterial({ map: gt });
+  for (const s of [-1, 1]) PTD.add(mesh(new THREE.BoxGeometry(0.24, 3.0, 0.24), mat(0x9d174d), -9.3, PT_Y + 1.5, s * 1.2));
+  PTD.add(mesh(new THREE.BoxGeometry(0.14, 0.62, 3.1), [gm, gm, mat(0x9d174d), mat(0x9d174d), mat(0x9d174d), mat(0x9d174d)], -9.3, PT_Y + 3.05, 0));
+  // air mancur di simpang
+  PTD.add(mesh(new THREE.CylinderGeometry(1.0, 1.05, 0.28, 20), mat(0xd6d3d1), -0.5, PT_Y + 0.14, 0));
+  PTD.add(mesh(new THREE.CylinderGeometry(0.9, 0.9, 0.06, 20), mat(0x60a5fa, { roughness: 0.1, metalness: 0.2 }), -0.5, PT_Y + 0.27, 0, false));
+  PTD.add(mesh(new THREE.CylinderGeometry(0.1, 0.14, 0.6, 8), mat(0xd6d3d1), -0.5, PT_Y + 0.55, 0));
+  const jet = mesh(new THREE.ConeGeometry(0.22, 0.6, 10, 1, true), new THREE.MeshStandardMaterial({ color: 0xbfe8ff, transparent: true, opacity: 0.6, side: THREE.DoubleSide }), -0.5, PT_Y + 1.1, 0, false); jet.rotation.x = Math.PI; PTD.add(jet); ptAnim.fountain = jet;
+
+  // ---------- TAMAN BUNGA (barat) ----------
+  const fcols = [0xef4444, 0xfacc15, 0xf472b6, 0xa78bfa, 0xf97316, 0xffffff];
+  const beds = [[-7.4, -2.6], [-5.2, -2.6], [-7.4, 2.6], [-5.2, 2.6]];
+  const fg = new THREE.IcosahedronGeometry(0.11, 0), sg = new THREE.CylinderGeometry(0.015, 0.015, 0.25, 4);
+  let nF = 0; const fpos = [];
+  beds.forEach(([x, z], b) => {
+    PTD.add(mesh(new THREE.BoxGeometry(1.8, 0.18, 3.0), mat(0x6b4423), x, PT_Y + 0.09, z));
+    PTD.add(mesh(new THREE.BoxGeometry(1.6, 0.04, 2.8), mat(0x4a2f17), x, PT_Y + 0.19, z, false));
+    for (let i = 0; i < 4; i++) for (let j = 0; j < 7; j++) fpos.push([x - 0.6 + i * 0.4, z - 1.2 + j * 0.4, fcols[(b * 2 + (i + j) % 2) % 6]]);
+  });
+  const FL = new THREE.InstancedMesh(fg, new THREE.MeshStandardMaterial({ roughness: 0.6, flatShading: true }), fpos.length);
+  const ST = new THREE.InstancedMesh(sg, mat(0x15803d), fpos.length);
+  const m4 = new THREE.Matrix4();
+  fpos.forEach(([x, z, c], i) => { m4.makeTranslation(x, PT_Y + 0.42, z); FL.setMatrixAt(i, m4); FL.setColorAt(i, new THREE.Color(c)); m4.makeTranslation(x, PT_Y + 0.3, z); ST.setMatrixAt(i, m4); });
+  FL.castShadow = true; PTD.add(FL, ST);
+  // kincir angin hias
+  const wm = new THREE.Group(); wm.position.set(-8.3, PT_Y, 0.0);
+  wm.add(mesh(new THREE.CylinderGeometry(0.25, 0.4, 2.2, 8), mat(0xfef3c7), 0, 1.1, 0));
+  wm.add(mesh(new THREE.ConeGeometry(0.42, 0.5, 8), mat(0xb91c1c), 0, 2.45, 0));
+  const blades = new THREE.Group(); blades.position.set(0.0, 2.1, 0.45); wm.add(blades);
+  for (let i = 0; i < 4; i++) { const b = mesh(new THREE.BoxGeometry(0.16, 1.1, 0.03), mat(0xffffff), 0, 0.55, 0); const g = new THREE.Group(); g.rotation.z = i * Math.PI / 2; g.add(b); blades.add(g); }
+  wm.rotation.y = Math.PI / 2; PTD.add(wm); ptAnim.windmill = blades;
+  const sB = signPost7('TAMAN BUNGA', 'warna-warni', 1.6); sB.position.set(-6.3, PT_Y, 4.9); PTD.add(sB);
+
+  // ---------- TAMAN BURUNG (tengah-utara) ----------
+  const AVc = V(-0.5, 0, -3.4), R = 2.25;
+  const dome = new THREE.Group(); dome.position.set(AVc.x, PT_Y, AVc.z); dome.scale.set(1.45, 1.15, 1.0);
+  for (let i = 0; i < 12; i++) { if (i === 6) continue; const a = mesh(new THREE.TorusGeometry(R, 0.016, 4, 32, Math.PI), steel, 0, 0.1, 0, false); a.rotation.y = i / 12 * Math.PI; dome.add(a); }
+  for (const h of [0.7, 1.35, 1.85]) { const r = Math.sqrt(R * R - (h - 0.1) * (h - 0.1)); const ring = mesh(new THREE.TorusGeometry(r, 0.014, 4, 40, Math.PI * 2 - 0.4), steel, 0, h, 0, false); ring.rotation.x = Math.PI / 2; ring.rotation.z = Math.PI / 2 + 0.2; dome.add(ring); }
+  dome.add(mesh(new THREE.SphereGeometry(R, 28, 14, 0, Math.PI * 2, 0, Math.PI / 2), new THREE.MeshStandardMaterial({ color: 0xbbf7d0, transparent: true, opacity: 0.08, side: THREE.DoubleSide, depthWrite: false }), 0, 0.1, 0, false));
+  PTD.add(dome);
+  for (const [x, z, s] of [[-2.3, -3.9, 0.9], [1.3, -4.1, 0.85], [-0.5, -4.6, 0.6]]) {
+    const tr = new THREE.Group(); tr.position.set(x, PT_Y, z);
+    tr.add(mesh(new THREE.CylinderGeometry(0.07 * s, 0.1 * s, 1.1 * s, 6), mat(0x7a4a24), 0, 0.55 * s, 0));
+    tr.add(mesh(new THREE.IcosahedronGeometry(0.55 * s, 0), mat(0x22a04a), 0, 1.25 * s, 0));
+    tr.add(mesh(new THREE.IcosahedronGeometry(0.4 * s, 0), mat(0x34b85a), 0.25 * s, 1.5 * s, 0.1));
+    PTD.add(tr);
+  }
+  const bench = new THREE.Group(); bench.position.set(AVc.x, PT_Y, AVc.z + 1.0);
+  bench.add(mesh(new THREE.BoxGeometry(1.1, 0.07, 0.38), wood, 0, 0.42, 0)); bench.add(mesh(new THREE.BoxGeometry(1.1, 0.32, 0.06), wood, 0, 0.64, -0.18));
+  for (const sx of [-0.45, 0.45]) bench.add(mesh(new THREE.BoxGeometry(0.06, 0.42, 0.34), mat(0x374151), sx, 0.21, 0));
+  PTD.add(bench);
+  const mkBird = (col, s) => {
+    const g = new THREE.Group(); const m = mat(col);
+    const b = mesh(new THREE.SphereGeometry(0.08, 8, 6), m, 0, 0, 0, false); b.scale.set(0.85, 0.85, 1.35); g.add(b);
+    g.add(mesh(new THREE.SphereGeometry(0.058, 8, 6), m, 0, 0.06, 0.09, false));
+    const bk = mesh(new THREE.ConeGeometry(0.02, 0.06, 4), mat(0xf59e0b), 0, 0.05, 0.16, false); bk.rotation.x = Math.PI / 2; g.add(bk);
+    const wings = [];
+    for (const sx of [-1, 1]) { const w = new THREE.Group(); w.position.set(sx * 0.05, 0.02, 0); w.add(mesh(new THREE.BoxGeometry(0.14, 0.012, 0.1), m, sx * 0.07, 0, 0, false)); g.add(w); wings.push(w); }
+    g.scale.setScalar(s); return { g, wings };
+  };
+  [0xef4444, 0xfacc15, 0x3b82f6, 0x22c55e, 0xf8fafc, 0xf97316, 0xec4899, 0x06b6d4, 0x111827, 0xa3e635].forEach((c, i) => {
+    const b = mkBird(c, 1.6); PTD.add(b.g);
+    ptBirds.push({ ...b, r: 0.6 + (i % 4) * 0.3, h: 1.0 + (i % 3) * 0.35, sp: (0.9 + (i % 5) * 0.18) * (i % 2 ? 1 : -1), ph: i * 0.9, c: AVc });
+  });
+  const sW = signPost7('TAMAN BURUNG', 'tempat santai warga', 1.6); sW.position.set(AVc.x - 2.2, PT_Y, -0.95); PTD.add(sW);
+
+  // ---------- TAMAN BERMAIN (tengah-selatan) ----------
+  const PG = V(-0.5, 0, 3.6);
+  PTD.add(mesh(new THREE.BoxGeometry(6.0, 0.06, 3.6), mat(0xfde68a), PG.x, PT_Y + 0.03, PG.z, false));   // pasir
+  // ayunan
+  const sw = new THREE.Group(); sw.position.set(PG.x - 1.8, PT_Y, PG.z);
+  for (const sx of [-0.9, 0.9]) for (const sz of [-0.35, 0.35]) { const l = mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.9, 6), mat(0xdc2626), sx, 0.9, sz * 0.8); l.rotation.x = sz > 0 ? -0.2 : 0.2; sw.add(l); }
+  const top = mesh(new THREE.CylinderGeometry(0.045, 0.045, 1.9, 6), mat(0xdc2626), 0, 1.8, 0); top.rotation.z = Math.PI / 2; sw.add(top);
+  for (const sx of [-0.4, 0.4]) { const p = new THREE.Group(); p.position.set(sx, 1.78, 0); for (const cx of [-0.15, 0.15]) p.add(mesh(new THREE.CylinderGeometry(0.008, 0.008, 1.3, 3), mat(0x9ca3af), cx, -0.65, 0, false)); p.add(mesh(new THREE.BoxGeometry(0.38, 0.05, 0.2), mat([0x2563eb, 0xfacc15][sx > 0 ? 1 : 0]), 0, -1.3, 0)); sw.add(p); ptSwing.push(p); }
+  PTD.add(sw);
+  // perosotan
+  const sl = new THREE.Group(); sl.position.set(PG.x + 0.4, PT_Y, PG.z - 0.6);
+  sl.add(mesh(new THREE.BoxGeometry(0.7, 0.06, 0.7), mat(0x22c55e), 0, 1.2, 0));
+  for (const [x, z] of [[-0.3, -0.3], [0.3, -0.3], [-0.3, 0.3], [0.3, 0.3]]) sl.add(mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.2, 6), mat(0x3b82f6), x, 0.6, z));
+  const lad = mesh(new THREE.BoxGeometry(0.5, 1.4, 0.05), mat(0xfacc15), 0, 0.6, -0.55); lad.rotation.x = 0.35; sl.add(lad);
+  const slide = mesh(new THREE.BoxGeometry(0.5, 0.05, 1.8), mat(0xf97316), 0, 0.62, 1.1); slide.rotation.x = 0.62; sl.add(slide);
+  PTD.add(sl);
+  // jungkat-jungkit
+  const ss = new THREE.Group(); ss.position.set(PG.x + 2.1, PT_Y, PG.z - 0.6);
+  ss.add(mesh(new THREE.BoxGeometry(0.2, 0.3, 0.2), mat(0x374151), 0, 0.15, 0));
+  const plank = new THREE.Group(); plank.position.y = 0.32; ss.add(plank);
+  plank.add(mesh(new THREE.BoxGeometry(2.0, 0.06, 0.22), mat(0xec4899), 0, 0, 0));
+  for (const sx of [-0.85, 0.85]) plank.add(mesh(new THREE.BoxGeometry(0.06, 0.25, 0.22), mat(0xfacc15), sx, 0.12, 0));
+  PTD.add(ss); ptAnim.seesaw = plank;
+  // komidi putar mini
+  const cr = new THREE.Group(); cr.position.set(PG.x + 1.4, PT_Y, PG.z + 1.0);
+  cr.add(mesh(new THREE.CylinderGeometry(0.75, 0.75, 0.08, 18), mat(0x8b5cf6), 0, 0.12, 0));
+  cr.add(mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.6, 6), mat(0x9ca3af), 0, 0.45, 0));
+  for (let i = 0; i < 4; i++) { const a = i * Math.PI / 2; const h = mesh(new THREE.TorusGeometry(0.22, 0.02, 4, 10, Math.PI), mat(0xfacc15), Math.cos(a) * 0.55, 0.3, Math.sin(a) * 0.55, false); h.rotation.y = -a; cr.add(h); }
+  PTD.add(cr); ptAnim.carousel = cr;
+  const sP = signPost7('TAMAN BERMAIN', 'ayo main!', 1.6); sP.position.set(PG.x - 3.4, PT_Y, PG.z + 1.9); PTD.add(sP);
+
+  // ---------- TAMAN WISATA & REKREASI (timur) ----------
+  const RK = V(6.8, 0, 0);
+  // bianglala
+  const W = new THREE.Group(); W.position.set(RK.x + 0.6, PT_Y + 3.0, -3.0);
+  const frameM = mat(0xf8fafc, { metalness: 0.3 });
+  for (const sz of [-0.55, 0.55]) for (const sx of [-1, 1]) { const l = mesh(new THREE.CylinderGeometry(0.07, 0.09, 3.4, 6), frameM, RK.x + 0.6 + sx * 0.85, PT_Y + 1.5, -3.0 + sz); l.rotation.z = -sx * 0.28; PTD.add(l); }
+  const rim = new THREE.Group(); W.add(rim);
+  for (const sz of [-0.38, 0.38]) rim.add(mesh(new THREE.TorusGeometry(2.3, 0.05, 5, 36), frameM, 0, 0, sz, false));
+  for (let i = 0; i < 8; i++) { const sp = mesh(new THREE.CylinderGeometry(0.03, 0.03, 4.6, 4), frameM, 0, 0, 0, false); sp.rotation.z = i / 8 * Math.PI; rim.add(sp); }
+  const hub = mesh(new THREE.CylinderGeometry(0.18, 0.18, 1.0, 10), mat(0xdc2626), 0, 0, 0, false); hub.rotation.x = Math.PI / 2; W.add(hub);
+  [0xef4444, 0xfacc15, 0x3b82f6, 0x22c55e, 0xf97316, 0xec4899, 0x06b6d4, 0x8b5cf6].forEach(c => { const gd = new THREE.Group(); gd.add(mesh(new THREE.BoxGeometry(0.5, 0.36, 0.5), mat(c), 0, -0.35, 0)); gd.add(mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.06, 8), mat(c), 0, -0.05, 0, false)); W.add(gd); ptAnim.gondola.push(gd); });
+  const bl = []; for (let i = 0; i < 32; i++) { const a = i / 32 * Math.PI * 2; bl.push([Math.cos(a) * 2.3, Math.sin(a) * 2.3, 0.4]); }
+  const BI = new THREE.InstancedMesh(new THREE.SphereGeometry(0.06, 6, 5), new THREE.MeshBasicMaterial({ color: 0xffffff }), bl.length); BI.frustumCulled = false;
+  bl.forEach((p, i) => { m4.makeTranslation(...p); BI.setMatrixAt(i, m4); BI.setColorAt(i, new THREE.Color().setHSL(i / 32, 1, 0.65)); });
+  rim.add(BI); PTD.add(W); ptAnim.wheel = W;
+  // gazebo
+  const gz = new THREE.Group(); gz.position.set(RK.x + 2.2, PT_Y, 3.0);
+  gz.add(mesh(new THREE.CylinderGeometry(1.3, 1.35, 0.18, 8), mat(0xd6c7a1), 0, 0.09, 0));
+  for (let i = 0; i < 6; i++) { const a = i / 6 * Math.PI * 2; gz.add(mesh(new THREE.CylinderGeometry(0.06, 0.06, 1.6, 6), wood, Math.cos(a) * 1.05, 0.95, Math.sin(a) * 1.05)); }
+  gz.add(mesh(new THREE.ConeGeometry(1.6, 0.9, 6), mat(0x9a3412), 0, 2.15, 0));
+  PTD.add(gz);
+  // lapak jajanan
+  [['ARUM MANIS', 0xf472b6], ['JAGUNG BAKAR', 0xf59e0b], ['ES BUAH', 0x06b6d4]].forEach(([lab, col], i) => {
+    const g = new THREE.Group(); g.position.set(RK.x - 2.0 + i * 1.75, PT_Y, 1.75);
+    for (const sx of [-0.65, 0.65]) g.add(mesh(new THREE.CylinderGeometry(0.035, 0.035, 1.9, 5), wood, sx, 0.95, -0.3));
+    g.add(mesh(new THREE.BoxGeometry(1.4, 0.06, 0.9), mat(col), 0, 1.9, 0));
+    g.add(mesh(new THREE.BoxGeometry(1.3, 0.7, 0.45), mat(0xb07e4f), 0, 0.35, 0.05));
+    const sm = new THREE.MeshStandardMaterial({ map: lapakSign(lab, col) });
+    g.add(mesh(new THREE.BoxGeometry(1.25, 0.32, 0.04), [wood, wood, wood, wood, sm, wood], 0, 1.6, 0.25, false));
+    PTD.add(g);
+  });
+  const sR = signPost7('WISATA & REKREASI', 'bianglala · gazebo · jajanan', 1.9); sR.position.set(RK.x - 2.6, PT_Y, -1.2); PTD.add(sR);
+}
+// jembatan Desa Tani → Pulau Taman
+const BRG_PT = new THREE.Group(); scene.add(BRG_PT);
+{
+  const a = V(-5.6, 0, PT.z), b = V(PT.x - PT_RX + 0.9, 0, PT.z), n = Math.ceil(a.distanceTo(b) / 0.36);
+  for (let i = 0; i <= n; i++) { const p = a.clone().lerp(b, i / n); const pl = mesh(new THREE.BoxGeometry(0.34, 0.07, 1.3), mat(i % 2 ? 0x9a6a3a : 0xa97c4f), p.x, SAND + 0.05, p.z); BRG_PT.add(pl); }
+}
+function tamanTick(rt) {
+  ptBirds.forEach((b, i) => {
+    const a = rt * b.sp + b.ph;
+    b.g.position.set(b.c.x + Math.cos(a) * b.r * 1.9, PT_Y + b.h + Math.sin(rt * 2 + i) * 0.12, b.c.z + Math.sin(a) * b.r * 0.8 - 0.3);
+    b.g.rotation.y = -a + (b.sp > 0 ? 0 : Math.PI);
+    const f = Math.sin(rt * 22 + i) * 0.7; b.wings[0].rotation.z = f; b.wings[1].rotation.z = -f;
+  });
+  const spin = rt * 0.35;
+  if (ptAnim.wheel) { ptAnim.wheel.children[0].rotation.z = -spin; ptAnim.gondola.forEach((g, i) => { const a = i / 8 * Math.PI * 2 - spin; g.position.set(Math.cos(a) * 2.3, Math.sin(a) * 2.3, 0); }); }
+  ptSwing.forEach((p, i) => p.rotation.x = Math.sin(rt * 2.2 + i * 1.7) * 0.45);
+  if (ptAnim.seesaw) ptAnim.seesaw.rotation.z = Math.sin(rt * 1.6) * 0.22;
+  if (ptAnim.carousel) ptAnim.carousel.rotation.y = rt * 0.9;
+  if (ptAnim.windmill) ptAnim.windmill.rotation.z = rt * 1.2;
+  if (ptAnim.fountain) ptAnim.fountain.scale.y = 1 + Math.sin(rt * 6) * 0.08;
+}
+
+
+// =====================================================================
+// DESA TANI 2 (barat Desa Tani 1) — tersembunyi sampai Desa Tani 1 terisi 90%
+// =====================================================================
+DESA2 = { ...DESA, x0: DESA.x0 - DESA.W - 3.2 };
+DESA2.cx = DESA2.x0 + DESA2.W / 2; DESA2.cz = DESA.cz;
+const desa2 = new THREE.Group(); scene.add(desa2); desa2.visible = false;
+{
+  desa2.add(mesh(new THREE.BoxGeometry(DESA2.W, 1.8, DESA2.D), mat(0xf2d79b), DESA2.cx, SAND - 0.9, DESA2.cz));
+  desa2.add(mesh(new THREE.BoxGeometry(DESA2.W - 1.0, 0.1, DESA2.D - 1.0), mat(0x86cf62), DESA2.cx, SAND + 0.0, DESA2.cz));
+  const gp = mat(0x14532d), gx = DESA2.cx, gz = DESA2.z0 - 0.2;
+  for (const dx of [-1.1, 1.1]) desa2.add(mesh(new THREE.BoxGeometry(0.22, 2.4, 0.22), gp, gx + dx, SAND + 1.2, gz));
+  const gt = canvasTex(1024, 200, (x, w, h) => { x.fillStyle = '#14532d'; x.fillRect(0, 0, w, h); x.fillStyle = '#fde68a'; x.font = '800 96px Poppins'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText('DESA TANI 2', w / 2, h / 2 + 4); });
+  desa2.add(mesh(new THREE.BoxGeometry(2.6, 0.5, 0.18), [gp, gp, gp, gp, new THREE.MeshStandardMaterial({ map: gt }), new THREE.MeshStandardMaterial({ map: gt })], gx, SAND + 2.55, gz));
+  for (let i = 0; i < 7; i++) desa2.add(palm(DESA2.x0 + 0.5, SAND, DESA2.z0 - 3 - i * 5.6, 2.8 + (i % 3) * 0.3, 0.2, i + 9));
+  const a = V(DESA2.x0 + DESA2.W - 0.3, 0, -22), b = V(DESA.x0 + 0.3, 0, -22), n = Math.ceil(a.distanceTo(b) / 0.36);
+  for (let i = 0; i <= n; i++) { const p = a.clone().lerp(b, i / n); desa2.add(mesh(new THREE.BoxGeometry(0.34, 0.07, 1.3), mat(i % 2 ? 0x9a6a3a : 0xa97c4f), p.x, SAND + 0.05, p.z)); }
+}
+
 // ================= WEB: PETA PENDUDUK (interaktif) =================
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 {
@@ -3068,17 +3421,27 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
   }
   const HAS_D6 = typeof MSJ !== 'undefined';
   const HAS_D7 = typeof KK !== 'undefined';
+  const D9_LIVE = (DATA.day || 0) >= 9 || Date.now() >= Date.parse('2026-11-10T12:00:00+07:00');      // Lumbung Pangan + Pulau Taman tampil setelah video Day 9 tayang
+  [SWB.g, KLB.g, HAB.g, KERBAU, ptL, PTD, BRG_PT].forEach(o => o.visible = D9_LIVE);
   // ---- ground height by raycast ----
-  const lands = [island, ext, north, sel, ...(typeof desa !== 'undefined' ? [desa] : []), ...(HAS_FAS ? [fasL, fasBridge] : []), ...(HAS_D6 ? [msjL, BRG] : []), ...(HAS_D7 ? [kkL, klL, BRG2] : [])];
+  const lands = [island, ext, north, sel, ...(typeof desa !== 'undefined' ? [desa] : []), ...(HAS_FAS ? [fasL, fasBridge] : []), ...(HAS_D6 ? [msjL, BRG] : []), ...(HAS_D7 ? [kkL, klL, BRG2] : []), ...(D9_LIVE ? [ptL, BRG_PT] : [])];
   const ray = new THREE.Raycaster();
   // height map of all land (one-time raycast), used for walking + placement
-  const HM = { x0: -38, z0: -50, s: 0.35, W: 72, D: 64 }; HM.nx = Math.ceil(HM.W / HM.s); HM.nz = Math.ceil(HM.D / HM.s);
+  const HM = { x0: -72, z0: -54, s: 0.35, W: 106, D: 68 }; HM.nx = Math.ceil(HM.W / HM.s); HM.nz = Math.ceil(HM.D / HM.s);
   HM.y = new Float32Array(HM.nx * HM.nz);
   scene.updateMatrixWorld(true);
   for (let j = 0; j < HM.nz; j++) for (let i = 0; i < HM.nx; i++) {
     ray.set(V(HM.x0 + i * HM.s, 20, HM.z0 + j * HM.s), V(0, -1, 0));
     const h = ray.intersectObjects(lands, true)[0]; HM.y[j * HM.nx + i] = h ? h.point.y : -99;
   }
+  const hmPaint = objs => {   // isi ulang peta tinggi di area objek baru (mis. Desa Tani 2 dibuka)
+    const bb = new THREE.Box3(); objs.forEach(o => { o.updateMatrixWorld(true); bb.expandByObject(o); });
+    const r2 = new THREE.Raycaster();
+    for (let j = 0; j < HM.nz; j++) { const z = HM.z0 + j * HM.s; if (z < bb.min.z || z > bb.max.z) continue;
+      for (let i = 0; i < HM.nx; i++) { const x = HM.x0 + i * HM.s; if (x < bb.min.x || x > bb.max.x) continue;
+        r2.set(V(x, 20, z), V(0, -1, 0)); const h = r2.intersectObjects(objs, true)[0]; if (h) HM.y[j * HM.nx + i] = Math.max(HM.y[j * HM.nx + i], h.point.y); } }
+  };
+  window.__hmPaint = hmPaint;
   const hAt = (x, z) => { const i = Math.round((x - HM.x0) / HM.s), j = Math.round((z - HM.z0) / HM.s); return i < 0 || j < 0 || i >= HM.nx || j >= HM.nz ? -99 : HM.y[j * HM.nx + i]; };
   const groundY = (x, z) => { const y = hAt(x, z); return y > SAND - 0.08 && y < GRASS + 0.25 ? y : SAND; };
 
@@ -3104,6 +3467,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     ...(typeof DESA !== 'undefined' ? { desa: { name: 'Desa Tani', look: V(DESA.cx, 0.5, DESA.z0 - 9), dist: 22 } } : {}),
     ...(HAS_D7 ? { kerukunan: { name: 'Kawasan Kerukunan', look: V(KK.x, 0.8, KK.z + 2), dist: 24 }, kolamrenang: { name: 'Kolam Renang', look: V(KLM.x, 0.8, KLM.z + 0.6), dist: 11 } } : {}),
     ...(typeof LH !== 'undefined' ? { mercusuar: { name: 'Mercusuar', look: V(LH.x, 2.4, LH.z), dist: 12 } } : {}),
+    ...(D9_LIVE ? { pulautaman: { name: 'Pulau Taman', look: V(PT.x, 0.8, PT.z), dist: 22, dir: V(0.15, 0.75, 1) }, lumbung: { name: 'Sawah & Kolam Ikan', look: V(SW.x + 6, 0.5, SW.z), dist: 18, dir: V(0.15, 0.75, -1) } } : {}),
     ...(typeof KOP !== 'undefined' ? { kopdes: { name: 'KOPDES & Balai Desa', look: V((KOP.x + BAL.x) / 2, 0.8, KOP.z + 1), dist: 15 } } : {}),
   };
   // fixed work spots
@@ -3113,7 +3477,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     pemancingan: [['pm', 0.6, 0.9], ['pm', -0.6, 1.5], ['pm', 0.6, 2.1]],
     utama: [],
     kampung: [],
-    kerukunan: [], kolamrenang: [], mercusuar: [], kopdes: [],
+    kerukunan: [], kolamrenang: [], mercusuar: [], kopdes: [], pulautaman: [], lumbung: [],
     masjid: HAS_D6 ? [[-1.6, 3.2], [1.6, 3.0], [0.2, 3.9], [-2.6, 1.2], [2.8, 0.9], [-1.0, 4.4]].map(([x, z]) => ['g', MSJ.x + x, MSJ.z + z]) : [],
     fasilitas: HAS_FAS ? [[-1.9, 1.3], [-1.0, 1.6], [2.0, 1.2], [1.0, 1.7], [-2.6, 2.1], [2.8, 2.4]].map(([x, z]) => ['g', FAS.x + x, FAS.z + z]) : [],
   };
@@ -3535,6 +3899,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     if (HAS_FAS) { foam5.visible = true; foam5.scale.set(0.74 * fs, 0.74 * fs, 0.25); foam5.position.set(FAS.x, foam.position.y, FAS.z); fbTick(t); }
     if (HAS_D6) { foam6.visible = true; day6Tick(t); }
     if (HAS_D7) { day7Tick(t); if (typeof day8Tick === 'function') day8Tick(t); }
+    if (D9_LIVE) { lumbungTick(t); tamanTick(t); }
     boat.position.set(BOAT_DOCK, waveH(BOAT_DOCK, 1, t) + 0.05, 1.0); boat.rotation.z = Math.sin(t * 1.7) * 0.04;
 
     const dtBT = Math.min(0.1, t - (window.__lt || t)); window.__lt = t;
@@ -3872,7 +4237,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     T.forEach((g, i) => g.visible = i === 0); return T;
   }
   function buildFarm(u, idx) {
-    const root = new THREE.Group(); scene.add(root); root.position.copy(desaPlot(idx));
+    const root = new THREE.Group(); scene.add(root); root.position.copy(plotPos(idx));
     DESA_TAKEN.add(idx);
     // ground patch + path
     root.add(box(DESA.PW - 0.5, 0.06, DESA.PD - 0.8, 0x7ccf5a, 0, 0.0, -0.1, false));
@@ -3951,15 +4316,56 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
   // ---------------- other players ----------------
   let LIST = [];
-  const farmSlot = i => (typeof KOP !== 'undefined' && i >= 36) ? i + 4 : i;
+  // ---- petak kebun: tetap (stabil), kebun tidur & petak dilepas ----
+  const SLEEP_D = 5, FREE_D = 14, DAY_MS = 86400000;
+  const RESERVED = new Set([36, 37, 38, 39, 42, 43, 44, 45, 46, 47]);   // KOPDES, Balai Desa, Sawah, Kolam Ikan
+  const FREE1 = []; for (let i = 0; i < 48; i++) if (!RESERVED.has(i)) FREE1.push(i);
+  const FREE2 = []; for (let i = 48; i < 96; i++) FREE2.push(i);
+  let desa2Open = false;
+  const idleDays = r => { const t = Date.parse(r.updated_at || r.created_at || ''); return isFinite(t) ? (Date.now() - t) / DAY_MS : 0; };
+  function assignSlots(rows) {
+    const act = rows.filter(r => (ME && r.username === ME.u) || idleDays(r) < FREE_D);
+    if (!desa2Open && act.length >= Math.ceil(FREE1.length * 0.9)) openDesa2();
+    const pool = desa2Open ? FREE1.concat(FREE2) : FREE1, used = new Set(), out = new Map(), wait = [];
+    rows.forEach((r, rank) => {                   // rumah asli = urutan daftar (paling lama daftar = petak paling depan)
+      if (!act.includes(r)) return;
+      const home = pool[rank];
+      if (home !== undefined && !used.has(home)) { used.add(home); out.set(r.username, home); } else wait.push(r);
+    });
+    let k = 0; wait.forEach(r => { while (k < pool.length && used.has(pool[k])) k++; if (k < pool.length) { used.add(pool[k]); out.set(r.username, pool[k]); } });
+    return out;
+  }
+  function openDesa2() {
+    if (desa2Open) return; desa2Open = true; desa2.visible = true;
+    if (window.__hmPaint) window.__hmPaint([desa2]);
+  }
+  window.__farmAdmin = { assignSlots, idleDays, openDesa2, get open() { return desa2Open; } };
+  function setSleep(v, on) {
+    if (on === !!v.zz?.visible) return;
+    if (on && !v.zz) {
+      const g = new THREE.Group(); v.root.add(g);
+      const rr = rnd(v.u.length * 13 + 7);
+      for (let i = 0; i < 22; i++) { const c = mesh(new THREE.ConeGeometry(0.09, 0.32 + rr() * 0.2, 4), mat(i % 3 ? 0x3f8f3a : 0x6b8e23), (rr() - 0.5) * 3.8, 0.16, -1.6 + rr() * 3.2, false); c.rotation.z = (rr() - 0.5) * 0.5; g.add(c); }
+      const sp = tagSprite('💤 Lagi pergi', '#ffffff', '#475569', 512); sp.position.set(0, 1.9, 1.2); sp.scale.set(1.6, 0.3, 1); g.add(sp);
+      v.zz = g;
+    }
+    if (v.zz) v.zz.visible = on;
+  }
   async function refreshList() {
     try { LIST = await api.rpc('farm_list'); } catch (e) { return; }
-    LIST.forEach((r, i0) => {
-      const i = farmSlot(i0);      // petak 36-39 dipakai KOPDES & Balai Desa
-      if (i >= DESA.cols * DESA.rows) return;
-      let v = FARMS.get(r.username); if (!v) v = buildFarm(r.username, i);
+    const rows = LIST.slice();
+    if (ME && !rows.some(r => r.username === ME.u)) rows.push({ username: ME.u, state: ME.s, created_at: new Date().toISOString(), updated_at: new Date().toISOString() });
+    const slots = assignSlots(rows);
+    for (const [u, v] of FARMS) if (!slots.has(u)) { v.root.visible = false; DESA_TAKEN.delete(v.idx); v.idx = -1; }   // petak dilepas (14 hari tidak aktif)
+    rows.forEach(r => {
+      const i = slots.get(r.username); if (i === undefined) return;
+      let v = FARMS.get(r.username);
+      if (!v) v = buildFarm(r.username, i);
+      else if (v.idx !== i) { if (v.idx >= 0 && [...FARMS.values()].every(o => o === v || o.idx !== v.idx)) DESA_TAKEN.delete(v.idx); v.idx = i; v.root.position.copy(plotPos(i)); DESA_TAKEN.add(i); }
+      v.root.visible = true;
       const s = (ME && ME.u === r.username) ? ME.s : r.state;
       if (s && s.tiles) { renderFarm(v, s, Date.now()); applyCostume(r.username, s); }
+      setSleep(v, !(ME && ME.u === r.username) && idleDays(r) >= SLEEP_D);
     });
   }
   refreshList(); setInterval(refreshList, 60000);
@@ -4089,7 +4495,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     const msgs = []; tickState(ME.s, Date.now(), msgs);
     if (r.new || !r.state || !r.state.tiles) { ME.s.animals.push({ t: 'ayam', n: NAMES[Math.floor(Math.random() * NAMES.length)], h: 2, fed: null, pet: null, col: null }); msgs.unshift('🎉 Selamat datang di Desa Tani! Kamu dapat 300 koin, benih, pakan, dan seekor ayam.'); }
     await refreshList();
-    let v = FARMS.get(u); if (!v) { let idx = Math.max(farmSlot(LIST.length), ...[...FARMS.values()].map(f => f.idx + 1), 0); if (idx >= 36 && idx < 40) idx = 40; v = buildFarm(u, idx); }
+    let v = FARMS.get(u); if (!v) { const used = new Set([...FARMS.values()].map(f => f.idx)); const idx = FREE1.concat(FREE2).find(i => !used.has(i)); v = buildFarm(u, idx); }
     ME.v = v; renderFarm(v, ME.s, Date.now());
     migrateWardrobe(ME.s); applyCostume(u, ME.s); pollHelps(); grLoad();
     // kompensasi sekali pakai: bug beli Kandang Sedang dua kali (8 Nov 2026)
