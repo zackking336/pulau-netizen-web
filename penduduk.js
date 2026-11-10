@@ -6,8 +6,8 @@
 //  char  : 'A3:n' / 'A4:n' = karakter seragam yang sudah ada di video; kosong = karakter warga
 // =====================================================================
 window.PULAU = {
-  updated: '9 November 2026, 22.15 WIB',
-  day: 8,
+  updated: '10 November 2026, 09.05 WIB',
+  day: 9,
   total: 276,
   warga: [
     // ---- Pegawai resmi ----
@@ -54,9 +54,17 @@ window.PULAU = {
     { u: 'rainbiee._', job: 'Penjual Seblak', zone: 'pasar', status: 'pegawai', since: 'Day 7', lantik: 'Day 8', char: 'V:seblak', rc: [[0xdc2626, 0x9333ea], [0xdba57a, 0xc98a5a]] },
     { u: 'narawi04', job: 'Penjual Bakso', zone: 'pasar', status: 'pegawai', since: 'Day 7', lantik: 'Day 8', char: 'V:bakso' },
 
+    // ---- Dilantik Day 9 ----
+    { u: 'abeztebezt', job: 'Pengawas Desa Tani', zone: 'kampung', status: 'pegawai', since: 'Day 5', lantik: 'Day 9', char: 'W:pengawastani', note: 'Pengusul Desa Tani, sawah, kolam ikan & taman burung' },
+    { u: 'fadilmuhmd_5', job: 'Tukang Kebun', zone: 'kampung', status: 'pegawai', since: 'Day 5', lantik: 'Day 9', char: 'W:kebun' },
+    { u: 'paypop4y', job: 'Penjual Baju & Celana', zone: 'pasar', status: 'pegawai', since: 'Day 6', lantik: 'Day 9', char: 'W:baju' },
+    { u: 'patria_jalurgaza', job: 'Penjual Mie Pedas', zone: 'pasar', status: 'pegawai', since: 'Day 5', lantik: 'Day 9', char: 'W:miepedas' },
+    { u: 'nyzhh_0', job: 'Pemandu Wisata', zone: 'pelabuhan', status: 'pegawai', since: 'Day 8', lantik: 'Day 9', char: 'W:pemandu', rc: [[0xf59e0b, 0x22c55e], [0x0ea5e9, 0xf97316]] },
+    { u: 'orangakuprinces', job: 'Guru', zone: 'fasilitas', status: 'pegawai', since: 'Day 7', lantik: 'Day 9', rumah: 'SD Pulau Netizen', char: 'W:guru2', rc: [[0x7f1d1d, 0xbe185d], [0xc98a5a, 0xdba57a]] },
+    { u: 'zahwaaltahira_', job: 'Tentara (TNI AD)', zone: 'pelabuhan', status: 'pegawai', since: 'Day 7', lantik: 'Day 9', char: 'W:tniadhijab', rc: [[0xa86b3c, 0xdba57a]], note: 'Pengusul markas TNI AD' },
+    { u: 'apipa_40', job: 'Tentara (TNI AD)', zone: 'pelabuhan', status: 'pegawai', since: 'Day 7', lantik: 'Day 9', char: 'U:tniad', skin: 0xb07446 },
+
     // ---- Menunggu pelantikan ----
-    { u: 'abeztebezt', job: 'Pengawas Desa Tani (menunggu pelantikan)', zone: 'kampung', status: 'menunggu', since: 'Day 5', note: 'Pengusul Desa Tani, sawah, kolam ikan & taman burung' },
-    { u: 'paypop4y', job: 'Penjual Baju & Celana (menunggu pelantikan)', zone: 'pasar', status: 'menunggu', since: 'Day 6' },
     { u: 'aidil_hasibuannn', job: 'Tentara (TNI AD)', zone: 'pelabuhan', status: 'pegawai', since: 'Day 5', lantik: 'Day 6', char: 'U:tniad' },
     { u: '_mhmdrizky28', job: 'Tentara (TNI AD)', zone: 'pelabuhan', status: 'pegawai', since: 'Day 5', lantik: 'Day 6', char: 'U:tniad', skin: 0xdba57a },
     { u: 'keisarsdkptr_', job: 'Tentara (TNI AD)', zone: 'pelabuhan', status: 'pegawai', since: 'Day 5', lantik: 'Day 6', char: 'U:tniad', skin: 0x9c6238 },
@@ -69,18 +77,12 @@ window.PULAU = {
     { u: 'nyong__01__', job: 'Pedagang (jualan apa?)', zone: 'pasar', status: 'menunggu', since: 'Day 3' },
     { u: '_attyyyy1', job: 'Pedagang (jualan apa?)', zone: 'pasar', status: 'menunggu', since: 'Day 3' },
     { u: 'ruryfauziah', job: 'Karyawan Salon (menunggu salon)', zone: 'kampung', status: 'menunggu', since: 'Day 4', note: 'Pengusul RM Padang' },
-    { u: 'patria_jalurgaza', job: 'Penjual Mie Pedas', zone: 'pasar', status: 'menunggu', since: 'Day 5' },
     { u: 's.ptraa.r', job: 'Masinis (menunggu kereta)', zone: 'kampung', status: 'menunggu', since: 'Day 5' },
     { u: 'ameng.3nr', job: 'Pembalap (menunggu sirkuit)', zone: 'kampung', status: 'menunggu', since: 'Day 5' },
-    { u: 'fadilmuhmd_5', job: 'Tukang Kebun', zone: 'kampung', status: 'menunggu', since: 'Day 5' },
     { u: 'mochtyansufy', job: 'Petugas Kebersihan', zone: 'utama', status: 'menunggu', since: 'Day 5' },
     { u: '_fnyyy_13', job: 'Pedagang (menunggu pelantikan)', zone: 'pasar', status: 'menunggu', since: 'Day 7' },
     { u: '4rchive_kerdil_2.0.1', job: 'Satpam (menunggu pelantikan)', zone: 'pelabuhan', status: 'menunggu', since: 'Day 7' },
-    { u: 'apipa_40', job: 'Tentara TNI AD (menunggu pelantikan)', zone: 'pelabuhan', status: 'menunggu', since: 'Day 7' },
-    { u: 'zahwaaltahira_', job: 'Tentara TNI AD (menunggu pelantikan)', zone: 'pelabuhan', status: 'menunggu', since: 'Day 7' },
     { u: 'video_ai_real2026', job: 'Pegawai Bank (menunggu pelantikan)', zone: 'kampung', status: 'menunggu', since: 'Day 7' },
-    { u: 'orangakuprinces', job: 'Guru (menunggu pelantikan)', zone: 'kampung', status: 'menunggu', since: 'Day 7' },
-    { u: 'nyzhh_0', job: 'Pemandu Wisata (menunggu pelantikan)', zone: 'kampung', status: 'menunggu', since: 'Day 8' },
 
     // ---- Warga (sudah disambut) ----
     ...['moose.raaa243', 'delia_wahada', 'givy1010', 'nazeera_maharani', 'zahirajerryanggels', 'anomaliindnggh022', 'mirrr5965', 'tatyanajennaira']

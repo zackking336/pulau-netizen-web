@@ -3027,6 +3027,58 @@ WORKERS.perawat = () => {
   return { v, pose: 'hold' };
 };
 
+// ---- Kostum Day 9 ----
+const labelPlane = (txt, bg, fg, w = 0.34, h = 0.11, fs = 50) => new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshStandardMaterial({ map: wtex(256, Math.round(256 * h / w), (x, W, H) => { x.fillStyle = bg; x.fillRect(0, 0, W, H); x.fillStyle = fg; let f = fs; x.font = `800 ${f}px Poppins`; while (x.measureText(txt).width > W - 12 && f > 16) { f -= 2; x.font = `800 ${f}px Poppins`; } x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(txt, W / 2, H / 2 + 2); }) }));
+WORKERS.pengawastani = () => {
+  const v = makeVillager({ shirt: 0x6b7a3a, pants: 0x4b5563, skin: 0xc98a5a, hat: 'none' });
+  wadd(v.head, new THREE.CylinderGeometry(0.24, 0.27, 0.16, 12), WM(0x8a7f4f), 0, 0.24, 0);
+  wadd(v.head, new THREE.CylinderGeometry(0.42, 0.42, 0.03, 14), WM(0x7a6f42), 0, 0.17, 0);
+  vest(v, 0x14532d);
+  const lb = labelPlane('DESA TANI', '#14532d', '#fde68a'); lb.position.set(0, 0.82, 0.345); v.body.add(lb);
+  const cb = new THREE.Group(); v.arms[1].add(cb); cb.position.set(0, -0.55, 0.14);
+  wadd(cb, new THREE.BoxGeometry(0.26, 0.34, 0.03), WM(0x8b5a2b), 0, 0, 0);
+  const pl = labelPlane('HARGA ADIL', '#ffffff', '#14532d', 0.22, 0.28, 40); pl.position.set(0, -0.01, 0.02); cb.add(pl);
+  return { v, pose: 'hold' };
+};
+const capingOn = (v, col = 0xd6b46a) => { const c = wadd(v.head, new THREE.ConeGeometry(0.52, 0.26, 14), WM(col), 0, 0.3, 0); return c; };
+WORKERS.kebun = () => {
+  const v = makeVillager({ shirt: 0x9ca3af, pants: 0x57534e, skin: 0x9c6238, hat: 'none' });
+  capingOn(v);
+  wadd(v.body, new THREE.BoxGeometry(0.46, 0.55, 0.04), WM(0x166534), 0, 0.58, 0.31);
+  const sh = new THREE.Group(); v.arms[1].add(sh); sh.position.set(0, -0.6, 0.12);
+  for (const s of [-1, 1]) { const b = wadd(sh, new THREE.BoxGeometry(0.03, 0.34, 0.02), WM(0xc0c6cc, { metalness: 0.7 }), s * 0.03, 0.12, 0); b.rotation.z = s * 0.25; }
+  wadd(sh, new THREE.BoxGeometry(0.1, 0.12, 0.05), WM(0xdc2626), 0, -0.06, 0);
+  return { v, pose: 'hold' };
+};
+WORKERS.baju = () => {
+  const v = makeVillager({ shirt: 0xf472b6, pants: 0x1e3a8a, skin: 0xdba57a, hat: 'hijab', hatColor: 0x7c3aed });
+  wadd(v.body, new THREE.BoxGeometry(0.3, 0.14, 0.1), WM(0x111827), 0.12, 0.5, 0.3);
+  const hg = new THREE.Group(); v.arms[1].add(hg); hg.position.set(0, -0.6, 0.14);
+  const tri = wadd(hg, new THREE.TorusGeometry(0.12, 0.012, 3, 3), WM(0x9ca3af), 0, 0.02, 0); tri.rotation.z = Math.PI / 2;
+  wadd(hg, new THREE.BoxGeometry(0.3, 0.34, 0.03), WM(0xfacc15), 0, -0.18, 0);
+  const lb = labelPlane('BAJU', '#ec4899', '#ffffff', 0.28, 0.1); lb.position.set(0, 0.85, 0.335); v.body.add(lb);
+  return { v, pose: 'hold' };
+};
+WORKERS.miepedas = () => {
+  const v = makeVillager({ shirt: 0xf8fafc, pants: 0x1f2937, skin: 0xb07446, hat: 'hair' });
+  const hb = wadd(v.head, new THREE.TorusGeometry(0.29, 0.035, 5, 18), WM(0xdc2626), 0, 0.1, 0); hb.rotation.x = Math.PI / 2;
+  wadd(v.body, new THREE.BoxGeometry(0.46, 0.58, 0.04), WM(0xdc2626), 0, 0.58, 0.31);
+  const lb = labelPlane('MIE SETAN', '#dc2626', '#fde68a'); lb.position.set(0, 0.7, 0.335); v.body.add(lb);
+  const bw = new THREE.Group(); v.arms[1].add(bw); bw.position.set(0, -0.6, 0.14);
+  wadd(bw, new THREE.CylinderGeometry(0.15, 0.09, 0.12, 10), WM(0xf8fafc), 0, 0, 0);
+  wadd(bw, new THREE.CylinderGeometry(0.13, 0.13, 0.02, 10), WM(0xb91c1c), 0, 0.05, 0);
+  for (let k = 0; k < 3; k++) { const c = wadd(bw, new THREE.ConeGeometry(0.025, 0.12, 5), WM(0xef4444), -0.06 + k * 0.06, 0.1, 0); c.rotation.z = 1.2; }
+  return { v, pose: 'hold' };
+};
+const hijabTni = (u, col = 0x3f5a2e) => {
+  const v = u.v;
+  wadd(v.head, new THREE.SphereGeometry(0.335, 12, 9), WM(col), 0, 0.0, -0.075);
+  wadd(v.head, new THREE.ConeGeometry(0.42, 0.45, 10), WM(col), 0, -0.3, -0.04);
+  return u;
+};
+
+WORKERS.tniadhijab = () => hijabTni(UNIFORMS.tniad());
+
 // ---- Day 8 dibangun penuh (statis) untuk web ----
 LHB.build(1); KB.build(1); BB.build(1); RSB.build(1); KLN_TOP.forEach(o => o.visible = false);
 lampM.emissiveIntensity = 3.0; lhLight.intensity = 6; beamM.opacity = 0.1;
