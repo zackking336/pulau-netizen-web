@@ -4012,7 +4012,9 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
   const card = $('card');
   const statusTxt = { pegawai: 'PEGAWAI RESMI', menunggu: 'MENUNGGU PELANTIKAN', warga: 'PENDUDUK', baru: 'PENDUDUK BARU' };
   const hex = c => '#' + c.toString(16).padStart(6, '0');
+  let cardE = null;
   function showCard(e) {
+    cardE = e;
     $('kNo').textContent = e.no;
     $('kUser').textContent = '@' + e.u;
     $('kStatus').textContent = statusTxt[e.status] || 'PENDUDUK';
@@ -4032,6 +4034,62 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     card.classList.add('on');
   }
   $('kClose').onclick = () => { select(null); };
+
+  // ---- KTP sebagai gambar (1080x1920) untuk dibagikan ke Story ----
+  function ktpImage(e) {
+    const W = 1080, H = 1920, cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+    const c = cv.getContext('2d'), F = (w, px) => `${w} ${px}px Poppins, sans-serif`;
+    const rr = (x, y, w, h, r) => { c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r); c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath(); };
+    const fit = (txt, w, px, max) => { do { c.font = F(w, px); px -= 2; } while (c.measureText(txt).width > max && px > 20); };
+    c.fillStyle = '#38bdf8'; c.fillRect(0, 0, W, H);
+    try { // pemandangan pulau saat ini (karakter di tengah layar)
+      renderer.render(scene, camera);
+      const src = renderer.domElement, s = Math.max(W / src.width, H / src.height), dw = src.width * s, dh = src.height * s;
+      c.drawImage(src, (W - dw) / 2, (H - dh) / 2 - 150, dw, dh);
+    } catch (err) { /* tetap lanjut tanpa foto */ }
+    let g = c.createLinearGradient(0, 0, 0, 420); g.addColorStop(0, 'rgba(8,47,73,.75)'); g.addColorStop(1, 'rgba(8,47,73,0)'); c.fillStyle = g; c.fillRect(0, 0, W, 420);
+    g = c.createLinearGradient(0, 1050, 0, H); g.addColorStop(0, 'rgba(8,47,73,0)'); g.addColorStop(0.45, 'rgba(8,47,73,.8)'); g.addColorStop(1, 'rgba(8,47,73,.95)'); c.fillStyle = g; c.fillRect(0, 1050, W, H - 1050);
+    c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillStyle = '#fff';
+    c.font = F(800, 64); c.fillText('🏝️ PULAU NETIZEN', W / 2, 120);
+    c.font = F(700, 38); c.fillText('Aku resmi jadi penduduk!', W / 2, 190);
+    // kartu
+    const X = 70, Y = 1230, CW = W - 140, CH = 440;
+    c.save(); c.shadowColor = 'rgba(0,0,0,.4)'; c.shadowBlur = 40; c.shadowOffsetY = 14; rr(X, Y, CW, CH, 40); c.fillStyle = '#fffaf0'; c.fill(); c.restore();
+    c.save(); rr(X, Y, CW, CH, 40); c.clip();
+    g = c.createLinearGradient(X, 0, X + CW, 0); g.addColorStop(0, '#ff7a1a'); g.addColorStop(1, '#ffb02e'); c.fillStyle = g; c.fillRect(X, Y, CW, 84); c.restore();
+    c.fillStyle = '#fff'; c.textAlign = 'left'; c.font = F(800, 32); c.fillText('KTP PULAU NETIZEN', X + 36, Y + 44);
+    c.textAlign = 'right'; c.font = F(700, 30); c.fillText(String(e.no || ''), X + CW - 36, Y + 44);
+    const torso = e.m.body.children.find(o => o.geometry && o.geometry.type === 'SphereGeometry');
+    const col = torso && torso.material.color ? torso.material.color : new THREE.Color(0xf97316);
+    rr(X + 36, Y + 120, 170, 210, 28); c.fillStyle = '#' + col.getHexString(); c.fill();
+    c.fillStyle = (0.3 * col.r + 0.59 * col.g + 0.11 * col.b) > 0.7 ? '#14181f' : '#fff'; c.textAlign = 'center'; c.font = F(800, 96);
+    c.fillText(e.u.replace(/[^a-z0-9]/gi, '')[0]?.toUpperCase() || '?', X + 121, Y + 230);
+    const TX = X + 240, TW = CW - 276; c.textAlign = 'left';
+    c.fillStyle = '#14181f'; fit('@' + e.u, 800, 52, TW); c.fillText('@' + e.u, TX, Y + 150);
+    const st = statusTxt[e.status] || 'PENDUDUK'; c.font = F(800, 24); const sw = c.measureText(st).width + 36;
+    rr(TX, Y + 188, sw, 42, 21); c.fillStyle = e.status === 'pegawai' ? '#dcfce7' : e.status === 'menunggu' ? '#fef3c7' : '#e5e7eb'; c.fill();
+    c.fillStyle = e.status === 'pegawai' ? '#166534' : e.status === 'menunggu' ? '#92400e' : '#374151'; c.fillText(st, TX + 18, Y + 210);
+    [['Profesi', e.job || 'Penduduk'], ['Rumah', e.rumah || 'Menunggu giliran dibangun'], ['Tercatat', 'Sejak ' + e.since + (e.lantik ? ' · dilantik ' + e.lantik : '')]].forEach(([k, v], i) => {
+      const y = Y + 268 + i * 46; c.fillStyle = '#8a8f98'; c.font = F(600, 24); c.fillText(k, TX, y);
+      c.fillStyle = '#14181f'; fit(v, 700, 28, TW - 130); c.fillText(v, TX + 130, y);
+    });
+    c.fillStyle = '#92400e'; c.font = F(700, 24); c.textAlign = 'center'; c.fillText('Pulau yang dibangun dari komentar kalian', W / 2, Y + CH - 34);
+    c.fillStyle = '#fff'; c.font = F(800, 40); c.fillText('Follow @pulau.netizen = jadi penduduk', W / 2, 1752);
+    c.font = F(600, 28); c.globalAlpha = 0.85; c.fillText('Cari karaktermu di link bio', W / 2, 1808); c.globalAlpha = 1;
+    return cv;
+  }
+  window.__ktpImage = () => cardE ? ktpImage(cardE).toDataURL('image/jpeg', 0.9) : null;
+  $('kShare').onclick = async () => {
+    if (!cardE) return; const btn = $('kShare'), old = btn.textContent; btn.disabled = true; btn.textContent = 'Menyiapkan…';
+    try {
+      await document.fonts.load('800 40px Poppins');
+      const blob = await new Promise(r => ktpImage(cardE).toBlob(r, 'image/jpeg', 0.92));
+      const name = `KTP-PulauNetizen-${cardE.u}.jpg`, file = new File([blob], name, { type: 'image/jpeg' });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        try { await navigator.share({ files: [file], title: 'KTP Pulau Netizen', text: 'Aku resmi jadi penduduk @pulau.netizen 🏝️' }); } catch (err) { /* dibatalkan */ }
+      } else { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); }
+    } finally { btn.disabled = false; btn.textContent = old; }
+  };
   $('tot').textContent = DATA.total;
   $('upd').textContent = 'Update ' + DATA.updated + ' · Day ' + DATA.day;
 

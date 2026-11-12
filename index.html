@@ -68,6 +68,8 @@
   .row{display:flex;gap:6px;font-size:12.5px;line-height:1.45}
   .row i{font-style:normal;color:var(--muted);flex:0 0 74px;font-weight:500}
   .row b{font-weight:700}
+  #kShare{display:block;width:calc(100% - 28px);margin:0 14px 14px;height:40px;border:0;border-radius:12px;background:linear-gradient(90deg,#ff7a1a,#ffb02e);color:#fff;font:800 14px Poppins,sans-serif;letter-spacing:.3px;cursor:pointer;pointer-events:auto}
+  #kShare:disabled{opacity:.6}
   #kNote{margin-top:6px;font-size:12px;color:#92400e;background:#fff3dc;border-radius:8px;padding:4px 8px;font-weight:600}
 
   /* panels */
@@ -141,6 +143,7 @@
       <div id="kNote"></div>
     </div>
   </div>
+  <button id="kShare">📸 Simpan / Bagikan KTP</button>
 </div>
 
 <div class="panel" id="dir">
