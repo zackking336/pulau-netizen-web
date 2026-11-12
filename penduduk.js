@@ -6,8 +6,8 @@
 //  char  : 'A3:n' / 'A4:n' = karakter seragam yang sudah ada di video; kosong = karakter warga
 // =====================================================================
 window.PULAU = {
-  updated: '12 November 2026, 12.10 WIB',
-  day: 9,
+  updated: '12 November 2026, 14.00 WIB',
+  day: 11,
   total: 324,
   warga: [
     // ---- Pegawai resmi ----
@@ -79,14 +79,14 @@ window.PULAU = {
     { u: 'ruryfauziah', job: 'Karyawan Salon (menunggu salon)', zone: 'kampung', status: 'menunggu', since: 'Day 4', note: 'Pengusul RM Padang' },
     { u: 's.ptraa.r', job: 'Masinis (menunggu kereta)', zone: 'kampung', status: 'menunggu', since: 'Day 5' },
     { u: 'ameng.3nr', job: 'Pembalap (menunggu sirkuit)', zone: 'kampung', status: 'menunggu', since: 'Day 5' },
-    { u: 'mochtyansufy', job: 'Petugas Kebersihan', zone: 'utama', status: 'menunggu', since: 'Day 5' },
+    { u: 'mochtyansufy', job: 'Petugas Kebersihan', zone: 'utama', status: 'pegawai', since: 'Day 5', lantik: 'Day 10', char: 'W:kebersihan' },
     { u: '_fnyyy_13', job: 'Pedagang (menunggu pelantikan)', zone: 'pasar', status: 'menunggu', since: 'Day 7' },
     { u: '4rchive_kerdil_2.0.1', job: 'Satpam (menunggu pelantikan)', zone: 'pelabuhan', status: 'menunggu', since: 'Day 7' },
-    { u: 'video_ai_real2026', job: 'Pegawai Bank (menunggu pelantikan)', zone: 'kampung', status: 'menunggu', since: 'Day 7' },
-    { u: 'arfildy', job: 'Hansip / Penjaga Malam (menunggu pelantikan)', zone: 'kampung', status: 'menunggu', since: 'Day 10' },
-    { u: 'cc_4nn', job: 'Pengurus RT (menunggu pelantikan)', zone: 'kampung', status: 'menunggu', since: 'Day 10' },
-    { u: 'kamel_7448', job: 'Pedagang Ikan Goreng (menunggu pelantikan)', zone: 'pasar', status: 'menunggu', since: 'Day 9' },
-    { u: 'massboy_1928', job: 'Tukang Bangunan (menunggu pelantikan)', zone: 'kampung', status: 'menunggu', since: 'Day 10' },
+    { u: 'video_ai_real2026', job: 'Pegawai Bank Pulau', zone: 'kampung', status: 'pegawai', since: 'Day 7', lantik: 'Day 11', char: 'W:bank' },
+    { u: 'arfildy', job: 'Hansip / Penjaga Malam', zone: 'kampung', status: 'pegawai', since: 'Day 10', lantik: 'Day 10', char: 'W:hansip' },
+    { u: 'cc_4nn', job: 'Pengurus RT · Info Warga', zone: 'kampung', status: 'pegawai', since: 'Day 10', lantik: 'Day 10', char: 'W:pengurusrt' },
+    { u: 'kamel_7448', job: 'Penjual Ikan Goreng', zone: 'pasar', status: 'pegawai', since: 'Day 9', lantik: 'Day 10', char: 'W:ikangoreng' },
+    { u: 'massboy_1928', job: 'Tukang Bangunan', zone: 'kampung', status: 'pegawai', since: 'Day 10', lantik: 'Day 11', char: 'W:tukang' },
 
     // ---- Warga (sudah disambut) ----
     ...['moose.raaa243', 'delia_wahada', 'givy1010', 'nazeera_maharani', 'zahirajerryanggels', 'anomaliindnggh022', 'mirrr5965', 'tatyanajennaira']
