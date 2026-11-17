@@ -6,9 +6,9 @@
 //  char  : 'A3:n' / 'A4:n' = karakter seragam yang sudah ada di video; kosong = karakter warga
 // =====================================================================
 window.PULAU = {
-  updated: '16 November 2026, 15.49 WIB',
+  updated: '17 November 2026, 12.03 WIB',
   day: 11,
-  total: 356,
+  total: 355,
   warga: [
     // ---- Pegawai resmi ----
     { u: 'bang.tanjung', job: 'Kepala Pulau', zone: 'utama', status: 'pegawai', since: 'Day 1', lantik: 'Day 1', rumah: 'Rumah Bang Tanjung (bukit)', char: 'BT', note: 'Akun resmi Bang Tanjung' },
@@ -115,7 +115,7 @@ window.PULAU = {
         'srywardanaa31', 'titinrooowrr_', 'riz_baecuyy2', 'zxc_ciaa', 'd3fr_1', 'cyaalbum', 'awkkobaiknian', 'sverence_', 'iansoulshinesy', 'anggasetiawan804', 'l0viieeee_lopp12', 'dias_pamungkas6', '4billllkedua_', 'syaareeeffa', 'odelia.alesha', 'aufarmaulidan', 'cicaco90', 'bupet_8967', 'mrco_costa',
         'boy288892', 'azka_b11r', 'evelynnnn_1228', 'official_kids_panda_dan_kereta', 'yayaaa_machaaa', 'm_riski_ramadhan2012', 'afif55800', 'haffd_z123', 'miftaaaa607', 'jihan_rawrrrr', 'u44lllwe_lhh', '1904.file', 'nabila_baik_18', 'melanesia_150517', 'morgan_99771234', 'anisa739724', 'dsta.taaaaataaa', '_.enggoenakk', 'mhmmd_abzr_', 'spa_rin2', 'cathy.boyoh', 'aadamaalto', 'p4ull3_30', 'sccincess', 'fhirajiia', 'abdullipmahmud', 'whoo_mme13', 'nadaariandi_27', 's4lsa44aaaa', 'm.nizarr_26', 'fhira_alwiyh06',
         'arifmalisy_', 'picang______', 'krunnisaij', 'omyyyyyyyy11', 'adityaramadan396', 'meyliyaanaa.bvp', '_raisasabil', 'jamin44523', 'amnd_puput', 'veyranicha', 'zlkhzhra', 'leny_dipangil.nengok', '3197.sasa', '4r4ar4a_', '15dnda_', 'abu2240511', 'ahmadgaizann', 'dip_vya', 'woretma_21', 'mahen_seoyeon', 'nataliegadisanggita', 'cath_sukahayam', 'haiiyaadisini', 'yoman_weh', 'n4bil418', 'naylasukamachaa', 'top3ko_22',
-        'datorgacor', 'bangunbikinibottom', 'good238299', 'dhaf316', 'browniezzh', 'alya_setecuuu', 'r.afkld', 'kay90613', 'samuray1767', 'natasyashj', 'kalz444_', '_ra.ra_09', 'incies_naila13', 'zenn_noskin', 'kim_brengsek_22', '2011_16hhhh', 'ahmadfirdaus2859349',
+        'datorgacor', 'bangunbikinibottom', 'good238299', 'dhaf316', 'browniezzh', 'alya_setecuuu', 'r.afkld', 'kay90613', 'samuray1767', 'natasyashj', 'kalz444_', '_ra.ra_09', 'incies_naila13', 'zenn_noskin', 'kim_brengsek_22', '2011_16hhhh', 'ahmadfirdaus2859349', 'diaryofsweet_',
       ]
       .map(u => ({ u, zone: 'kampung', status: 'warga', since: 'Day 5' })),
   ],
